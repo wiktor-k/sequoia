@@ -26,6 +26,7 @@ use http::Response;
 use hyper::{Body, Client, Uri};
 use hyper_tls::HttpsConnector;
 
+use openpgp::policy::StandardPolicy;
 use sequoia_openpgp::{
     self as openpgp,
     Fingerprint,
@@ -329,6 +330,32 @@ pub async fn get<S: AsRef<str>>(email_address: S) -> Result<Vec<Cert>> {
     parse_body(&body, &email)
 }
 
+/// Returns all e-mail addresses from certificate's User IDs matching `domain`.
+fn get_cert_domains<'a>(domain: &'a str, cert: &ValidCert<'a>) -> impl Iterator<Item = Url> + 'a
+{
+    cert.userids().filter_map(move |uidb| {
+        uidb.userid().email().unwrap_or(None).and_then(|addr| {
+            if EmailAddress::from(&addr).ok().map(|e| e.domain == domain)
+                .unwrap_or(false)
+            {
+                Url::from(&addr).ok()
+            } else {
+                None
+            }
+        })
+    })
+}
+
+/// Checks if the certificate contains a User ID for given domain.
+///
+/// Returns `true` if at least one of `cert`'s UserIDs contains an
+/// e-mail address in the domain passed as an argument.
+pub fn cert_contains_domain_userid<S>(domain: S, cert: &ValidCert) -> bool
+    where S: AsRef<str>
+{
+    get_cert_domains(domain.as_ref(), cert).next().is_some()
+}
+
 /// Inserts a key into a Web Key Directory.
 ///
 /// Creates a WKD hierarchy at `base_path` for `domain`, and inserts
@@ -349,24 +376,16 @@ pub fn insert<P, S, V>(base_path: P, domain: S, variant: V,
     let base_path = base_path.as_ref();
     let domain = domain.as_ref();
     let variant = variant.into().unwrap_or_default();
+    let policy = &StandardPolicy::new();
+    let cert = cert.with_policy(policy, None)?;
 
     // First, check which UserIDs are in `domain`.
-    let addresses = cert.userids().filter_map(|uidb| {
-        uidb.userid().email().unwrap_or(None).and_then(|addr| {
-            if EmailAddress::from(&addr).ok().map(|e| e.domain == domain)
-                .unwrap_or(false)
-            {
-                Url::from(&addr).ok()
-            } else {
-                None
-            }
-        })
-    }).collect::<Vec<_>>();
+    let addresses = get_cert_domains(domain, &cert).collect::<Vec<_>>();
 
     // Any?
     if addresses.is_empty() {
         return Err(openpgp::Error::InvalidArgument(
-            format!("Key {} does not have a UserID in {}", cert, domain)
+            format!("Key {} does not have a User ID in {}", cert, domain)
         ).into());
     }
 
@@ -384,7 +403,7 @@ pub fn insert<P, S, V>(base_path: P, domain: S, variant: V,
                     format!("Malformed Cert in existing {:?}", path))?)?;
             }
         }
-        keyring.insert(cert.clone())?;
+        keyring.insert(cert.cert().clone())?;
         let mut file = fs::File::create(&path)?;
         keyring.export(&mut file)?;
 
@@ -557,5 +576,39 @@ mod tests {
             ".well-known/openpgpkey/example.com/hu/\
              stnkabub89rpcphiz4ppbxixkwyt1pic");
         assert!(!path.is_file());
+    }
+
+    #[test]
+    fn test_get_cert_domains() -> Result<()> {
+        let (cert, _) = CertBuilder::new()
+             .add_userid("test1@example.example")
+             .add_userid("juga@sequoia-pgp.org")
+             .generate()
+             .unwrap();
+        let policy = &StandardPolicy::new();
+        let user_ids: Vec<_> = get_cert_domains("sequoia-pgp.org", &cert.with_policy(policy, None)?)
+            .map(|addr| addr.to_string())
+            .collect();
+        assert_eq!(user_ids, vec!["https://openpgpkey.sequoia-pgp.org/.well-known/openpgpkey/sequoia-pgp.org/hu/7t1uqk9cwh1955776rc4z1gqf388566j?l=juga"]);
+
+        let user_ids: Vec<_> = get_cert_domains("example.example", &cert.with_policy(policy, None)?)
+            .map(|addr| addr.to_string())
+            .collect();
+        assert_eq!(user_ids, vec!["https://openpgpkey.example.example/.well-known/openpgpkey/example.example/hu/stnkabub89rpcphiz4ppbxixkwyt1pic?l=test1"]);
+        Ok(())
+    }
+
+    #[test]
+    fn test_cert_contains_domain_userid() -> Result<()> {
+        let (cert, _) = CertBuilder::new()
+             .add_userid("test1@example.example")
+             .add_userid("juga@sequoia-pgp.org")
+             .generate()
+             .unwrap();
+        let policy = &StandardPolicy::new();
+        assert!(cert_contains_domain_userid("sequoia-pgp.org", &cert.with_policy(policy, None)?));
+        assert!(cert_contains_domain_userid("example.example", &cert.with_policy(policy, None)?));
+        assert!(!cert_contains_domain_userid("example.org", &cert.with_policy(policy, None)?));
+        Ok(())
     }
 }
