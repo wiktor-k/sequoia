@@ -1262,6 +1262,9 @@
 //!     -h, --help
 //!             Prints help information
 //!
+//!     -s, --skip
+//!             Skips certificates that do not have User IDs for given domain.
+//!
 //!     -V, --version
 //!             Prints version information
 //!

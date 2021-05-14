@@ -139,6 +139,7 @@ pub fn dispatch_wkd(config: Config, m: &clap::ArgMatches) -> Result<()> {
         },
         ("generate", Some(m)) => {
             let domain = m.value_of("domain").unwrap();
+            let skip = m.is_present("skip");
             let f = open_or_stdin(m.value_of("input"))?;
             let base_path =
                 m.value_of("base_directory").expect("required");
@@ -148,12 +149,25 @@ pub fn dispatch_wkd(config: Config, m: &clap::ArgMatches) -> Result<()> {
                 wkd::Variant::Advanced
             };
             let parser = CertParser::from_reader(f)?;
+            let policy = &config.policy;
             let certs: Vec<Cert> = parser.filter_map(|cert| cert.ok())
                 .collect();
             for cert in certs {
-                wkd::insert(&base_path, domain, variant, &cert)
-                    .context(format!("Failed to generate the WKD in \
-                                      {}.", base_path))?;
+                let vc = match cert.with_policy(policy, None) {
+                    Ok(vc) => vc,
+                    e @ Err(_) if !skip => e?,
+                    _ => continue,
+                };
+                if wkd::cert_contains_domain_userid(domain, &vc) {
+                    wkd::insert(&base_path, domain, variant, &vc)
+                        .context(format!("Failed to generate the WKD in \
+                        {}.", base_path))?;
+                } else if !skip {
+                    return Err(openpgp::Error::InvalidArgument(
+                        format!("Certificate {} does not contain User IDs in domain {}.",
+                        vc.fingerprint(), domain)
+                    ).into());
+                }
             }
         },
         _ => unreachable!(),

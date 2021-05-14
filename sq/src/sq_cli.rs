@@ -1807,6 +1807,10 @@ as being human readable."))
                                      .short("d").long("direct-method")
                                      .help("Uses the direct method \
                                             [default: advanced method]"))
+                                .arg(Arg::with_name("skip")
+                                     .short("s").long("skip")
+                                     .help("Skips certificates that do not have \
+                                            User IDs for given domain."))
                     )
         );
 
