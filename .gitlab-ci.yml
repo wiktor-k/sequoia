@@ -380,6 +380,40 @@ windows-msvc-32:
   variables:
     CFLAGS: "" # Silence some C warnings when compiling with MSVC
 
+docker-build-push:
+  # Official docker image.
+  image: docker:stable
+  stage: build
+  services:
+    - docker:dind
+  tags:
+    - docker
+    - self-hosted
+  before_script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  script:
+    - >
+      docker build
+      --no-cache
+      --target sq
+      --tag "$IMAGE":latest
+      .
+    # smoke test
+    - docker run "$IMAGE":latest --help
+    - docker push "$IMAGE":latest
+  after_script: []
+  only:
+    refs:
+      - /docker/i # refs containing 'windows' keyword
+      - tags
+      - web
+      - schedules
+  variables:
+    CI_REGISTRY: "registry.gitlab.com"
+    IMAGE: "$CI_REGISTRY/sequoia-pgp/sequoia"
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_DRIVER: overlay2
+
 variables:
   DEBIAN_FRONTEND: noninteractive
   CARGO_HOME: $CI_PROJECT_DIR/../cargo
