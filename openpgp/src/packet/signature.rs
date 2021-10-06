@@ -3367,17 +3367,28 @@ mod test {
 
     #[test]
     fn sign_message() {
-        use crate::types::Curve;
+        use crate::types::Curve::*;
 
-        let key: Key<key::SecretParts, key::PrimaryRole>
-            = Key4::generate_ecc(true, Curve::Ed25519)
-            .unwrap().into();
-        let msg = b"Hello, World";
-        let mut pair = key.into_keypair().unwrap();
-        let mut sig = SignatureBuilder::new(SignatureType::Binary)
-            .sign_message(&mut pair, msg).unwrap();
+        for curve in vec![
+            Ed25519,
+            NistP256,
+            NistP384,
+            NistP521,
+        ] {
+            if ! curve.is_supported() {
+                eprintln!("Skipping unsupported {:?}", curve);
+                continue;
+            }
 
-        sig.verify_message(pair.public(), msg).unwrap();
+            let key: Key<key::SecretParts, key::PrimaryRole>
+                = Key4::generate_ecc(true, curve).unwrap().into();
+            let msg = b"Hello, World";
+            let mut pair = key.into_keypair().unwrap();
+            let mut sig = SignatureBuilder::new(SignatureType::Binary)
+                .sign_message(&mut pair, msg).unwrap();
+
+            sig.verify_message(pair.public(), msg).unwrap();
+        }
     }
 
     #[test]
