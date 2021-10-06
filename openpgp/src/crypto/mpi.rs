@@ -190,8 +190,13 @@ impl MPI {
                 Ok((&value[1..], &[]))
             },
 
-            _ => {
-
+            NistP256
+                | NistP384
+                | NistP521
+                | BrainpoolP256
+                | BrainpoolP512
+                =>
+            {
                 // Length of one coordinate in bytes, rounded up.
                 let coordinate_length = (curve.len()? + 7) / 8;
 
@@ -216,6 +221,9 @@ impl MPI {
                 Ok((&value[1..1 + coordinate_length],
                     &value[1 + coordinate_length..]))
             },
+
+            Unknown(_) =>
+                Err(Error::UnsupportedEllipticCurve(curve.clone()).into()),
         }
     }
 
