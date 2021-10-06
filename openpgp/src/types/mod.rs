@@ -347,6 +347,28 @@ impl Curve {
             Unknown(_) => None,
         }
     }
+
+    /// Returns the curve's field size in bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # fn main() -> sequoia_openpgp::Result<()> {
+    /// use sequoia_openpgp as openpgp;
+    /// use openpgp::types::Curve;
+    ///
+    /// assert_eq!(Curve::NistP256.field_size()?, 32);
+    /// assert_eq!(Curve::NistP384.field_size()?, 48);
+    /// assert_eq!(Curve::NistP521.field_size()?, 66);
+    /// assert_eq!(Curve::Ed25519.field_size()?, 32);
+    /// assert!(Curve::Unknown(Box::new([0x2B, 0x11])).field_size().is_err());
+    /// # Ok(()) }
+    /// ```
+    pub fn field_size(&self) -> Result<usize> {
+        self.bits()
+            .map(|bits| (bits + 7) / 8)
+            .ok_or_else(|| Error::UnsupportedEllipticCurve(self.clone()).into())
+    }
 }
 
 impl fmt::Display for Curve {
