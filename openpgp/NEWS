@@ -6,6 +6,8 @@
 ** New functionality
    - AEADAlgorithm::nonce_size replaces AEADAlgorithm::iv_size
    - crypto::backend
+   - MPI::is_zero
+   - MPI::zero
    - packet::Any
    - Packet::version
    - SignatureBuilder::set_reference_time

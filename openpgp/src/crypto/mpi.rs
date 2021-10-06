@@ -117,6 +117,16 @@ impl MPI {
         val
     }
 
+    /// Creates a new MPI representing zero.
+    pub fn zero() -> Self {
+        Self::new(&[])
+    }
+
+    /// Tests whether the MPI represents zero.
+    pub fn is_zero(&self) -> bool {
+        self.value().is_empty()
+    }
+
     /// Returns the length of the MPI in bits.
     ///
     /// Leading zero-bits are not included in the returned size.
