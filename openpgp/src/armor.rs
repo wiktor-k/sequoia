@@ -1451,14 +1451,14 @@ impl<'a> Reader<'a> {
 
                         // First, split off the line ending.
                         let crlf_line_end = line.ends_with(b"\r\n");
-                        line = &line[..line.len()
-                                         - if crlf_line_end { 2 } else { 1 }];
+                        line = &line[..line.len().saturating_sub(
+                            if crlf_line_end { 2 } else { 1 })];
 
                         // Now, trim whitespace off the line.
                         while Some(&b' ') == line.last()
                             || Some(&b'\t') == line.last()
                         {
-                            line = &line[..line.len() - 1];
+                            line = &line[..line.len().saturating_sub(1)];
                         }
 
                         text.extend_from_slice(line);
