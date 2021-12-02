@@ -2,9 +2,9 @@ use std::fs::File;
 use std::time;
 use std::time::Duration;
 
-use assert_cli::Assert;
-use assert_cmd::Command;
 use tempfile::TempDir;
+use assert_cmd::Command;
+use predicates::prelude::*;
 
 use sequoia_openpgp as openpgp;
 use openpgp::Result;
@@ -38,14 +38,15 @@ fn sq_certify() -> Result<()> {
 
 
     // A simple certification.
-    Assert::cargo_binary("sq")
-        .with_args(
-            &["certify",
-              alice_pgp.to_str().unwrap(),
-              bob_pgp.to_str().unwrap(),
-              "bob@example.org",
-            ])
-        .stdout().satisfies(|output| {
+    Command::cargo_bin("sq")
+        .unwrap()
+        .arg("certify")
+        .arg(alice_pgp.to_str().unwrap())
+        .arg(bob_pgp.to_str().unwrap())
+        .arg("bob@example.org")
+        .assert()
+        .success()
+        .stdout(predicate::function(|output: &[u8]| -> bool {
             let cert = Cert::from_bytes(output).unwrap();
             let vc = cert.with_policy(P, None).unwrap();
 
@@ -66,22 +67,21 @@ fn sq_certify() -> Result<()> {
                     return true;
                 }
             }
-
             false
         },
-                            "Bad certification")
-        .unwrap();
+    ));
 
     // No expiry.
-    Assert::cargo_binary("sq")
-        .with_args(
-            &["certify",
-              alice_pgp.to_str().unwrap(),
-              bob_pgp.to_str().unwrap(),
-              "bob@example.org",
-              "--expires", "never"
-            ])
-        .stdout().satisfies(|output| {
+    Command::cargo_bin("sq")
+        .unwrap()
+        .arg("certify")
+        .arg(alice_pgp.to_str().unwrap())
+        .arg(bob_pgp.to_str().unwrap())
+        .arg("bob@example.org")
+        .args(["--expires", "never"])
+        .assert()
+        .success()
+        .stdout(predicate::function(|output: &[u8]| -> bool {
             let cert = Cert::from_bytes(output).unwrap();
             let vc = cert.with_policy(P, None).unwrap();
 
@@ -103,26 +103,25 @@ fn sq_certify() -> Result<()> {
             }
 
             false
-        },
-                            "Bad certification")
-        .unwrap();
+        }));
 
     // Have alice certify bob@example.org for 0xB0B.
-    Assert::cargo_binary("sq")
-        .with_args(
-            &["certify",
-              alice_pgp.to_str().unwrap(),
-              bob_pgp.to_str().unwrap(),
-              "bob@example.org",
-              "--depth", "10",
-              "--amount", "5",
-              "--regex", "a",
-              "--regex", "b",
-              "--local",
-              "--non-revocable",
-              "--expires-in", "1d",
-            ])
-        .stdout().satisfies(|output| {
+    Command::cargo_bin("sq")
+        .unwrap()
+        .arg("certify")
+        .arg(alice_pgp.to_str().unwrap())
+        .arg(bob_pgp.to_str().unwrap())
+        .arg("bob@example.org")
+        .args(["--depth", "10"])
+        .args(["--amount", "5"])
+        .args(["--regex", "a"])
+        .args(["--regex", "b"])
+        .arg("--local")
+        .arg("--non-revocable")
+        .args(["--expires-in", "1d"])
+        .assert()
+        .success()
+        .stdout(predicate::function(|output: &[u8]| -> bool {
             let cert = Cert::from_bytes(output).unwrap();
             let vc = cert.with_policy(P, None).unwrap();
 
@@ -146,33 +145,31 @@ fn sq_certify() -> Result<()> {
             }
 
             false
-        },
-                            "Bad certification")
-        .unwrap();
+        }));
 
     // It should fail if the User ID doesn't exist.
-    Assert::cargo_binary("sq")
-        .with_args(
-            &["certify",
-              alice_pgp.to_str().unwrap(),
-              bob_pgp.to_str().unwrap(),
-              "bob",
-            ])
-        .fails()
-        .unwrap();
+    Command::cargo_bin("sq")
+        .unwrap()
+        .arg("certify")
+        .arg(alice_pgp.to_str().unwrap())
+        .arg(bob_pgp.to_str().unwrap())
+        .arg("bob")
+        .assert()
+        .failure();
 
     // With a notation.
-    Assert::cargo_binary("sq")
-        .with_args(
-            &["certify",
-              "--notation", "foo", "bar",
-              "--notation", "!foo", "xyzzy",
-              "--notation", "hello@example.org", "1234567890",
-              alice_pgp.to_str().unwrap(),
-              bob_pgp.to_str().unwrap(),
-              "bob@example.org",
-            ])
-        .stdout().satisfies(|output| {
+    Command::cargo_bin("sq")
+        .unwrap()
+        .arg("certify")
+        .args(["--notation", "foo", "bar"])
+        .args(["--notation", "!foo", "xyzzy"])
+        .args(["--notation", "hello@example.org", "1234567890"])
+        .arg(alice_pgp.to_str().unwrap())
+        .arg(bob_pgp.to_str().unwrap())
+        .arg("bob@example.org")
+        .assert()
+        .success()
+        .stdout(predicate::function(|output: &[u8]| -> bool {
             let cert = Cert::from_bytes(output).unwrap();
 
             // The standard policy will reject the
@@ -239,9 +236,7 @@ fn sq_certify() -> Result<()> {
             }
 
             false
-        },
-                            "Bad certification")
-        .unwrap();
+        }));
 
     Ok(())
 }
