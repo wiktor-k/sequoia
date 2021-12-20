@@ -217,6 +217,7 @@ impl Signer for PksClient {
         let content_type = match hash_algo {
             HashAlgorithm::SHA1 => "application/vnd.pks.digest.sha1",
             HashAlgorithm::SHA256 => "application/vnd.pks.digest.sha256",
+            HashAlgorithm::SHA384 => "application/vnd.pks.digest.sha384",
             HashAlgorithm::SHA512 => "application/vnd.pks.digest.sha512",
             _ => "application/octet-stream",
         };
