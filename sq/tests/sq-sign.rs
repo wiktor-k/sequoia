@@ -15,7 +15,7 @@ use crate::openpgp::parse::Parse;
 use crate::openpgp::serialize::stream::{Message, Signer, Compressor, LiteralWriter};
 
 fn artifact(filename: &str) -> String {
-    format!("../openpgp/tests/data/{}", filename)
+    format!("tests/data/{}", filename)
 }
 
 #[test]
