@@ -1247,6 +1247,29 @@ impl<'a> Signer<'a> {
         assert!(!self.signers.is_empty(), "The constructor adds a signer.");
         assert!(self.inner.is_some(), "The constructor adds an inner writer.");
 
+        let mut acceptable_hashes = crate::crypto::hash::DEFAULT_HASHES.to_vec();
+
+        let is_sorted = |data: &[HashAlgorithm]| {
+            data.windows(2).all(|w| w[0] <= w[1])
+        };
+
+        for signer in &self.signers {
+            let mut signer_hashes = signer.acceptable_hashes();
+            let mut signer_hashes_;
+            if ! is_sorted(signer_hashes) {
+                signer_hashes_ = signer_hashes.to_vec();
+                signer_hashes_.sort();
+                signer_hashes = &signer_hashes_;
+            }
+            acceptable_hashes.retain(|hash| signer_hashes.binary_search(hash).is_ok());
+        }
+
+        if let Some(hash) = acceptable_hashes.first() {
+            self.hash = hash.context().unwrap();
+        } else {
+            return Err(Error::NoAcceptableHash.into());
+        }
+
         match self.mode {
             SignatureMode::Inline => {
                 // For every key we collected, build and emit a one pass
@@ -3661,5 +3684,89 @@ mod test {
         }
 
         Ok(())
+    }
+
+    struct BadSigner;
+
+    impl crypto::Signer for BadSigner {
+        fn public(&self) -> &Key<key::PublicParts, key::UnspecifiedRole> {
+            panic!("public not impl")
+        }
+
+        /// Returns a list of hashes that this signer accepts.
+        fn acceptable_hashes(&self) -> &[HashAlgorithm] {
+            &[]
+        }
+
+        fn sign(&mut self, _hash_algo: HashAlgorithm, _digest: &[u8])
+        -> Result<crypto::mpi::Signature> {
+            panic!("sign not impl")
+        }
+    }
+
+    struct GoodSigner(Vec<HashAlgorithm>, Key<key::PublicParts, key::UnspecifiedRole>);
+
+    impl crypto::Signer for GoodSigner {
+        fn public(&self) -> &Key<key::PublicParts, key::UnspecifiedRole> {
+            &self.1
+        }
+
+        /// Returns a list of hashes that this signer accepts.
+        fn acceptable_hashes(&self) -> &[HashAlgorithm] {
+            &self.0
+        }
+
+        fn sign(&mut self, _hash_algo: HashAlgorithm, _digest: &[u8])
+        -> Result<crypto::mpi::Signature> {
+            unimplemented!()
+        }
+    }
+
+    impl Default for GoodSigner {
+        fn default() -> Self {
+            let p = &P::new();
+
+            let (cert, _) = CertBuilder::new().generate().unwrap();
+
+            let ka = cert.keys().with_policy(p, None).next().unwrap();
+
+            Self(vec![HashAlgorithm::default()], ka.key().clone())
+        }
+    }
+
+    #[test]
+    fn overlapping_hashes() {
+        let mut signature = vec![];
+        let message = Message::new(&mut signature);
+
+        Signer::new(message, GoodSigner::default()).build().unwrap();
+    }
+
+    #[test]
+    fn no_overlapping_hashes() {
+        let mut signature = vec![];
+        let message = Message::new(&mut signature);
+        let signer = Signer::new(message, BadSigner);
+
+        if let Err(e) = signer.build() {
+            assert_eq!(e.downcast_ref::<Error>(), Some(&Error::NoAcceptableHash));
+        } else {
+            unreachable!();
+        };
+    }
+
+    #[test]
+    fn no_overlapping_hashes_for_new_signer() {
+        let mut signature = vec![];
+        let message = Message::new(&mut signature);
+
+        let mut signer = Signer::new(message, GoodSigner::default());
+        signer = signer.add_signer(BadSigner);
+
+        if let Err(e) = signer.build() {
+            assert_eq!(e.downcast_ref::<Error>(), Some(&Error::NoAcceptableHash));
+        } else {
+            unreachable!();
+        };
     }
 }

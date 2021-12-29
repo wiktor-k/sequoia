@@ -318,6 +318,10 @@ pub enum Error {
     #[error("Invalid key: {0:?}")]
     InvalidKey(String),
 
+    /// No hash algorithm found that would be accepted by all signers.
+    #[error("No acceptable hash")]
+    NoAcceptableHash,
+
     /// The operation is not allowed, because it violates the policy.
     ///
     /// The optional time is the time at which the operation was

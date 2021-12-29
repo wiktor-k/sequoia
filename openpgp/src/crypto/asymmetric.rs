@@ -39,6 +39,19 @@ pub trait Signer {
     /// Returns a reference to the public key.
     fn public(&self) -> &Key<key::PublicParts, key::UnspecifiedRole>;
 
+    /// Returns a list of hashes that this signer accepts.
+    ///
+    /// Some cryptographic libraries or hardware modules support signing digests
+    /// produced with only a limited set of hashing algorithms. This function
+    /// indicates to callers which algorithm digests are supported by this signer.
+    ///
+    /// The default implementation of this function allows all hash algorithms to
+    /// be used. Provide an explicit implementation only when a smaller subset
+    /// of hashing algorithms is valid for this `Signer` implementation.
+    fn acceptable_hashes(&self) -> &[HashAlgorithm] {
+        &crate::crypto::hash::DEFAULT_HASHES_SORTED
+    }
+
     /// Creates a signature over the `digest` produced by `hash_algo`.
     fn sign(&mut self, hash_algo: HashAlgorithm, digest: &[u8])
             -> Result<mpi::Signature>;
@@ -47,6 +60,19 @@ pub trait Signer {
 impl Signer for Box<dyn Signer> {
     fn public(&self) -> &Key<key::PublicParts, key::UnspecifiedRole> {
         self.as_ref().public()
+    }
+
+    /// Returns a list of hashes that this signer accepts.
+    ///
+    /// Some cryptographic libraries or hardware modules support signing digests
+    /// produced with only a limited set of hashing algorithms. This function
+    /// indicates to callers which algorithm digests are supported by this signer.
+    ///
+    /// The default implementation of this function allows all hash algorithms to
+    /// be used. Provide an explicit implementation only when a smaller subset
+    /// of hashing algorithms is valid for this `Signer` implementation.
+    fn acceptable_hashes(&self) -> &[HashAlgorithm] {
+        self.as_ref().acceptable_hashes()
     }
 
     fn sign(&mut self, hash_algo: HashAlgorithm, digest: &[u8])
@@ -58,6 +84,19 @@ impl Signer for Box<dyn Signer> {
 impl Signer for Box<dyn Signer + Send + Sync> {
     fn public(&self) -> &Key<key::PublicParts, key::UnspecifiedRole> {
         self.as_ref().public()
+    }
+
+    /// Returns a list of hashes that this signer accepts.
+    ///
+    /// Some cryptographic libraries or hardware modules support signing digests
+    /// produced with only a limited set of hashing algorithms. This function
+    /// indicates to callers which algorithm digests are supported by this signer.
+    ///
+    /// The default implementation of this function allows all hash algorithms to
+    /// be used. Provide an explicit implementation only when a smaller subset
+    /// of hashing algorithms is valid for this `Signer` implementation.
+    fn acceptable_hashes(&self) -> &[HashAlgorithm] {
+        self.as_ref().acceptable_hashes()
     }
 
     fn sign(&mut self, hash_algo: HashAlgorithm, digest: &[u8])

@@ -51,6 +51,28 @@ use std::io::{self, Write};
 // hashed to files /tmp/hash-N, where N is a number.
 const DUMP_HASHED_VALUES: Option<&str> = None;
 
+lazy_static::lazy_static! {
+    /// List of hashes that the signer may produce.
+    /// This list is ordered by the preference so that the most preferred
+    /// hash algorithm is first.
+    pub(crate) static ref DEFAULT_HASHES: Vec<HashAlgorithm> = vec![
+        HashAlgorithm::default(),
+        HashAlgorithm::SHA512,
+        HashAlgorithm::SHA384,
+        HashAlgorithm::SHA256,
+        HashAlgorithm::SHA224,
+        HashAlgorithm::SHA1,
+        HashAlgorithm::RipeMD,
+        HashAlgorithm::MD5,
+    ];
+
+    pub(crate) static ref DEFAULT_HASHES_SORTED: Vec<HashAlgorithm> = {
+        let mut hashes = DEFAULT_HASHES.clone();
+        hashes.sort();
+        hashes
+    };
+}
+
 /// Hasher capable of calculating a digest for the input byte stream.
 ///
 /// This provides an abstract interface to the hash functions used in
