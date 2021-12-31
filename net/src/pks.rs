@@ -32,6 +32,32 @@ use hyper_tls::HttpsConnector;
 use super::Result;
 use url::Url;
 
+#[derive(thiserror::Error, Debug)]
+/// Errors returned from Private Key Store functions.
+pub enum Error {
+    /// Unlocking the key did not return a Location header.
+    #[error("Key unlock did not return a Location header")]
+    NoKeyLocation,
+
+    /// Unlocking the key failed with given error code.
+    ///
+    /// The error code is the [HTTP response code] returned by
+    /// the Private Key Store implementation.
+    ///
+    /// [HTTP response code]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+    #[error("Key unlock failed with error: {0}")]
+    KeyUnlockFailed(u16),
+
+    /// Private Key Store operation failed with given error code.
+    ///
+    /// The error code is the [HTTP response code] returned by
+    /// the Private Key Store implementation.
+    ///
+    /// [HTTP response code]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+    #[error("Private Key Store operation failed: {0}")]
+    OperationFailed(u16),
+}
+
 /// Contains a description of the unlocked key.
 struct KeyDescriptor {
     /// URL of the endpoint that can be used to interact with the key.
@@ -62,7 +88,7 @@ impl TryFrom<&HeaderMap<HeaderValue>> for KeyDescriptor {
                 accepted_types,
             })
         } else {
-            Err(anyhow::anyhow!("Key unlock did not return a Location header."))
+            Err(Error::NoKeyLocation.into())
         }
     }
 }
@@ -103,7 +129,7 @@ fn create_descriptor(store_uri: &str, key: &Key<PublicParts, UnspecifiedRole>,
     let response = rt.block_on(client.request(request))?;
 
     if !response.status().is_success() {
-        return Err(anyhow::anyhow!("PKS Key unlock failed: {}", response.status()));
+        return Err(Error::KeyUnlockFailed(response.status().into()).into());
     }
 
     response.headers().try_into()
@@ -209,7 +235,7 @@ impl PksClient {
         let response = self.rt.block_on(self.client.request(request))?;
 
         if !response.status().is_success() {
-            return Err(anyhow::anyhow!("PKS operation failed: {}", response.status()));
+            return Err(Error::OperationFailed(response.status().into()).into());
         }
 
         Ok(self.rt.block_on(hyper::body::to_bytes(response))?.to_vec())
@@ -235,12 +261,11 @@ impl Decryptor for PksClient {
                 let S = self.make_request(e.value().to_vec(), "application/vnd.pks.ecdh.point")?.into();
                 Ok(ecdh::decrypt_unwrap(&self.public, &S, ciphertext)?)
             },
-            (ciphertext, public) => Err(anyhow::anyhow!(
-                "Unsupported combination of ciphertext {:?} \
-                     and public key {:?} ",
-                ciphertext,
-                public
-            )),
+            (ciphertext, public) => Err(openpgp::Error::InvalidOperation(format!(
+                "unsupported combination of key pair {:?} \
+                 and ciphertext {:?}",
+                public, ciphertext)).into()
+            ),
         }
     }
 }
@@ -296,11 +321,9 @@ impl Signer for PksClient {
                 Ok(mpi::Signature::ECDSA { r, s })
             }
 
-            (pk_algo, _) => Err(anyhow::anyhow!(
-                "Unsupported combination of algorithm {:?} and pubkey {:?}",
-                pk_algo,
-                self.public
-            )),
+            (pk_algo, _) => Err(openpgp::Error::InvalidOperation(format!(
+                "unsupported combination of algorithm {:?} and key {:?}",
+                pk_algo, self.public)).into()),
         }
     }
 }
