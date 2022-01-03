@@ -29,6 +29,7 @@ use crate::openpgp::serialize::stream::{
     padding::Padder,
 };
 use crate::openpgp::policy::Policy;
+use crate::openpgp::types::KeyFlags;
 
 use crate::{
     Config,
@@ -55,9 +56,10 @@ pub mod certify;
 
 /// Returns suitable signing keys from a given list of Certs.
 #[allow(clippy::never_loop)]
-fn get_signing_keys<C>(certs: &[C], p: &dyn Policy,
-                       private_key_store: Option<&str>,
-                       timestamp: Option<SystemTime>)
+fn get_keys<C>(certs: &[C], p: &dyn Policy,
+               private_key_store: Option<&str>,
+               timestamp: Option<SystemTime>,
+               flags: KeyFlags)
     -> Result<Vec<Box<dyn crypto::Signer + Send + Sync>>>
     where C: Borrow<Cert>
 {
@@ -65,7 +67,7 @@ fn get_signing_keys<C>(certs: &[C], p: &dyn Policy,
     'next_cert: for tsk in certs {
         let tsk = tsk.borrow();
         for key in tsk.keys().with_policy(p, timestamp).alive().revoked(false)
-            .for_signing()
+            .key_flags(flags.clone())
             .supported()
             .map(|ka| ka.key())
         {
@@ -93,7 +95,7 @@ fn get_signing_keys<C>(certs: &[C], p: &dyn Policy,
                         keys.push(signer);
                         break 'next_cert;
                     },
-                    Err(error) => eprintln!("Could not unlock signer: {:?}", error),
+                    Err(error) => eprintln!("Could not unlock key: {:?}", error),
                 }
             }
         }
@@ -103,6 +105,20 @@ fn get_signing_keys<C>(certs: &[C], p: &dyn Policy,
     }
 
     Ok(keys)
+}
+
+/// Returns suitable signing keys from a given list of Certs.
+///
+/// This returns one key for each Cert.  If a Cert doesn't have an
+/// appropriate key, then this returns an error.
+fn get_signing_keys<C>(certs: &[C], p: &dyn Policy,
+                       private_key_store: Option<&str>,
+                       timestamp: Option<SystemTime>)
+    -> Result<Vec<Box<dyn crypto::Signer + Send + Sync>>>
+    where C: Borrow<Cert>
+{
+    get_keys(certs, p, private_key_store, timestamp,
+             KeyFlags::empty().set_signing())
 }
 
 pub struct EncryptOpts<'a> {
