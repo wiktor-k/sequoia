@@ -1,4 +1,5 @@
 use anyhow::Context as _;
+use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
@@ -54,13 +55,15 @@ pub mod certify;
 
 /// Returns suitable signing keys from a given list of Certs.
 #[allow(clippy::never_loop)]
-fn get_signing_keys(certs: &[openpgp::Cert], p: &dyn Policy,
-                    private_key_store: Option<&str>,
-                    timestamp: Option<SystemTime>)
+fn get_signing_keys<C>(certs: &[C], p: &dyn Policy,
+                       private_key_store: Option<&str>,
+                       timestamp: Option<SystemTime>)
     -> Result<Vec<Box<dyn crypto::Signer + Send + Sync>>>
+    where C: Borrow<Cert>
 {
     let mut keys: Vec<Box<dyn crypto::Signer + Send + Sync>> = Vec::new();
     'next_cert: for tsk in certs {
+        let tsk = tsk.borrow();
         for key in tsk.keys().with_policy(p, timestamp).alive().revoked(false)
             .for_signing()
             .supported()
