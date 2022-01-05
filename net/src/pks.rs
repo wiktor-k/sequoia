@@ -25,6 +25,7 @@ use openpgp::packet::Key;
 use openpgp::packet::key::{PublicParts, UnspecifiedRole};
 use openpgp::crypto::{Password, Decryptor, Signer, mpi, SessionKey, ecdh};
 use openpgp::types::HashAlgorithm;
+use openpgp::Fingerprint;
 
 use hyper::{Body, Client, Uri, client::HttpConnector, Request, HeaderMap, header::HeaderValue};
 use hyper_tls::HttpsConnector;
@@ -93,25 +94,35 @@ impl TryFrom<&HeaderMap<HeaderValue>> for KeyDescriptor {
     }
 }
 
-/// Returns an unlocked key descriptor.
+/// Returns request parameters for given arguments.
 ///
-/// Unlocks a key using given password and on success returns a key descriptor
-/// that can be used for signing or decryption.
-fn create_descriptor(store_uri: &str, key: &Key<PublicParts, UnspecifiedRole>,
-                      p: &Password, capability: &str) -> Result<KeyDescriptor> {
-    let mut url = Url::parse(store_uri)?;
+/// Computes target URL and optional authentication data for given input
+/// arguments.
+fn create_request_params(store_uri: &str, fingerprint: &Fingerprint, capability: &str)
+                         -> Result<(Url, Option<String>)> {
+    let url = Url::parse(store_uri)?;
     let auth = if !url.username().is_empty() {
-        let credentials = format!("{}:{}", url.username(), url.password().unwrap_or_default());
+        let password = url.password().unwrap_or_default();
+        let credentials = format!("{}:{}", url.username(), password);
         Some(format!("Basic {}", base64::encode(credentials)))
     } else {
         None
     };
-
-    let client = Client::builder().build(HttpsConnector::new());
+    let mut url = url.join(&fingerprint.to_hex())?;
 
     url.query_pairs_mut().append_pair("capability", capability);
+    Ok((url, auth))
+}
 
-    let uri: hyper::Uri = url.join(&key.fingerprint().to_hex())?.as_str().parse()?;
+/// Returns an unlocked key descriptor.
+///
+/// Unlocks a key using the given password and on success returns a key descriptor
+/// that can be used for signing or decryption.
+fn create_descriptor(store_uri: &str, key: &Key<PublicParts, UnspecifiedRole>,
+                      p: &Password, capability: &str) -> Result<KeyDescriptor> {
+    let fpr = &key.fingerprint();
+    let (url, auth) = create_request_params(store_uri, fpr, capability)?;
+    let uri: hyper::Uri = url.as_str().parse()?;
     let mut request = Request::builder()
         .method("POST")
         .uri(uri);
@@ -126,6 +137,8 @@ fn create_descriptor(store_uri: &str, key: &Key<PublicParts, UnspecifiedRole>,
         .build()?;
 
     let request = request.body(Body::from(p.map(|p|p.as_ref().to_vec())))?;
+
+    let client = Client::builder().build(HttpsConnector::new());
     let response = rt.block_on(client.request(request))?;
 
     if !response.status().is_success() {
@@ -325,5 +338,51 @@ impl Signer for PksClient {
                 "unsupported combination of algorithm {:?} and key {:?}",
                 pk_algo, self.public)).into()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_decrypt_url() {
+        let fingerprint = &Fingerprint::from_str("43B24E4557BBCD10225EDDB97123242412A19C9B").unwrap();
+        let (url, auth) = create_request_params("http://localhost:3000", fingerprint, "decrypt").unwrap();
+        assert_eq!(url.as_str(), "http://localhost:3000/43B24E4557BBCD10225EDDB97123242412A19C9B?capability=decrypt");
+        assert!(auth.is_none());
+    }
+
+    #[test]
+    fn test_sign_url() {
+        let fingerprint = &Fingerprint::from_str("43B24E4557BBCD10225EDDB97123242412A19C9B").unwrap();
+        let (url, auth) = create_request_params("http://localhost:3000", fingerprint, "sign").unwrap();
+        assert_eq!(url.as_str(), "http://localhost:3000/43B24E4557BBCD10225EDDB97123242412A19C9B?capability=sign");
+        assert!(auth.is_none());
+    }
+
+    #[test]
+    fn test_sign_url_with_slash() {
+        let fingerprint = &Fingerprint::from_str("43B24E4557BBCD10225EDDB97123242412A19C9B").unwrap();
+        let (url, auth) = create_request_params("http://localhost:3000/", fingerprint, "sign").unwrap();
+        assert_eq!(url.as_str(), "http://localhost:3000/43B24E4557BBCD10225EDDB97123242412A19C9B?capability=sign");
+        assert!(auth.is_none());
+    }
+
+    #[test]
+    fn test_sign_url_with_subdirectory() {
+        let fingerprint = &Fingerprint::from_str("43B24E4557BBCD10225EDDB97123242412A19C9B").unwrap();
+        let (url, auth) = create_request_params("http://localhost:3000/keys/", fingerprint, "sign").unwrap();
+        assert_eq!(url.as_str(), "http://localhost:3000/keys/43B24E4557BBCD10225EDDB97123242412A19C9B?capability=sign");
+        assert!(auth.is_none());
+    }
+
+    #[test]
+    fn test_sign_url_with_credentials() {
+        let fingerprint = &Fingerprint::from_str("43B24E4557BBCD10225EDDB97123242412A19C9B").unwrap();
+        let (url, auth) = create_request_params("http://a:b@localhost:3000", fingerprint, "sign").unwrap();
+        assert_eq!(url.as_str(), "http://a:b@localhost:3000/43B24E4557BBCD10225EDDB97123242412A19C9B?capability=sign");
+        assert_eq!("Basic YTpi", auth.unwrap());
     }
 }
