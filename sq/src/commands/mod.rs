@@ -42,6 +42,8 @@ pub mod decrypt;
 pub use self::decrypt::decrypt;
 pub mod sign;
 pub use self::sign::sign;
+pub mod revoke;
+pub use self::revoke::revoke_certificate;
 pub mod dump;
 pub use self::dump::dump;
 mod inspect;
@@ -119,6 +121,49 @@ fn get_signing_keys<C>(certs: &[C], p: &dyn Policy,
 {
     get_keys(certs, p, private_key_store, timestamp,
              KeyFlags::empty().set_signing())
+}
+
+/// Returns suitable certification keys from a given list of Certs.
+///
+/// This returns one key for each Cert.  If a Cert doesn't have an
+/// appropriate key, then this returns an error.
+fn get_certification_keys<C>(certs: &[C], p: &dyn Policy,
+                             private_key_store: Option<&str>,
+                             timestamp: Option<SystemTime>)
+    -> Result<Vec<Box<dyn crypto::Signer + Send + Sync>>>
+    where C: std::borrow::Borrow<Cert>
+{
+    get_keys(certs, p, private_key_store, timestamp,
+             KeyFlags::empty().set_certification())
+}
+
+// Returns the smallest valid certificate.
+//
+// Given a certificate, returns the smallest valid certificate that is
+// still technically valid according to RFC 4880 and popular OpenPGP
+// implementations.
+//
+// In particular, this function extracts the primary key, the primary
+// User ID, and the active binding signature.  If there is no valid
+// User ID, it returns the active direct key signature.
+pub fn cert_stub(cert: Cert,
+                 policy: &dyn Policy,
+                 timestamp: Option<SystemTime>)
+    -> Result<Cert>
+{
+    let vc = cert.with_policy(policy, timestamp)?;
+
+    let mut packets = Vec::with_capacity(4);
+    packets.push(Packet::from(vc.primary_key().key().clone()));
+    if let Ok(uid) = vc.primary_userid() {
+        packets.push(Packet::from(uid.userid().clone()));
+        packets.push(Packet::from(uid.binding_signature().clone()));
+    } else {
+        packets.push(
+            Packet::from(vc.primary_key().binding_signature().clone()));
+    }
+
+    Ok(Cert::from_packets(packets.into_iter())?)
 }
 
 pub struct EncryptOpts<'a> {

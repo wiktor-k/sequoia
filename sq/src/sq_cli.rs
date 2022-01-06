@@ -1295,7 +1295,154 @@ $ sq packet join juliet.pgp-[0-3]*
                                      .help("Selects the kind of armor header"))
                                 .arg(Arg::with_name("binary")
                                      .short("B").long("binary")
-                                     .help("Emits binary data"))));
+                                     .help("Emits binary data")))
+        )
+        .subcommand(SubCommand::with_name("revoke")
+                    .display_order(700)
+                    .about("Generates revocation certificates")
+                    .long_about(
+                    "
+Generates revocation certificates.
+
+A revocation certificate indicates that a certificate, a subkey, a
+User ID, or a signature should not be used anymore.
+
+A revocation certificate includes two fields, a type and a
+human-readable explanation, which allows the issuer to indicate why
+the revocation certificate was issued.  It is important to set the
+type field accurately as this allows an OpenPGP implementation to
+better reason about artifacts whose validity relies on the revoked
+object.  For instance, if a certificate is retired, it is reasonable
+to consider signatures that it made prior to its retirement as still
+being valid.  However, if a certificate's secret key material is
+compromised, any signatures that it made should be considered
+potentially forged, as they could have been made by an attacker and
+backdated.
+
+As the intent of a revocation certificate is to stop others from using
+a certificate, it is necessary to distribute the revocation
+certificate.  One effective way to do this is to upload the revocation
+certificate to a keyserver.
+")
+                    .after_help(
+"EXAMPLES:
+
+# Revoke a certificate.
+$ sq revoke certificate --time 20220101 --certificate juliet.pgp \\
+  compromised \"My parents went through my things, and found my backup.\"
+")
+                    .setting(AppSettings::SubcommandRequiredElseHelp)
+                    .subcommand(SubCommand::with_name("certificate")
+                                .display_order(100)
+                                .about("Revoke a certificate")
+                                .long_about("
+Revokes a certificate
+
+Creates a revocation certificate for the certificate.
+
+If \"--revocation-key\" is provided, then that key is used to create
+the signature.  If that key is different from the certificate being
+revoked, this creates a third-party revocation.  This is normally only
+useful if the owner of the certificate designated the key to be a
+designated revoker.
+
+If \"--revocation-key\" is not provided, then the certificate must
+include a certification-capable key.")
+
+                        .arg(Arg::with_name("input")
+                             .value_name("FILE")
+                             .long("certificate")
+                             .alias("cert")
+                             .help("The certificate to revoke")
+                             .long_help("
+Reads the certificate to revoke from FILE or stdin, if omitted.  It is
+an error for the file to contain more than one certificate.")
+                        )
+                        .arg(Arg::with_name("secret-key-file")
+                             .long("revocation-key").value_name("FILE")
+                             .help("Signs the revocation certificate using KEY")
+                             .long_help("
+Signs the revocation certificate using KEY.  If the key is different
+from the certificate, this creates a third-party revocation.  If this
+option is not provided, and the certificate includes secret key material,
+then that key is used to sign the revocation certificate.")
+                        )
+                        .arg(Arg::with_name("private-key-store")
+                             .long("private-key-store").value_name("KEY_STORE")
+                             .help("Provides parameters for private key store")
+                        )
+                        .arg(Arg::with_name("reason")
+                             .value_name("REASON")
+                             .required(true)
+                             .possible_values(&["compromised",
+                                                "superseded",
+                                                "retired",
+                                                "unspecified"])
+                             .help("The reason for the revocation")
+                             .long_help("
+The reason for the revocation.  This must be either: compromised,
+superseded, retired, or unspecified:
+
+  - compromised means that the secret key material may have been
+    compromised.  Prefer this value if you suspect that the secret key
+    has been leaked.
+
+  - superseded means that the owner of the certificate has replaced it
+    with a new certificate.  Prefer \"compromised\" if the secret key
+    material has been compromised even if the certificate is also
+    being replaced!  You should include the fingerprint of the new
+    certificate in the message.
+
+  - retired means that this certificate should not be used anymore,
+    and there is no replacement.  This is appropriate when someone
+    leaves an organisation.  Prefer \"compromised\" if the secret key
+    material has been compromised even if the certificate is also
+    being retired!  You should include how to contact the owner, or
+    who to contact instead in the message.
+
+  - unspecified means that none of the three other three reasons
+    apply.  OpenPGP implementations conservatively treat this type of
+    revocation similar to a compromised key.
+
+If the reason happened in the past, you should specify that using the
+--time argument.  This allows OpenPGP implementations to more
+accurately reason about objects whose validity depends on the validity
+of the certificate.")
+                        )
+                        .arg(Arg::with_name("message")
+                             .value_name("MESSAGE")
+                             .required(true)
+                             .help("A short, explanatory text")
+                             .long_help("
+A short, explanatory text that is shown to a viewer of the revocation
+certificate.  It explains why the certificate has been revoked.  For
+instance, if Alice has created a new key, she would generate a
+'superceded' revocation certificate for her old key, and might include
+the message \"I've created a new certificate, FINGERPRINT, please use
+that in the future.\"")
+                        )
+                        .arg(Arg::with_name("time")
+                             .short("t").long("time").value_name("TIME")
+                             .help("
+Chooses keys valid at the specified time and sets the revocation
+certificate's creation time"))
+                        .arg(Arg::with_name("notation")
+                             .value_names(&["NAME", "VALUE"])
+                             .long("notation")
+                             .multiple(true).number_of_values(2)
+                             .help("Adds a notation to the certification.")
+                             .long_help("
+Adds a notation to the certification.  A user-defined notation's name
+must be of the form \"name@a.domain.you.control.org\".  If the
+notation's name starts with a !, then the notation is marked as being
+critical.  If a consumer of a signature doesn't understand a critical
+notation, then it will ignore the signature.  The notation is marked
+as being human readable."))
+                        .arg(Arg::with_name("binary")
+                             .short("B").long("binary")
+                             .help("Emits binary data"))
+                )
+        );
 
     let app = if ! feature_net {
         // Without networking support.
