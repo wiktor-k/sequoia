@@ -4,4 +4,8 @@
 rustflags = [
           "-Dwarnings",
           "-Aunused-parens",
+          "-Aclippy::collapsible-else-if",
+          "-Aclippy::needless-question-mark",
+          "-Aclippy::redundant-clone",
+          "-Aclippy::try-err",
 ]
