@@ -157,7 +157,8 @@ impl MPI {
     ///
     /// Returns `Error::UnsupportedEllipticCurve` if the curve is not
     /// supported, `Error::MalformedMPI` if the point is formatted
-    /// incorrectly.
+    /// incorrectly, `Error::InvalidOperation` if the given curve is
+    /// operating on native octet strings.
     pub fn decode_point(&self, curve: &Curve) -> Result<(&[u8], &[u8])> {
         Self::decode_point_common(self.value(), curve)
     }
@@ -431,7 +432,8 @@ impl ProtectedMPI {
     ///
     /// Returns `Error::UnsupportedEllipticCurve` if the curve is not
     /// supported, `Error::MalformedMPI` if the point is formatted
-    /// incorrectly.
+    /// incorrectly, `Error::InvalidOperation` if the given curve is
+    /// operating on native octet strings.
     pub fn decode_point(&self, curve: &Curve) -> Result<(&[u8], &[u8])> {
         MPI::decode_point_common(self.value(), curve)
     }
