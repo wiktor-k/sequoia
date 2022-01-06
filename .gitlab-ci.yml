@@ -31,7 +31,6 @@ build-bookworm:
   variables:
     CARGO_TARGET_DIR: /target
     CARGO_HOME: /cargo
-    RUSTFLAGS: -D warnings -A unused-parens
   after_script: []
 
 build-bookworm:arm64:
@@ -54,7 +53,6 @@ build-bookworm:arm64:
   variables:
     CARGO_TARGET_DIR: /target
     CARGO_HOME: /cargo
-    RUSTFLAGS: -D warnings -A unused-parens
   after_script: []
 
 bookworm:
@@ -69,7 +67,6 @@ bookworm:
   variables:
     CARGO_TARGET_DIR: /target
     CARGO_HOME: /cargo
-    RUSTFLAGS: -D warnings -A unused-parens
   after_script: []
 
 bookworm-crypto-rust:
@@ -85,7 +82,6 @@ bookworm-crypto-rust:
   variables:
     CARGO_TARGET_DIR: /target
     CARGO_HOME: /cargo
-    RUSTFLAGS: -D warnings -A unused-parens
   after_script: []
 
 bookworm:arm64:
@@ -113,7 +109,6 @@ bookworm:arm64:
   variables:
     CARGO_TARGET_DIR: /target
     CARGO_HOME: /cargo
-    RUSTFLAGS: -D warnings -A unused-parens
   after_script: []
 
 benchmarks:
@@ -142,7 +137,6 @@ benchmarks:
     paths: ['benchmark.txt']
   variables:
     CARGO_TARGET_DIR: $CI_PROJECT_DIR/../target.benchmarks
-    RUSTFLAGS: -D warnings -A unused-parens
 
 all_commits:
   # Test each commit up to main, to facilitate bisecting.
@@ -157,7 +151,6 @@ all_commits:
   variables:
     CARGO_TARGET_DIR: /target
     CARGO_HOME: /cargo
-    RUSTFLAGS: -D warnings -A unused-parens
     GIT_STRATEGY: clone
 
 all_commits:arm64:
@@ -185,7 +178,6 @@ all_commits:arm64:
   variables:
     CARGO_TARGET_DIR: /target
     CARGO_HOME: /cargo
-    RUSTFLAGS: -D warnings -A unused-parens
     GIT_STRATEGY: clone
 
 codespell:
@@ -217,7 +209,6 @@ doc:
   variables:
     CARGO_TARGET_DIR: /target
     CARGO_HOME: /cargo
-    RUSTFLAGS: -D warnings -A unused-parens
   after_script: []
 
 rust-stable:
@@ -237,7 +228,6 @@ rust-stable:
   variables:
     CARGO_TARGET_DIR: /target
     CARGO_HOME: /cargo
-    RUSTFLAGS: -D warnings -A unused-parens
 
 clippy:
   tags:
@@ -259,7 +249,6 @@ clippy:
   variables:
     CARGO_TARGET_DIR: /target
     CARGO_HOME: /cargo
-    RUSTFLAGS: -D warnings -A unused-parens
 
 rust-stable:arm64:
   tags:
@@ -283,7 +272,6 @@ rust-stable:arm64:
   variables:
     CARGO_TARGET_DIR: /target
     CARGO_HOME: /cargo
-    RUSTFLAGS: -D warnings -A unused-parens
 
 windows-gnu:
   tags:
@@ -375,7 +363,6 @@ variables:
   CARGO_FLAGS: --color always
   CARGO_INCREMENTAL: 0
   RUST_BACKTRACE: full
-  RUSTFLAGS: -D warnings
   CFLAGS: -Werror
   MAKE_TOP: make --file=.Makefile
   QUICKCHECK_GENERATOR_SIZE: 500 # https://github.com/BurntSushi/quickcheck/pull/240
