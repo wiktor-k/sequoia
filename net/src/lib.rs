@@ -64,7 +64,7 @@ pub mod pks;
 pub mod updates;
 pub mod wkd;
 
-/// https://url.spec.whatwg.org/#fragment-percent-encode-set
+/// <https://url.spec.whatwg.org/#fragment-percent-encode-set>
 const KEYSERVER_ENCODE_SET: &AsciiSet =
     // Formerly DEFAULT_ENCODE_SET
     &CONTROLS.add(b' ').add(b'"').add(b'#').add(b'<').add(b'>').add(b'`')
