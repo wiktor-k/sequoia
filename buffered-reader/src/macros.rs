@@ -86,7 +86,7 @@ macro_rules! tracer {
 /// trait bounds:
 ///
 /// ```
-/// pub struct MyWriterWithLifetime<a', C, W: io::Write> {}
+/// pub struct MyWriterWithLifetime<'a, C, W: io::Write> {}
 /// assert_send_and_sync!(MyWriterStruct<'_, C, W> where C, W: io::Write);
 /// ```
 ///
