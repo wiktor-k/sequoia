@@ -1719,12 +1719,7 @@ impl Subpacket {
                 }
                 let bytes = php.parse_bytes("issuer fp", len - 1)?;
                 SubpacketValue::IssuerFingerprint(
-                    match version {
-                        4 => Fingerprint::from_bytes(&bytes),
-                        // XXX: Fix once we dig V5.
-                        5 => Fingerprint::Invalid(bytes.into()),
-                        _ => Fingerprint::Invalid(bytes.into()),
-                    })
+                    Fingerprint::from_bytes(&bytes))
             },
             SubpacketTag::PreferredAEADAlgorithms =>
                 SubpacketValue::PreferredAEADAlgorithms(
@@ -1750,12 +1745,7 @@ impl Subpacket {
                 }
                 let bytes = php.parse_bytes("intended rcpt", len - 1)?;
                 SubpacketValue::IntendedRecipient(
-                    match version {
-                        4 => Fingerprint::from_bytes(&bytes),
-                        // XXX: Fix once we dig V5.
-                        5 => Fingerprint::Invalid(bytes.into()),
-                        _ => Fingerprint::Invalid(bytes.into()),
-                    })
+                    Fingerprint::from_bytes(&bytes))
             },
             SubpacketTag::AttestedCertifications => {
                 // If we don't know the hash algorithm, put all digest
