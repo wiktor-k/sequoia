@@ -735,7 +735,7 @@ impl<W: io::Write> Encryptor<W> {
             }
 
             // Write final digest.
-            let mut aead = self.make_aead(CipherOp::Decrypt)?;
+            let mut aead = self.make_aead(CipherOp::Encrypt)?;
             self.hash_associated_data(&mut aead, true);
             aead.digest(&mut self.scratch[..self.digest_size]);
             inner.write_all(&self.scratch[..self.digest_size])?;
