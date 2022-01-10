@@ -137,6 +137,30 @@ pub trait Decryptor {
                -> Result<SessionKey>;
 }
 
+impl Decryptor for Box<dyn Decryptor> {
+    fn public(&self) -> &Key<key::PublicParts, key::UnspecifiedRole> {
+        self.as_ref().public()
+    }
+
+    fn decrypt(&mut self, ciphertext: &mpi::Ciphertext,
+               plaintext_len: Option<usize>)
+               -> Result<SessionKey> {
+        self.as_mut().decrypt(ciphertext, plaintext_len)
+    }
+}
+
+impl Decryptor for Box<dyn Decryptor + Send + Sync> {
+    fn public(&self) -> &Key<key::PublicParts, key::UnspecifiedRole> {
+        self.as_ref().public()
+    }
+
+    fn decrypt(&mut self, ciphertext: &mpi::Ciphertext,
+               plaintext_len: Option<usize>)
+               -> Result<SessionKey> {
+        self.as_mut().decrypt(ciphertext, plaintext_len)
+    }
+}
+
 /// A cryptographic key pair.
 ///
 /// A `KeyPair` is a combination of public and secret key.  If both
