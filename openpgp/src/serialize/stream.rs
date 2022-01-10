@@ -3391,7 +3391,11 @@ mod test {
     }
 
     #[test]
-    fn aead_messages() -> Result<()> {
+    fn aead_eax() -> Result<()> {
+        test_aead_messages(AEADAlgorithm::EAX)
+    }
+
+    fn test_aead_messages(algo: AEADAlgorithm) -> Result<()> {
         // AEAD data is of the form:
         //
         //   [ chunk1 ][ tag1 ] ... [ chunkN ][ tagN ][ tag ]
@@ -3422,7 +3426,6 @@ mod test {
             },
         };
         use crate::cert::prelude::*;
-        use crate::serialize::stream::{LiteralWriter, Message};
 
         let (tsk, _) = CertBuilder::new()
             .set_cipher_suite(CipherSuite::Cv25519)
@@ -3480,7 +3483,7 @@ mod test {
                         .keys().with_policy(p, None)
                         .for_storage_encryption().for_transport_encryption();
                     let encryptor = Encryptor::for_recipients(m, recipients)
-                        .aead_algo(AEADAlgorithm::EAX)
+                        .aead_algo(algo)
                         .build().unwrap();
                     let mut literal = LiteralWriter::new(encryptor).build()
                         .unwrap();
