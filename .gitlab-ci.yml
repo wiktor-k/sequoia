@@ -3,17 +3,48 @@ stages:
   - build
   - test
 
-before_script:
+# These stanzas do some common management tasks before and after the
+# job-specific before_script and after_script stanzas are run.
+# before_script_start configures any default global state.  The
+# job-specific before_script can override this state, if required.
+# before_script_end prints out information about the environment to
+# improve debugging; it does not modify the environment.
+# after_script_end does some common management tasks after the
+# job-specific after_script is run.  It prints information about the
+# environment, and does some clean up.
+#
+# Add this to your stanza as follows:
+#
+#   before_script:
+#     - *before_script_start
+#     - *** YOUR CODE HERE ***
+#     - *before_script_end
+#   after_script:
+#     - *** YOUR CODE HERE ***
+#     - *after_script_end
+
+.before_script_start: &before_script_start
+  - 'if test "x${RUSTFLAGS+SET}" = xSET; then echo "\$RUSTFLAGS is set ($RUSTFLAGS)"; exit 1; fi'
+
+.before_script_end: &before_script_end
+  - 'if test "x${RUSTFLAGS+SET}" = xSET; then echo "WARNING: before_script set \$RUSTFLAGS ($RUSTFLAGS)"; fi'
+  - rustc --version --verbose
+  - cargo --version
+  - clang -v
   - if [ -d $CARGO_TARGET_DIR ]; then find $CARGO_TARGET_DIR | wc --lines; du -sh $CARGO_TARGET_DIR; fi
   - if [ -d $CARGO_HOME ]; then find $CARGO_HOME | wc --lines; du -sh $CARGO_HOME; fi
-  - rustc --version
-  - cargo --version
-  - clang --version
 
-after_script:
+.after_script_end: &after_script_end
   - if [ -d $CARGO_TARGET_DIR ]; then find $CARGO_TARGET_DIR -type f -atime +7 -delete; fi
   - if [ -d $CARGO_TARGET_DIR ]; then du -sh $CARGO_TARGET_DIR; fi
   - if [ -d $CARGO_HOME ]; then du -sh $CARGO_HOME; fi
+
+before_script:
+  - *before_script_start
+  - *before_script_end
+
+after_script:
+  - *after_script_end
 
 build-bookworm:
   tags:
@@ -122,7 +153,9 @@ benchmarks:
       - web
       - schedules
   before_script:
+    - *before_script_start
     - cargo install critcmp
+    - *before_script_end
   script:
     - cargo bench -- --color always --save-baseline $CI_COMMIT_SHA
   after_script:
@@ -187,7 +220,9 @@ codespell:
   image: registry.gitlab.com/sequoia-pgp/build-docker-image/bookworm:latest
 
   before_script:
+    - *before_script_start
     - codespell --version
+    - *before_script_end
   script:
     - $MAKE_TOP codespell CODESPELL_FLAGS=--summary
   after_script: []
@@ -198,12 +233,9 @@ doc:
   stage: build
   image: registry.gitlab.com/sequoia-pgp/build-docker-image/rust-stable-prebuild:latest
   before_script:
-    - if [ -d $CARGO_TARGET_DIR ]; then find $CARGO_TARGET_DIR | wc --lines; du -sh $CARGO_TARGET_DIR; fi
-    - if [ -d $CARGO_HOME ]; then find $CARGO_HOME | wc --lines; du -sh $CARGO_HOME; fi
+    - *before_script_start
     - rustup override set stable
-    - rustc --version
-    - cargo --version
-    - clang --version
+    - *before_script_end
   script:
     - cargo doc --document-private-items --no-deps
   variables:
@@ -217,12 +249,9 @@ rust-stable:
   stage: build
   image: registry.gitlab.com/sequoia-pgp/build-docker-image/rust-stable-prebuild:latest
   before_script:
-    - if [ -d $CARGO_TARGET_DIR ]; then find $CARGO_TARGET_DIR | wc --lines; du -sh $CARGO_TARGET_DIR; fi
-    - if [ -d $CARGO_HOME ]; then find $CARGO_HOME | wc --lines; du -sh $CARGO_HOME; fi
+    - *before_script_start
     - rustup override set stable
-    - rustc --version
-    - cargo --version
-    - clang --version
+    - *before_script_end
   script:
     - CARGO_PACKAGES="-p buffered-reader -p sequoia-openpgp" $MAKE_TOP test
   variables:
@@ -235,15 +264,12 @@ clippy:
   stage: build
   image: registry.gitlab.com/sequoia-pgp/build-docker-image/rust-stable-prebuild:latest
   before_script:
-    - if [ -d $CARGO_TARGET_DIR ]; then find $CARGO_TARGET_DIR | wc --lines; du -sh $CARGO_TARGET_DIR; fi
-    - if [ -d $CARGO_HOME ]; then find $CARGO_HOME | wc --lines; du -sh $CARGO_HOME; fi
+    - *before_script_start
     - apt-get -y install libssl-dev capnproto libsqlite3-dev
     - rustup override unset
     - rustup component add clippy
     - cargo clippy --version
-    - rustc --version
-    - cargo --version
-    - clang --version
+    - *before_script_end
   script:
     - cargo clippy
   variables:
@@ -261,12 +287,9 @@ rust-stable:arm64:
       - $CI_PROJECT_NAMESPACE == "sequoia-pgp"
   when: manual
   before_script:
-    - if [ -d $CARGO_TARGET_DIR ]; then find $CARGO_TARGET_DIR | wc --lines; du -sh $CARGO_TARGET_DIR; fi
-    - if [ -d $CARGO_HOME ]; then find $CARGO_HOME | wc --lines; du -sh $CARGO_HOME; fi
+    - *before_script_start
     - rustup override set stable
-    - rustc --version
-    - cargo --version
-    - clang --version
+    - *before_script_end
   script:
     - CARGO_PACKAGES="-p buffered-reader -p sequoia-openpgp" $MAKE_TOP test
   variables:
@@ -291,10 +314,6 @@ windows-gnu:
       # Forks of this project most likely use gitlab's shared windows runners, which
       # do not use the docker executor, so disable the windows jobs for forks.
       - $CI_PROJECT_NAMESPACE == "sequoia-pgp"
-  before_script:
-    - clang -v
-    - rustc --version --verbose
-    - cargo --version
   script:
     - cargo test --workspace
     # https://github.com/rust-lang/cargo/issues/5015
@@ -315,6 +334,8 @@ windows-msvc:
       # do not use the docker executor, so disable the windows jobs for forks.
       - $CI_PROJECT_NAMESPACE == "sequoia-pgp"
   before_script:
+    # We don't call *before_script_start or *before_script_end as we
+    # don't have bash, clang, etc.
     - rustc --version --verbose
     - cargo --version
   script:
@@ -344,6 +365,8 @@ windows-msvc-32:
       # do not use the docker executor, so disable the windows jobs for forks.
       - $CI_PROJECT_NAMESPACE == "sequoia-pgp"
   before_script:
+    # We don't call *before_script_start or *before_script_end as we
+    # don't have bash, clang, etc.
     - rm rust-toolchain
     - rustup default 1.56.0-x86_64-pc-windows-msvc
     - rustup target add i686-pc-windows-msvc
