@@ -24,6 +24,35 @@ tool.
 [Sequoia-PGP]: https://sequoia-pgp.org/
 [OpenPGP]: https://en.wikipedia.org/wiki/Pretty_Good_Privacy#OpenPGP
 
+
+## Testing approach for sq
+
+This document explicitly only covers integration and acceptance
+testing of the `sq` command line tool. It does not try to verify that
+the underlying library implements OpenPGP correctly: the library has
+its own test suite for that. Instead, this document concentrates on
+making sure the `sq` command line tool behaves as it should from an
+end-user's point of view.
+
+We make the following simplifying assumption: we know the `sq`
+developers as competent developers, and assume that they don't
+entangle unrelated functionality. By this we mean that we feel we can
+assume that the code in `sq` that reads input files is separate from the
+code that compresses it, which in turn is independent of the code that
+writes output as text or binary data. Thus, we verify each such
+functionality independently of each other. This drastically cuts down
+the number of feature combinations we need to test. If this assumption
+turns out to be incorrect, we will rethink and revise the testing
+approach as needed.
+
+We also know, by inspection, that `sq` uses the well-known,
+well-respected Rust library `clap` for parsing the command line.
+Because of this we feel it's not necessary to verify that, for
+example, `sq` notices that a required argument is missing from the
+command line, or that it notices that there are extra arguments
+present. We will concentrate on testing that when invoked with valid
+arguments results in expected output.
+
 ## Using Subplot and this document
 
 The acceptance criteria and requirements are explained in prose and
