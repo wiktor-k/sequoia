@@ -12,6 +12,7 @@ use openpgp::types::SignatureType;
 use crate::Config;
 use crate::parse_duration;
 use crate::SECONDS_IN_YEAR;
+use crate::commands::get_certification_keys;
 
 pub fn certify(config: Config, m: &clap::ArgMatches)
     -> Result<()>
@@ -21,6 +22,7 @@ pub fn certify(config: Config, m: &clap::ArgMatches)
     let userid = m.value_of("userid").unwrap();
 
     let certifier = Cert::from_file(certifier)?;
+    let private_key_store = m.value_of("private-key-store");
     let cert = Cert::from_file(cert)?;
     let vc = cert.with_policy(&config.policy, None)?;
 
@@ -141,8 +143,12 @@ pub fn certify(config: Config, m: &clap::ArgMatches)
 
 
     // Sign it.
-    let mut signer = certifier.primary_key().key().clone()
-        .parts_into_secret()?.into_keypair()?;
+    let signers = get_certification_keys(
+        &[certifier], &config.policy,
+        private_key_store,
+        None)?;
+    assert_eq!(signers.len(), 1);
+    let mut signer = signers.into_iter().next().unwrap();
 
     let certification = builder
         .sign_userid_binding(

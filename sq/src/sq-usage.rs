@@ -981,6 +981,9 @@
 //!     -o, --output <FILE>
 //!             Writes to FILE or stdout if omitted
 //!
+//!         --private-key-store <KEY_STORE>
+//!             Provides parameters for private key store
+//!
 //!     -r, --regex <REGEX>...
 //!             Adds a regular expression to constrain what a trusted introducer can
 //!             certify.  The regular expression must match the certified User ID in
@@ -990,7 +993,7 @@
 //!
 //! ARGS:
 //!     <CERTIFIER-KEY>
-//!             Creates the certificate using CERTIFIER-KEY.
+//!             Creates the certification using CERTIFIER-KEY.
 //!
 //!     <CERTIFICATE>
 //!             Certifies CERTIFICATE.

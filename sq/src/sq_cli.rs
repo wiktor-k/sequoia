@@ -1116,7 +1116,11 @@ $ sq certify juliet.pgp romeo.pgp \"<romeo@example.org>\"
                          .value_name("CERTIFIER-KEY")
                          .required(true)
                          .index(1)
-                         .help("Creates the certificate using CERTIFIER-KEY."))
+                         .help("Creates the certification using CERTIFIER-KEY."))
+                    .arg(Arg::with_name("private-key-store")
+                         .long("private-key-store").value_name("KEY_STORE")
+                         .help("Provides parameters for private key store"))
+
                     .arg(Arg::with_name("certificate")
                          .value_name("CERTIFICATE")
                          .required(true)
