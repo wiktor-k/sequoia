@@ -111,20 +111,34 @@ then exit code is 0
 then stdout matches regex ^sq \d+\.\d+\.\d+ .*$
 ~~~
 
-# Generate a key
+# Key generation
+
+This chapter covers key generation with `sq`. Keys are somewhat
+complicated: it is possible to have keys for specify that they can
+only used for specific operations, or the time period when they are
+valid. Different cryptographic algorithms have different kinds of
+keys. We verify these by varying what kind keys we generate and that
+they look as expected, when inspected.
+
+## Generate a key with defaults
 
 _Requirement: We must be able to generate new encryption keys and
 corresponding certificates._
 
-This scenario generates a new key with `sq` and inspects it to see if
-it looks at least vaguely correct. Note that in this scenario we don't
-verify that the key works, other scenarios take care of that.
+This scenario generates a new key with `sq` using default settings and
+inspects it to see if it looks at least vaguely correct. Note that in
+this scenario we don't verify that the key works, other scenarios take
+care of that. Here we merely verify that the new key looks OK.
 
 ~~~scenario
 given an installed sq
 when I run sq key generate --userid Tomjon --export tomjon.pgp
 when I run sq inspect tomjon.pgp
 then stdout contains "Tomjon"
+then stdout contains "Expiration time: 20"
+then stdout contains "Key flags: certification"
+then stdout contains "Key flags: signing"
+then stdout contains "Key flags: transport encryption, data-at-rest encryption"
 ~~~
 
 We also extract a certificate ("public key") from the key, to be
@@ -135,6 +149,220 @@ when I run sq key extract-cert -o cert.pgp tomjon.pgp
 then file cert.pgp contains "-----BEGIN PGP PUBLIC KEY BLOCK-----"
 then file cert.pgp contains "Comment: Tomjon"
 then file cert.pgp contains "-----END PGP PUBLIC KEY BLOCK-----"
+~~~
+
+## Generate key without user identifiers
+
+_Requirement: We must be able to generate new encryption keys without
+any user identifiers._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --export key.pgp
+then file key.pgp contains "-----BEGIN PGP PRIVATE KEY BLOCK-----"
+~~~
+
+
+## Generate key with more than one user identifier
+
+_Requirement: We must be able to generate new encryption keys with
+more than one user identifier._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid Alice --userid '<alice@example.com>' --export key.pgp
+then file key.pgp contains "Comment: Alice"
+then file key.pgp contains "Comment: <alice@example.com>"
+~~~
+
+
+## Generate a key for encryption only
+
+_Requirement: We must be able to generate a key that can only be used
+for encryption, and can't be used for signing._
+
+Note that `sq` always creates a key usable for certification.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --cannot-sign --export key.pgp
+when I run sq inspect key.pgp
+then stdout contains "Key flags: certification"
+then stdout doesn't contain "Key flags: signing"
+then stdout contains "Key flags: transport encryption, data-at-rest encryption"
+~~~
+
+## Generate a key for storage encryption only
+
+_Requirement: We must be able to generate a key that can only be used
+for at-rest (storage) encryption._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --can-encrypt=storage --export key.pgp
+when I run sq inspect key.pgp
+then stdout contains "Key flags: certification"
+then stdout doesn't contain "transport encryption"
+then stdout contains "Key flags: data-at-rest encryption"
+~~~
+
+## Generate a key for transport encryption only
+
+_Requirement: We must be able to generate a key that can only be used
+for transport encryption._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --can-encrypt=transport --export key.pgp
+when I run sq inspect key.pgp
+then stdout contains "Key flags: certification"
+then stdout contains "Key flags: transport encryption"
+then stdout doesn't contain "data-at-rest encryption"
+~~~
+
+## Generate a key for signing only
+
+_Requirement: We must be able to generate a key that can only be used
+for signing, and can't be used for encryption._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --cannot-encrypt --export key.pgp
+when I run sq inspect key.pgp
+then stdout contains "Key flags: certification"
+then stdout contains "Key flags: signing"
+then stdout doesn't contain "Key flags: transport encryption, data-at-rest encryption"
+~~~
+
+## Generate an elliptic curve key
+
+_Requirement: We must be able to generate an Curve25519 key_
+
+This is currently the default key, but we check it separately in case
+the default ever changes.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --cipher-suite=cv25519 --export key.pgp
+when I run sq inspect key.pgp
+then stdout contains "Public-key algo: EdDSA Edwards-curve Digital Signature Algorithm"
+then stdout contains "Public-key size: 256 bits"
+~~~
+
+## Generate a three kilobit RSA key
+
+_Requirement: We must be able to generate a 3072-bit RSA key._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --cipher-suite=rsa3k --export key.pgp
+when I run sq inspect key.pgp
+then stdout contains "Public-key algo: RSA"
+then stdout contains "Public-key size: 3072 bits"
+~~~
+
+## Generate four kilobit RSA key
+
+_Requirement: We must be able to generate a 4096-bit RSA key._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --cipher-suite=rsa4k --export key.pgp
+when I run sq inspect key.pgp
+then stdout contains "Public-key algo: RSA"
+then stdout contains "Public-key size: 4096 bits"
+~~~
+
+## Generate a key with revocation certificate
+
+_Requirement: We must be able to specify where the revocation
+certificate is store._
+
+When `sq` generates a key, it also generates a revocation certificate.
+By default, this is written to a file next to the key file. However,
+we need to able to specify where it goes. This scenario tests various
+cases.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --export key.pgp
+then file key.pgp.rev contains "Comment: Revocation certificate for"
+
+when I run sq key generate --export key2.pgp --rev-cert rev.pgp
+then file rev.pgp contains "Comment: Revocation certificate for"
+~~~
+
+## Generate a key with default duration
+
+_Requirement: By default, generated key expire._
+
+We generate a key with defaults, and check the key expires.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --export key.pgp
+when I run sq inspect key.pgp
+then stdout contains "Expiration time: 20"
+~~~
+
+The check for expiration time assumes the scenario is run the 21st
+century, and will need to be amended in the 2090s or by time
+travellers running it before about the year 2000.
+
+## Generate a key that expires at a given moment
+
+_Requirement: We must be able to generate a key that expires._
+
+Note that the timestamp given to `--expire` is the first second when
+the key is no longer valid, not the last second it's valid. The
+inspect output is the last second of validity.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --expires=2038-01-19T03:14:07+00:00 --export key.pgp
+when I run sq inspect key.pgp
+then stdout contains "Expiration time: 2038-01-19 03:14:06 UTC"
+~~~
+
+## Generate a key with a given duration
+
+_Requirement: We must be able to generate a key that expires in a
+given time._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --expires-in=1y --export key.pgp
+when I run sq inspect key.pgp
+then stdout contains "Expiration time: 20"
+~~~
+
+## Generate a key without password
+
+_Requirement: We must be able to generate a that doesn't have a
+password._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --export key.pgp
+when I run sq inspect key.pgp
+then stdout contains "Secret key: Unencrypted"
+~~~
+
+## Generate a key with a password
+
+_Requirement: We must be able to generate a that does have a
+password._
+
+Unfortunately, the `--with-password` option causes `sq` to read the
+password from the terminal, and that makes it hard to do in an
+automated test. Thus, this scenario isn't enabled, waiting for a way
+to feed `sq` a password as if the user typed it from a terminal.
+
+~~~
+given an installed sq
+when I run sq key generate --export key.pgp --with-password
+when I run sq inspect key.pgp
+then stdout contains "Secret key: Encrypted"
 ~~~
 
 # Encrypt and decrypt a file using public keys
