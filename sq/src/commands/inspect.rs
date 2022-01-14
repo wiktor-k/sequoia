@@ -283,14 +283,38 @@ fn inspect_revocation(output: &mut dyn io::Write,
                       -> Result<()> {
     use crate::openpgp::types::RevocationStatus::*;
     fn print_reasons(output: &mut dyn io::Write, indent: &str,
-                     sigs: &[&Signature])
+                     third_party: bool, sigs: &[&Signature])
                      -> Result<()> {
         for sig in sigs {
-            if let Some((r, _)) = sig.reason_for_revocation() {
+            if let Some((r, msg)) = sig.reason_for_revocation() {
                 writeln!(output, "{}                  - {}", indent, r)?;
+                if third_party {
+                    writeln!(output, "{}                    Issued by {}",
+                             indent,
+                             if let Some(issuer)
+                                 = sig.get_issuers().into_iter().next()
+                             {
+                                 issuer.to_string()
+                             } else {
+                                 "an unknown certificate".into()
+                             })?;
+                }
+                writeln!(output, "{}                    Message: {:?}",
+                         indent, String::from_utf8_lossy(msg))?;
             } else {
                 writeln!(output, "{}                  - No reason specified",
                          indent)?;
+                if third_party {
+                    writeln!(output, "{}                    Issued by {}",
+                             indent,
+                             if let Some(issuer)
+                                 = &sig.get_issuers().into_iter().next()
+                             {
+                                 issuer.to_string()
+                             } else {
+                                 "an unknown certificate".into()
+                             })?;
+                }
             }
         }
         Ok(())
@@ -298,11 +322,11 @@ fn inspect_revocation(output: &mut dyn io::Write,
     match revoked {
         Revoked(sigs) => {
             writeln!(output, "{}                 Revoked:", indent)?;
-            print_reasons(output, indent, &sigs)?;
+            print_reasons(output, indent, false, &sigs)?;
         },
         CouldBe(sigs) => {
             writeln!(output, "{}                 Possibly revoked:", indent)?;
-            print_reasons(output, indent, &sigs)?;
+            print_reasons(output, indent, true, &sigs)?;
         },
         NotAsFarAsWeKnow => (),
     }
