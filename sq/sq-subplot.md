@@ -141,16 +141,6 @@ then stdout contains "Key flags: signing"
 then stdout contains "Key flags: transport encryption, data-at-rest encryption"
 ~~~
 
-We also extract a certificate ("public key") from the key, to be
-shared with others.
-
-~~~scenario
-when I run sq key extract-cert -o cert.pgp tomjon.pgp
-then file cert.pgp contains "-----BEGIN PGP PUBLIC KEY BLOCK-----"
-then file cert.pgp contains "Comment: Tomjon"
-then file cert.pgp contains "-----END PGP PUBLIC KEY BLOCK-----"
-~~~
-
 ## Generate key without user identifiers
 
 _Requirement: We must be able to generate new encryption keys without
@@ -364,6 +354,75 @@ when I run sq key generate --export key.pgp --with-password
 when I run sq inspect key.pgp
 then stdout contains "Secret key: Encrypted"
 ~~~
+
+# Certificate extraction
+
+This chapter covers extraction of certificates from keys: the `sq key
+extract-certificate` subcommand and its variations.
+
+
+## Extract certificate to the standard output
+
+_Requirement: We must be able to extract a certificate to standard
+output._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --export key.pgp
+when I run sq key extract-cert key.pgp
+then stdout contains "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+then stdout contains "-----END PGP PUBLIC KEY BLOCK-----"
+~~~
+
+
+## Extract certificate to a file
+
+_Requirement: We must be able to extract a certificate to a named
+file._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --export key.pgp
+when I run sq key extract-cert key.pgp -o cert.pgp
+then file cert.pgp contains "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+then file cert.pgp contains "-----END PGP PUBLIC KEY BLOCK-----"
+~~~
+
+
+## Extract binary certificate to the standard output
+
+_Requirement: We must be able to extract a binary certificate to the
+standard output._
+
+This scenario actually only verifies the output doesn't look like a
+textual certificate. It could certainly be improved.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --export key.pgp
+when I run sq key extract-cert key.pgp --binary
+then stdout doesn't contain "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+then stdout doesn't contain "-----END PGP PUBLIC KEY BLOCK-----"
+~~~
+
+
+## Extract binary certificate from the standard input
+
+_Requirement: We must be able to extract a certificate from a key read
+from the standard input._
+
+Unfortunately, Subplot does not currently have a way to redirect
+stding from a file. This scenario is inactive and here as a
+placeholder until Subplot learns a new trick.
+
+~~~
+given an installed sq
+when I run sq key generate --export key.pgp
+when I run sq key extract-cert < key.pgp
+then stdout contains "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+then stdout contains "-----END PGP PUBLIC KEY BLOCK-----"
+~~~
+
 
 # Encrypt and decrypt a file using public keys
 
