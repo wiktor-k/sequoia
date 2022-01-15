@@ -21,10 +21,6 @@ RUN groupadd builder && \
         make \
         nettle-dev \
         pkg-config \
-        python3-dev \
-        python3-setuptools \
-        python3-cffi \
-        python3-pytest \
         rustc \
         && \
     apt-get clean && \
