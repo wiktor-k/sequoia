@@ -193,6 +193,15 @@ $ docker run --rm -i sq keyserver get 653909A2F0E37C106F5FAF546C8857E0D8E8F074 >
 $ docker run --rm -i sq packet dump < cert.asc
 ```
 
+A current build of the docker image is available from the gitlab registry.
+Rename it to `sq` locally so that it matches the above commands and for convenience.
+
+```shell
+$ docker pull registry.gitlab.com/sequoia-pgp/sequoia:latest
+$ docker tag registry.gitlab.com/sequoia-pgp/sequoia:latest sq
+$ docker run --rm -i sq --help
+```
+
 ## Requirements
 
 To build Sequoia, you need at least Rust 1.56 and a few libraries,
