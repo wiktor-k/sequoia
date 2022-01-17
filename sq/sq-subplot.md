@@ -429,6 +429,144 @@ then stdout contains "-----END PGP PUBLIC KEY BLOCK-----"
 ~~~
 
 
+# Keyring management: `sq keyring`
+
+This chapter verifies that the various subcommands to manage keyring
+files work: subcommands of the `sq keyring` command.
+
+## Joining keys into a keyring: `sq keyring join`
+
+The scenarios in this section verify that various ways of joining keys
+into a keyring work.
+
+### Join two keys into a textual keyring to stdout
+
+_Requirement: we can join two keys into a keyring, and have it written
+to stdout._
+
+This is for secret keys, with the output going to stdout in text form.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq keyring join alice.pgp bob.pgp
+then stdout contains "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+then stdout contains "-----END PGP PUBLIC KEY BLOCK-----"
+~~~
+
+### Join two keys into a textual keyring to a named file
+
+_Requirement: we can join two keys into a keyring, and have it written
+to a named file._
+
+This is for secret keys, with the output going to a file in text form.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq keyring join alice.pgp bob.pgp -o ring.pgp
+then file ring.pgp contains "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+then file ring.pgp contains "-----END PGP PUBLIC KEY BLOCK-----"
+when I run sq inspect ring.pgp
+then stdout contains "Transferable Secret Key."
+then stdout contains "Alice"
+then stdout contains "Bob"
+~~~
+
+### Join two keys into a binary keyring
+
+_Requirement: we can join two keys into a keyring in binary form._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq keyring join alice.pgp bob.pgp -o ring.pgp --binary
+when I try to run grep PGP ring.pgp
+then command fails
+when I run sq inspect ring.pgp
+then stdout contains "Transferable Secret Key."
+then stdout contains "Alice"
+then stdout contains "Bob"
+~~~
+
+### Join two certificates into a keyring
+
+_Requirement: we can join two certificates into a keyring._
+
+This scenario writes the keyring to a named file. We assume the
+writing operation is independent of the types of items in the keyring,
+so we don't change writing to stdout separately.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq key extract-cert alice.pgp -o alice-cert.pgp
+when I run sq key extract-cert bob.pgp -o bob-cert.pgp
+when I run sq keyring join alice-cert.pgp bob-cert.pgp -o ring.pgp
+when I run cat ring.pgp
+then stdout contains "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+then stdout contains "-----END PGP PUBLIC KEY BLOCK-----"
+when I run sq inspect ring.pgp
+then stdout doesn't contain "Transferable Secret Key."
+then stdout contains "OpenPGP Certificate."
+then stdout contains "Alice"
+then stdout contains "Bob"
+~~~
+
+## Listing contents of a keyring: `sq keyring list`
+
+The scenarios in this section verify the contents of a keyring can be listed.
+
+### List keys in a keyring
+
+_Requirement: we can list the keys in a keyring._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq keyring join alice.pgp bob.pgp -o ring.pgp
+when I run sq keyring list ring.pgp
+then stdout contains "Alice"
+then stdout contains "Bob"
+~~~
+
+### List keys in a key file
+
+_Requirement: we can list the keys in a key file._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq keyring list alice.pgp
+then stdout contains "Alice"
+then stdout doesn't contain "Bob"
+~~~
+
+### List all user ids in a key file
+
+_Requirement: we can list all user ids._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid Alice --userid Bob --export alice.pgp
+when I run sq keyring list alice.pgp --all-userids
+then stdout contains "Alice"
+then stdout contains "Bob"
+~~~
+
+### List keys in keyring read from stdin
+
+_Requirement: we can list keys in a keyring that we read from stdin._
+
+This isn't implemented yet, because Subplot needs to add support for
+redirecting stdin to come from a file first.
+
+
 # Encrypt and decrypt a file using public keys
 
 _Requirement: We must be able to encrypt a file using a certificate,
