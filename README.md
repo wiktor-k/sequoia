@@ -40,14 +40,6 @@ can be used to experiment with Sequoia and OpenPGP. It is also an
 example of how to use various aspects of Sequoia.
 
 
-Foreign Function Interface
---------------------------
-
-Sequoia provides a C API for use in languages other than Rust.  The
-glue code for the low-level interface can be found in the
-'sequoia-openpgp-ffi' crate, glue for the high-level interface in the
-'sequoia-ffi' crate.
-
 Project status
 ==============
 
@@ -256,10 +248,6 @@ pkgs.mkShell {
     nettle
     openssl
     sqlite
-
-    # for the python bindings
-    (python3.withPackages
-      (python-packages: with python-packages; [ setuptools pip ]))
   ];
 
   nativeBuildInputs = [
@@ -271,19 +259,11 @@ pkgs.mkShell {
     pkgconfig
     capnproto
 
-    # for the python bindings
-    (python3.withPackages
-      (python-packages: with python-packages; [ setuptools pip ]))
-
     # tools
     codespell
   ];
 
   RUST_BACKTRACE = 1;
-
-  # NixOS enables "fortify" by default, but that is incompatible with
-  # gcc -O0 in `make -Cffi examples`.
-  hardeningDisable = [ "fortify" ];
 
   # compilation of -sys packages requires manually setting LIBCLANG_PATH
   LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
@@ -348,40 +328,6 @@ $ cargo build --no-default-features --features crypto-cng,compression # Only cha
 
 [`capnp`]: https://capnproto.org/install.html
 
-Bindings
---------
-
-### Python
-
-The FFI crate contains Python bindings.  To disable building, testing,
-and installing the Python bindings, use `make PYTHON=disable`.
-
-To build the Python bindings, you will need the Python headers,
-setuptools, pip, cffi, and pytest for Python3.
-
-#### Debian
-
-```shell
-$ sudo apt install python3-dev python3-setuptools python3-cffi python3-pytest python3-pip
-```
-
-#### Fedora
-
-```shell
-$ sudo dnf install python3-devel python3-setuptools python3-cffi python3-pytest python3-pip
-```
-
-#### macOS (Mojave), using MacPorts
-
-```shell
-$ sudo port install py-setuptools py-cffi py-pytest py-pip
-```
-
-#### BSD
-
-```shell
-# pkg install capnproto coreutils gmake lang/rust llvm nettle pkgconf py37-setuptools py37-pip python3 sqlite
-```
 
 Getting help
 ============
