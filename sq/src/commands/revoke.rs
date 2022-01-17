@@ -3,15 +3,20 @@ use std::time::SystemTime;
 
 use sequoia_openpgp as openpgp;
 use openpgp::armor;
-use openpgp::cert::CertRevocationBuilder;
+use openpgp::cert::prelude::*;
 use openpgp::Packet;
 use openpgp::packet::signature::subpacket::NotationData;
+use openpgp::packet::signature::subpacket::NotationDataFlags;
+use openpgp::parse::Parse;
 use openpgp::Result;
 use openpgp::serialize::Serialize;
 use openpgp::types::ReasonForRevocation;
 use crate::{
     commands::cert_stub,
     Config,
+    load_certs,
+    open_or_stdin,
+    parse_iso8601,
 };
 
 pub struct RevokeOpts<'a> {
@@ -24,6 +29,91 @@ pub struct RevokeOpts<'a> {
     pub reason: ReasonForRevocation,
     pub message: &'a str,
     pub notations: &'a [(bool, NotationData)],
+}
+
+
+pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
+    match m.subcommand() {
+        ("certificate",  Some(m)) => {
+            let input = m.value_of("input");
+            let input = open_or_stdin(input)?;
+            let cert = CertParser::from_reader(input)?.collect::<Vec<_>>();
+            let cert = match cert.len() {
+                0 => Err(anyhow::anyhow!("No certificates provided."))?,
+                1 => cert.into_iter().next().expect("have one")?,
+                _ => Err(
+                    anyhow::anyhow!("Multiple certificates provided."))?,
+            };
+
+            let secret: Option<&str> = m.value_of("secret-key-file");
+            let secret = load_certs(secret.into_iter())?;
+            if secret.len() > 1 {
+                Err(anyhow::anyhow!("Multiple secret keys provided."))?;
+            }
+            let secret = secret.into_iter().next();
+
+            let private_key_store = m.value_of("private-key-store");
+
+            let binary = m.is_present("binary");
+
+            let time = if let Some(time) = m.value_of("time") {
+                Some(parse_iso8601(time, chrono::NaiveTime::from_hms(0, 0, 0))
+                     .context(format!("Bad value passed to --time: {:?}",
+                                      time))?.into())
+            } else {
+                None
+            };
+
+            let reason = m.value_of("reason").expect("required");
+            let reason = match &*reason {
+                "compromised" => ReasonForRevocation::KeyCompromised,
+                "superseded" => ReasonForRevocation::KeySuperseded,
+                "retired" => ReasonForRevocation::KeyRetired,
+                "unspecified" => ReasonForRevocation::Unspecified,
+                _ => panic!("invalid values should be caught by clap"),
+            };
+
+            let message: &str = m.value_of("message").expect("required");
+
+            // Each --notation takes two values.  The iterator
+            // returns them one at a time, however.
+            let mut notations: Vec<(bool, NotationData)> = Vec::new();
+            if let Some(mut n) = m.values_of("notation") {
+                while let Some(name) = n.next() {
+                    let value = n.next().unwrap();
+
+                    let (critical, name) = if !name.is_empty()
+                        && name.starts_with('!')
+                    {
+                        (true, &name[1..])
+                    } else {
+                        (false, name)
+                    };
+
+                    notations.push(
+                        (critical,
+                         NotationData::new(
+                             name, value,
+                             NotationDataFlags::empty().set_human_readable())));
+                }
+            }
+
+            revoke_certificate(RevokeOpts {
+                config,
+                private_key_store,
+                cert,
+                secret,
+                binary,
+                time,
+                notations: &notations,
+                reason,
+                message,
+            })?;
+        }
+        _ => unreachable!(),
+    }
+
+    Ok(())
 }
 
 pub fn revoke_certificate(opts: RevokeOpts) -> Result<()>
