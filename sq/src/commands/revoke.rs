@@ -165,10 +165,18 @@ fn revoke(config: Config,
             assert_eq!(keys.len(), 1);
             (secret, keys.into_iter().next().expect("have one"))
         } else {
-            return Err(anyhow::anyhow!("\
+            if let Some(time) = time {
+                return Err(anyhow::anyhow!("\
+No certification key found: the key specified with --revocation-key \
+does not contain a certification key with secret key material.  \
+Perhaps this is because no certification keys are valid at the time \
+you specified ({})",
+                    chrono::DateTime::<chrono::offset::Utc>::from(time)));
+            } else {
+                return Err(anyhow::anyhow!("\
 No certification key found: the key specified with --revocation-key \
 does not contain a certification key with secret key material"));
-
+            }
         }
     } else {
         if let Ok(keys) = super::get_certification_keys(&[ &cert ],
@@ -178,10 +186,19 @@ does not contain a certification key with secret key material"));
             assert_eq!(keys.len(), 1);
             (&cert, keys.into_iter().next().expect("have one"))
         } else {
-            return Err(anyhow::anyhow!("\
+            if let Some(time) = time {
+                return Err(anyhow::anyhow!("\
+No certification key found: --revocation-key not provided and the
+certificate to revoke does not contain a certification key with secret
+key material.  Perhaps this is because no certification keys are valid at
+the time you specified ({})",
+                    chrono::DateTime::<chrono::offset::Utc>::from(time)));
+            } else {
+                return Err(anyhow::anyhow!("\
 No certification key found: --revocation-key not provided and the
 certificate to revoke does not contain a certification key with secret
 key material"));
+            }
         }
     };
 
