@@ -19,115 +19,112 @@ use crate::{
     parse_iso8601,
 };
 
-pub struct RevokeOpts<'a> {
-    pub config: Config<'a>,
-    pub private_key_store: Option<&'a str>,
-    pub cert: openpgp::Cert,
-    pub secret: Option<openpgp::Cert>,
-    pub binary: bool,
-    pub time: Option<SystemTime>,
-    pub reason: ReasonForRevocation,
-    pub message: &'a str,
-    pub notations: &'a [(bool, NotationData)],
-}
-
-
 pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
-    match m.subcommand() {
-        ("certificate",  Some(m)) => {
-            let input = m.value_of("input");
-            let input = open_or_stdin(input)?;
-            let cert = CertParser::from_reader(input)?.collect::<Vec<_>>();
-            let cert = match cert.len() {
-                0 => Err(anyhow::anyhow!("No certificates provided."))?,
-                1 => cert.into_iter().next().expect("have one")?,
-                _ => Err(
-                    anyhow::anyhow!("Multiple certificates provided."))?,
-            };
+    enum Subcommand {
+        Certificate,
+    }
 
-            let secret: Option<&str> = m.value_of("secret-key-file");
-            let secret = load_certs(secret.into_iter())?;
-            if secret.len() > 1 {
-                Err(anyhow::anyhow!("Multiple secret keys provided."))?;
-            }
-            let secret = secret.into_iter().next();
+    let (subcommand, m) = match m.subcommand() {
+        ("certificate", Some(m)) => (Subcommand::Certificate, m),
+        _ => unreachable!(),
+    };
 
-            let private_key_store = m.value_of("private-key-store");
+    let input = m.value_of("input");
+    let input = open_or_stdin(input)?;
+    let cert = CertParser::from_reader(input)?.collect::<Vec<_>>();
+    let cert = match cert.len() {
+        0 => Err(anyhow::anyhow!("No certificates provided."))?,
+        1 => cert.into_iter().next().expect("have one")?,
+        _ => Err(
+            anyhow::anyhow!("Multiple certificates provided."))?,
+    };
 
-            let binary = m.is_present("binary");
+    let secret: Option<&str> = m.value_of("secret-key-file");
+    let secret = load_certs(secret.into_iter())?;
+    if secret.len() > 1 {
+        Err(anyhow::anyhow!("Multiple secret keys provided."))?;
+    }
+    let secret = secret.into_iter().next();
 
-            let time = if let Some(time) = m.value_of("time") {
-                Some(parse_iso8601(time, chrono::NaiveTime::from_hms(0, 0, 0))
-                     .context(format!("Bad value passed to --time: {:?}",
-                                      time))?.into())
-            } else {
-                None
-            };
+    let private_key_store = m.value_of("private-key-store");
 
-            let reason = m.value_of("reason").expect("required");
-            let reason = match &*reason {
+    let binary = m.is_present("binary");
+
+    let time = if let Some(time) = m.value_of("time") {
+        Some(parse_iso8601(time, chrono::NaiveTime::from_hms(0, 0, 0))
+             .context(format!("Bad value passed to --time: {:?}",
+                              time))?.into())
+    } else {
+        None
+    };
+
+    let reason = m.value_of("reason").expect("required");
+    let reason = match subcommand {
+        Subcommand::Certificate => {
+            match &*reason {
                 "compromised" => ReasonForRevocation::KeyCompromised,
                 "superseded" => ReasonForRevocation::KeySuperseded,
                 "retired" => ReasonForRevocation::KeyRetired,
                 "unspecified" => ReasonForRevocation::Unspecified,
                 _ => panic!("invalid values should be caught by clap"),
+            }
+        }
+    };
+
+    let message: &str = m.value_of("message").expect("required");
+
+    // Each --notation takes two values.  The iterator
+    // returns them one at a time, however.
+    let mut notations: Vec<(bool, NotationData)> = Vec::new();
+    if let Some(mut n) = m.values_of("notation") {
+        while let Some(name) = n.next() {
+            let value = n.next().unwrap();
+
+            let (critical, name) = if !name.is_empty()
+                && name.starts_with('!')
+            {
+                (true, &name[1..])
+            } else {
+                (false, name)
             };
 
-            let message: &str = m.value_of("message").expect("required");
+            notations.push(
+                (critical,
+                 NotationData::new(
+                     name, value,
+                     NotationDataFlags::empty().set_human_readable())));
+        }
+    }
 
-            // Each --notation takes two values.  The iterator
-            // returns them one at a time, however.
-            let mut notations: Vec<(bool, NotationData)> = Vec::new();
-            if let Some(mut n) = m.values_of("notation") {
-                while let Some(name) = n.next() {
-                    let value = n.next().unwrap();
-
-                    let (critical, name) = if !name.is_empty()
-                        && name.starts_with('!')
-                    {
-                        (true, &name[1..])
-                    } else {
-                        (false, name)
-                    };
-
-                    notations.push(
-                        (critical,
-                         NotationData::new(
-                             name, value,
-                             NotationDataFlags::empty().set_human_readable())));
-                }
-            }
-
-            revoke_certificate(RevokeOpts {
+    match subcommand {
+        Subcommand::Certificate => {
+            revoke(
                 config,
                 private_key_store,
                 cert,
                 secret,
                 binary,
                 time,
-                notations: &notations,
                 reason,
                 message,
-            })?;
+                &notations)?;
         }
-        _ => unreachable!(),
     }
 
     Ok(())
 }
 
-pub fn revoke_certificate(opts: RevokeOpts) -> Result<()>
+fn revoke(config: Config,
+          private_key_store: Option<&str>,
+          cert: openpgp::Cert,
+          secret: Option<openpgp::Cert>,
+          binary: bool,
+          time: Option<SystemTime>,
+          reason: ReasonForRevocation,
+          message: &str,
+          notations: &[(bool, NotationData)])
+    -> Result<()>
 {
-    let config = opts.config;
-    let private_key_store = opts.private_key_store;
-    let cert = opts.cert;
-    let secret = opts.secret;
-    let binary = opts.binary;
-    let time = opts.time;
-    let reason = opts.reason;
-    let message = opts.message;
-    let notations = opts.notations;
-
     let mut output = config.create_or_stdout_safe(None)?;
 
     let (secret, mut signer) = if let Some(secret) = secret.as_ref() {
