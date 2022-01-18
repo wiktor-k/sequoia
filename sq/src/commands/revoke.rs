@@ -177,7 +177,7 @@ key material"));
     let packets: Vec<Packet> = if first_party {
         vec![ rev ]
     } else {
-        cert_stub(cert.clone(), &config.policy, time)
+        cert_stub(cert.clone(), &config.policy, time, None)
             // If we fail to minimize the the certificate, just use as
             // it.
             .unwrap_or_else(|_err| cert.clone())
