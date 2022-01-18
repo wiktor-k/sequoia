@@ -12,6 +12,7 @@ use openpgp::Result;
 use openpgp::cert::prelude::*;
 use openpgp::parse::Parse;
 use openpgp::Packet;
+use openpgp::packet::UserID;
 use openpgp::PacketPile;
 use openpgp::policy::StandardPolicy;
 use openpgp::serialize::Serialize;
@@ -24,10 +25,17 @@ const TRACE: bool = false;
 mod integration {
     use super::*;
 
-    const _P: StandardPolicy = StandardPolicy::new();
-    const P: &StandardPolicy = &_P;
+    const P: &StandardPolicy = &StandardPolicy::new();
 
-    fn t(reason: ReasonForRevocation,
+    const ALICE: &str = "<alice@example.org>";
+
+    // USERIDS is a vector of User IDs.  If it is empty, then a
+    // default User ID will be used and the *certificate* will be
+    // revoked.  If it contains at least one entry, then each entry
+    // will be added as a User ID, and the last User ID will be
+    // revoked.
+    fn t(mut userids: Vec<&str>,
+         reason: ReasonForRevocation,
          reason_message: &str,
          stdin: bool,
          third_party: bool,
@@ -40,21 +48,28 @@ mod integration {
             t - Duration::nanoseconds(t.timestamp_subsec_nanos() as i64)
         });
 
-        // We're going to revoke alice's certificate.  If we're doing
-        // it via a third-party revocation, then bob is the revoker.
-        // Otherwise, it's alice.
-        let (alice, _) =
-            CertBuilder::general_purpose(None, Some("alice@example.org"))
-            .set_creation_time(
-                time.map(|t| (t - Duration::hours(1)).into()))
-            .generate()?;
+        let gen = |userids: &[&str]| {
+            let mut builder = CertBuilder::new()
+                .set_creation_time(
+                    time.map(|t| (t - Duration::hours(1)).into()));
+            for &u in userids {
+                builder = builder.add_userid(u);
+            }
+            builder.generate().map(|(key, _rev)| key)
+        };
 
-        let (bob, _) =
-            CertBuilder::general_purpose(None, Some("bob@example.org"))
-            .set_creation_time(
-                time.map(|t| (t - Duration::hours(1)).into()))
-            .generate()?;
+        let userid = if userids.len() == 0 {
+            userids = vec![ ALICE ];
+            None
+        } else {
+            Some(userids[userids.len() - 1])
+        };
 
+        // We're going to revoke alice's certificate or a User ID.  If
+        // we're doing it via a third-party revocation, then bob is
+        // the revoker.  Otherwise, it's alice.
+        let alice = gen(&userids)?;
+        let bob = gen(&[ "<revoker@some.org>" ])?;
 
         let mut cert = Vec::new();
         alice.serialize(&mut cert)?;
@@ -69,18 +84,30 @@ mod integration {
 
         // Build up the command line.
         let mut cmd = Command::cargo_bin("sq")?;
-        cmd.args([
-            "revoke",
-            "certificate",
-            match reason {
-                ReasonForRevocation::KeyCompromised => "compromised",
-                ReasonForRevocation::KeyRetired => "retired",
-                ReasonForRevocation::KeySuperseded => "superseded",
-                ReasonForRevocation::Unspecified => "unspecified",
-                _ => panic!("Invalid reason: {}", reason),
-            },
-            reason_message
-        ]);
+        cmd.arg("revoke");
+        if let Some(userid) = userid {
+            cmd.args([
+                "userid", userid,
+                match reason {
+                    ReasonForRevocation::UIDRetired => "retired",
+                    ReasonForRevocation::Unspecified => "unspecified",
+                    _ => panic!("Invalid reason: {}", reason),
+                },
+                reason_message
+            ]);
+        } else {
+            cmd.args([
+                "certificate",
+                match reason {
+                    ReasonForRevocation::KeyCompromised => "compromised",
+                    ReasonForRevocation::KeyRetired => "retired",
+                    ReasonForRevocation::KeySuperseded => "superseded",
+                    ReasonForRevocation::Unspecified => "unspecified",
+                    _ => panic!("Invalid reason: {}", reason),
+                },
+                reason_message
+            ]);
+        }
 
         let _tmp_dir = match (third_party, stdin) {
             (true, true) => {
@@ -177,35 +204,102 @@ mod integration {
         }
 
         // Get the revocation certificate.
+        {
+            let vc = alice.with_policy(P, time.map(Into::into)).unwrap();
+            assert!(matches!(vc.revocation_status(),
+                             RevocationStatus::NotAsFarAsWeKnow));
 
-        assert!(matches!(
-            alice.with_policy(P, time.map(Into::into)).unwrap()
-                .revocation_status(),
-            RevocationStatus::NotAsFarAsWeKnow));
+            if let Some(userid) = userid {
+                let mut found = false;
+                for u in vc.userids() {
+                    if u.value() == userid.as_bytes() {
+                        assert!(matches!(u.revocation_status(),
+                                         RevocationStatus::NotAsFarAsWeKnow));
 
-        let sig = if third_party {
+                        found = true;
+                        break;
+                    }
+                }
+                assert!(found, "User ID {} not found on certificate", userid);
+            }
+        }
+
+        let sig = if third_party || userid.is_some() {
             // We should get a certificate stub.
             let result = Cert::from_bytes(&*stdout)?;
-            let status = result.with_policy(P, time.map(Into::into))?
-                .revocation_status();
-            if let RevocationStatus::CouldBe(sigs) = status {
-                assert_eq!(sigs.len(), 1);
-                let sig = sigs.into_iter().next().unwrap();
 
-                // Bob issued the revocation.
-                assert_eq!(sig.get_issuers().into_iter().next(),
-                           Some(bob.fingerprint().into()));
+            let vc = result.with_policy(P, time.map(Into::into))?;
 
-                // Verify the revocation.
-                sig.clone()
-                    .verify_primary_key_revocation(
-                        &bob.primary_key(),
-                        &alice.primary_key())
-                    .context("revocation is not valid")?;
+            // Make sure the certificate stub only contains the
+            // revoked User ID (the rest should be striped).
+            assert_eq!(vc.userids().count(), 1);
 
-                sig.clone()
+            // Get the revocation status of the revoked object.
+            let status = if let Some(userid) = userid {
+                let mut status = None;
+                for u in vc.userids() {
+                    if u.value() == userid.as_bytes() {
+                        status = Some(u.revocation_status());
+                        break;
+                    }
+                }
+                if let Some(status) = status {
+                    status
+                } else {
+                    panic!("Revoked user ID {} not found on revoked certificate",
+                           userid);
+                }
             } else {
-                panic!("Unexpected revocation status: {:?}", status);
+                vc.revocation_status()
+            };
+
+            // Make sure the revocation status is sane.
+            if third_party {
+                if let RevocationStatus::CouldBe(sigs) = status {
+                    assert_eq!(sigs.len(), 1);
+                    let sig = sigs.into_iter().next().unwrap();
+
+                    // Bob issued the revocation.
+                    assert_eq!(sig.get_issuers().into_iter().next(),
+                               Some(bob.fingerprint().into()));
+
+                    // Verify the revocation.
+                    if let Some(userid) = userid {
+                        sig.clone()
+                            .verify_userid_revocation(
+                                &bob.primary_key(),
+                                &alice.primary_key(),
+                                &UserID::from(userid))
+                            .context("revocation is not valid")?;
+                    } else {
+                        sig.clone()
+                            .verify_primary_key_revocation(
+                                &bob.primary_key(),
+                                &alice.primary_key())
+                            .context("revocation is not valid")?;
+                    }
+
+                    sig.clone()
+                } else {
+                    panic!("Unexpected revocation status: {:?}", status);
+                }
+            } else {
+                assert!(userid.is_some());
+                if let RevocationStatus::Revoked(sigs) = status {
+                    assert_eq!(sigs.len(), 1);
+                    let sig = sigs.into_iter().next().unwrap();
+
+                    // Alice issued the revocation.
+                    assert_eq!(sig.get_issuers().into_iter().next(),
+                               Some(alice.fingerprint().into()));
+
+                    // Since it is a self-siganture, sig has already
+                    // been validated.
+
+                    sig.clone()
+                } else {
+                    panic!("Unexpected revocation status: {:?}", status);
+                }
             }
         } else {
             // We should get just a single signature packet.
@@ -234,7 +328,11 @@ mod integration {
         };
 
         // Revocation reason.
-        assert_eq!(sig.typ(), SignatureType::KeyRevocation);
+        if userid.is_some() {
+            assert_eq!(sig.typ(), SignatureType::CertificationRevocation);
+        } else {
+            assert_eq!(sig.typ(), SignatureType::KeyRevocation);
+        }
         assert_eq!(sig.reason_for_revocation(),
                    Some((reason, reason_message.as_bytes())));
 
@@ -260,7 +358,8 @@ mod integration {
         Ok(())
     }
 
-    fn dispatch(reasons: &[ReasonForRevocation],
+    fn dispatch(userid: Vec<&str>,
+                reasons: &[ReasonForRevocation],
                 msgs: &[&str],
                 stdin: &[bool],
                 third_party: &[bool],
@@ -282,7 +381,8 @@ mod integration {
                                            message: {:?}",
                                           third_party, time, stdin, notations,
                                           reason, msg);
-                                t(*reason, *msg,
+                                t(userid.clone(),
+                                  *reason, *msg,
                                   *stdin, *third_party, *notations,
                                   *time)?;
                             }
@@ -295,10 +395,14 @@ mod integration {
         Ok(())
     }
 
-    const REASONS: &[ ReasonForRevocation ] = &[
+    const CERT_REASONS: &[ ReasonForRevocation ] = &[
         ReasonForRevocation::KeyCompromised,
         ReasonForRevocation::KeyRetired,
         ReasonForRevocation::KeySuperseded,
+        ReasonForRevocation::Unspecified
+    ];
+    const USERID_REASONS: &[ ReasonForRevocation ] = &[
+        ReasonForRevocation::UIDRetired,
         ReasonForRevocation::Unspecified
     ];
     const MSGS: &[&str] = &[
@@ -311,12 +415,14 @@ mod integration {
         &[("a", "b"), ("hallo@sequoia-pgp.org", "VALUE")]
     ];
 
+    // User ID revocation tests.
     #[test]
-    fn sq_revoke_stdin() -> Result<()> {
+    fn sq_revoke_cert_stdin() -> Result<()> {
         let now = Utc::now();
 
         dispatch(
-            REASONS,
+            vec![],
+            CERT_REASONS,
             MSGS,
             // stdin
             &[true],
@@ -332,11 +438,12 @@ mod integration {
     }
 
     #[test]
-    fn sq_revoke() -> Result<()> {
+    fn sq_revoke_cert() -> Result<()> {
         let now = Utc::now();
 
         dispatch(
-            REASONS,
+            vec![],
+            CERT_REASONS,
             MSGS,
             // stdin
             &[false],
@@ -352,11 +459,12 @@ mod integration {
     }
 
     #[test]
-    fn sq_revoke_third_party_stdin() -> Result<()> {
+    fn sq_revoke_cert_third_party_stdin() -> Result<()> {
         let now = Utc::now();
 
         dispatch(
-            REASONS,
+            vec![],
+            CERT_REASONS,
             MSGS,
             // stdin
             &[true],
@@ -372,11 +480,12 @@ mod integration {
     }
 
     #[test]
-    fn sq_revoke_third_party() -> Result<()> {
+    fn sq_revoke_cert_third_party() -> Result<()> {
         let now = Utc::now();
 
         dispatch(
-            REASONS,
+            vec![],
+            CERT_REASONS,
             MSGS,
             // stdin
             &[false],
@@ -390,4 +499,120 @@ mod integration {
                 Some(now - Duration::hours(1))
             ])
     }
+
+
+    // Certificate revocation tests.
+    //
+    // We manually unroll to get some parallelism.  Otherwise, the
+    // tests take way too long.
+    #[test]
+    fn sq_revoke_userid_stdin() -> Result<()> {
+        let now = Utc::now();
+
+        dispatch(
+            vec![ ALICE ],
+            USERID_REASONS,
+            MSGS,
+            // stdin
+            &[true],
+            // third_party
+            &[false],
+            NOTATIONS,
+            // time
+            &[
+                None,
+                Some(now),
+                Some(now - Duration::hours(1))
+            ])
+    }
+
+    #[test]
+    fn sq_revoke_userid() -> Result<()> {
+        let now = Utc::now();
+
+        dispatch(
+            vec![ ALICE ],
+            USERID_REASONS,
+            MSGS,
+            // stdin
+            &[false],
+            // third_party
+            &[false],
+            NOTATIONS,
+            // time
+            &[
+                None,
+                Some(now),
+                Some(now - Duration::hours(1))
+            ])
+    }
+
+    #[test]
+    fn sq_revoke_userid_third_party_stdin() -> Result<()> {
+        let now = Utc::now();
+
+        dispatch(
+            vec![ ALICE ],
+            USERID_REASONS,
+            MSGS,
+            // stdin
+            &[true],
+            // third_party
+            &[true],
+            NOTATIONS,
+            // time
+            &[
+                None,
+                Some(now),
+                Some(now - Duration::hours(1))
+            ])
+    }
+
+    #[test]
+    fn sq_revoke_userid_third_party() -> Result<()> {
+        let now = Utc::now();
+
+        dispatch(
+            vec![ ALICE ],
+            USERID_REASONS,
+            MSGS,
+            // stdin
+            &[false],
+            // third_party
+            &[true],
+            NOTATIONS,
+            // time
+            &[
+                None,
+                Some(now),
+                Some(now - Duration::hours(1))
+            ])
+    }
+
+
+    #[test]
+    fn sq_revoke_one_of_three_userids() -> Result<()> {
+        let now = Utc::now();
+
+        dispatch(
+            vec![
+                "<alice@example.org",
+                "<alice@some.org>",
+                "<alice@other.org>",
+            ],
+            USERID_REASONS,
+            MSGS,
+            // stdin
+            &[false],
+            // third_party
+            &[false],
+            NOTATIONS,
+            // time
+            &[
+                None,
+                Some(now),
+                Some(now - Duration::hours(1))
+            ])
+    }
+
 }

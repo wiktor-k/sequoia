@@ -7,7 +7,9 @@ use openpgp::cert::prelude::*;
 use openpgp::Packet;
 use openpgp::packet::signature::subpacket::NotationData;
 use openpgp::packet::signature::subpacket::NotationDataFlags;
+use openpgp::packet::UserID;
 use openpgp::parse::Parse;
+use openpgp::policy::NullPolicy;
 use openpgp::Result;
 use openpgp::serialize::Serialize;
 use openpgp::types::ReasonForRevocation;
@@ -19,13 +21,17 @@ use crate::{
     parse_iso8601,
 };
 
+const NP: &NullPolicy = &NullPolicy::new();
+
 pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
     enum Subcommand {
         Certificate,
+        UserID,
     }
 
     let (subcommand, m) = match m.subcommand() {
         ("certificate", Some(m)) => (Subcommand::Certificate, m),
+        ("userid", Some(m)) => (Subcommand::UserID, m),
         _ => unreachable!(),
     };
 
@@ -69,6 +75,13 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
                 _ => panic!("invalid values should be caught by clap"),
             }
         }
+        Subcommand::UserID => {
+            match &*reason {
+                "retired" => ReasonForRevocation::UIDRetired,
+                "unspecified" => ReasonForRevocation::Unspecified,
+                _ => panic!("invalid values should be caught by clap"),
+            }
+        }
     };
 
     let message: &str = m.value_of("message").expect("required");
@@ -102,6 +115,22 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
                 config,
                 private_key_store,
                 cert,
+                None,
+                secret,
+                binary,
+                time,
+                reason,
+                message,
+                &notations)?;
+        }
+        Subcommand::UserID => {
+            let userid = m.value_of("userid").expect("required");
+
+            revoke(
+                config,
+                private_key_store,
+                cert,
+                Some(userid),
                 secret,
                 binary,
                 time,
@@ -117,6 +146,7 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
 fn revoke(config: Config,
           private_key_store: Option<&str>,
           cert: openpgp::Cert,
+          userid: Option<&str>,
           secret: Option<openpgp::Cert>,
           binary: bool,
           time: Option<SystemTime>,
@@ -157,29 +187,91 @@ key material"));
 
     let first_party = secret.fingerprint() == cert.fingerprint();
 
-    let mut rev = CertRevocationBuilder::new()
-        .set_reason_for_revocation(reason, message.as_bytes())?;
-    if let Some(time) = time {
-        rev = rev.set_signature_creation_time(time)?;
-    }
-    for (critical, notation) in notations {
-        rev = rev.add_notation(notation.name(),
-                               notation.value(),
-                               Some(notation.flags().clone()),
-                               *critical)?;
-    }
-    let rev = rev.build(&mut signer, &cert, None)?;
-    let rev = Packet::Signature(rev);
+    let rev: Packet = if let Some(userid) = userid {
+        // Create a revocation for a User ID.
 
-    let packets: Vec<Packet> = if first_party {
+        // Unless force is specified, we require the User ID to have a
+        // valid self signature under the Null policy.  We use the
+        // Null policy and not the standard policy, because it is
+        // still useful to revoke a User ID whose self signature is no
+        // longer valid.  For instance, the binding signature may use
+        // SHA-1.
+        if ! config.force {
+            let vc = cert.with_policy(NP, None)?;
+            let present = vc.userids().any(|u| {
+                if let Ok(u) = String::from_utf8(u.value().to_vec()) {
+                    if u == userid {
+                        return true;
+                    }
+                }
+                false
+            });
+
+            if ! present {
+                eprintln!("User ID: '{}' not found.\nValid User IDs:",
+                          userid);
+                let mut have_valid = false;
+                for ua in vc.userids() {
+                    if let Ok(u) = std::str::from_utf8(ua.userid().value()) {
+                        have_valid = true;
+                        eprintln!("  - {}", u);
+                    }
+                }
+                if ! have_valid {
+                    eprintln!("  - Certificate has no valid User IDs.");
+                }
+                return Err(anyhow::anyhow!("\
+The certificate does not contain the specified User ID.  To create
+a revocation certificate for that User ID anyways, specify '--force'"));
+            }
+        }
+
+        let mut rev = UserIDRevocationBuilder::new()
+            .set_reason_for_revocation(reason, message.as_bytes())?;
+        if let Some(time) = time {
+            rev = rev.set_signature_creation_time(time)?;
+        }
+        for (critical, notation) in notations {
+            rev = rev.add_notation(notation.name(),
+                                   notation.value(),
+                                   Some(notation.flags().clone()),
+                                   *critical)?;
+        }
+        let rev = rev.build(&mut signer, &cert, &UserID::from(userid), None)?;
+        Packet::Signature(rev)
+    } else {
+        // Create a revocation for the certificate.
+        let mut rev = CertRevocationBuilder::new()
+            .set_reason_for_revocation(reason, message.as_bytes())?;
+        if let Some(time) = time {
+            rev = rev.set_signature_creation_time(time)?;
+        }
+        for (critical, notation) in notations {
+            rev = rev.add_notation(notation.name(),
+                                   notation.value(),
+                                   Some(notation.flags().clone()),
+                                   *critical)?;
+        }
+        let rev = rev.build(&mut signer, &cert, None)?;
+        Packet::Signature(rev)
+    };
+
+    let mut stub = None;
+    let packets: Vec<Packet> = if first_party && userid.is_none() {
         vec![ rev ]
     } else {
-        cert_stub(cert.clone(), &config.policy, time, None)
-            // If we fail to minimize the the certificate, just use as
-            // it.
-            .unwrap_or_else(|_err| cert.clone())
-            // Now add the revocation certificate.
-            .insert_packets(rev)?
+        let s = match cert_stub(cert.clone(), &config.policy, time,
+                                userid.map(UserID::from).as_ref())
+        {
+            Ok(stub) => stub,
+            // We failed to create a stub.  Just use the original
+            // certificate as is.
+            Err(_) => cert.clone(),
+        };
+
+        stub = Some(s.clone());
+
+        s.insert_packets(rev)?
             .into_packets()
             .collect()
     };
@@ -227,7 +319,7 @@ key material"));
             }
         };
 
-        let headers = cert.armor_headers();
+        let headers = stub.unwrap_or(cert).armor_headers();
         let headers: Vec<_> = preface
             .iter()
             .map(|s| ("Comment", s.as_str()))

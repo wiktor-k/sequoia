@@ -1659,6 +1659,7 @@
 //!
 //! SUBCOMMANDS:
 //!     certificate    Revoke a certificate
+//!     userid         Revoke a User ID
 //!     help           Prints this message or the help of the given
 //!                    subcommand(s)
 //!
@@ -1667,6 +1668,10 @@
 //! # Revoke a certificate.
 //! $ sq revoke certificate --time 20220101 --certificate juliet.pgp \
 //!   compromised "My parents went through my things, and found my backup."
+//!
+//! # Revoke a User ID.
+//! $ sq revoke userid --time 20220101 --certificate juliet.pgp \
+//!   "Juliet <juliet@capuleti.it>" retired "I've left the family."
 //! ```
 //!
 //! ### Subcommand revoke certificate
@@ -1782,6 +1787,110 @@
 //!             that in the future."
 //! ```
 //!
+//! ### Subcommand revoke userid
+//!
+//! ```text
+//!
+//! Revokes a User ID
+//!
+//! Creates a revocation certificate for a User ID.
+//!
+//! If "--revocation-key" is provided, then that key is used to create
+//! the signature.  If that key is different from the certificate being
+//! revoked, this creates a third-party revocation.  This is normally only
+//! useful if the owner of the certificate designated the key to be a
+//! designated revoker.
+//!
+//! If "--revocation-key" is not provided, then the certificate must
+//! include a certification-capable key.
+//!
+//! USAGE:
+//!     sq revoke userid [FLAGS] [OPTIONS] <USERID> <REASON> <MESSAGE>
+//!
+//! FLAGS:
+//!     -B, --binary
+//!             Emits binary data
+//!
+//!     -h, --help
+//!             Prints help information
+//!
+//!     -V, --version
+//!             Prints version information
+//!
+//!
+//! OPTIONS:
+//!         --certificate <FILE>
+//! 
+//!             Reads the certificate to revoke from FILE or stdin, if omitted.  It
+//!             is
+//!             an error for the file to contain more than one certificate.
+//!         --notation <NAME> <VALUE>
+//! 
+//!             Adds a notation to the certification.  A user-defined notation's
+//!             name
+//!             must be of the form "name@a.domain.you.control.org".  If the
+//!             notation's name starts with a !, then the notation is marked as
+//!             being
+//!             critical.  If a consumer of a signature doesn't understand a
+//!             critical
+//!             notation, then it will ignore the signature.  The notation is marked
+//!             as being human readable.
+//!         --private-key-store <KEY_STORE>
+//!             Provides parameters for private key store
+//!
+//!         --revocation-key <FILE>
+//! 
+//!             Signs the revocation certificate using KEY.  If the key is different
+//!             from the certificate, this creates a third-party revocation.  If
+//!             this
+//!             option is not provided, and the certificate includes secret key
+//!             material,
+//!             then that key is used to sign the revocation certificate.
+//!     -t, --time <TIME>
+//! 
+//!             Chooses keys valid at the specified time and sets the revocation
+//!             certificate's creation time
+//!
+//! ARGS:
+//!     <USERID>
+//! 
+//! 
+//!             The User ID to revoke.  By default, this must exactly match a
+//!             self-signed User ID.  Use --force to generate a revocation
+//!             certificate
+//!             for a User ID, which is not self signed.
+//!     <REASON>
+//! 
+//!             The reason for the revocation.  This must be either: retired, or
+//!             unspecified:
+//! 
+//!               - retired means that this User ID is no longer valid.  This is
+//!                 appropriate when someone leaves an organisation, and the
+//!                 organisation does not have their secret key material.  For
+//!                 instance, if someone was part of Debian and retires, they would
+//!                 use this to indicate that a Debian-specific User ID is no longer
+//!                 valid.
+//! 
+//!               - unspecified means that a different reason applies.
+//! 
+//!             If the reason happened in the past, you should specify that using
+//!             the
+//!             --time argument.  This allows OpenPGP implementations to more
+//!             accurately reason about objects whose validity depends on the
+//!             validity
+//!             of a User ID. [possible values: retired, unspecified]
+//!     <MESSAGE>
+//! 
+//!             A short, explanatory text that is shown to a viewer of the
+//!             revocation
+//!             certificate.  It explains why the certificate has been revoked.  For
+//!             instance, if Alice has created a new key, she would generate a
+//!             'superceded' revocation certificate for her old key, and might
+//!             include
+//!             the message "I've created a new certificate, FINGERPRINT, please use
+//!             that in the future."
+//! ```
+//!
 //! ### Subcommand revoke EXAMPLES:
 //!
 //! ```text
@@ -1803,6 +1912,26 @@
 //! ```
 //!
 //! ### Subcommand revoke compromised
+//!
+//! ```text
+//!
+//! USAGE:
+//!     sq revoke <SUBCOMMAND>
+//!
+//! For more information try --help
+//! ```
+//!
+//! ### Subcommand revoke #
+//!
+//! ```text
+//!
+//! USAGE:
+//!     sq revoke <SUBCOMMAND>
+//!
+//! For more information try --help
+//! ```
+//!
+//! ### Subcommand revoke "Juliet
 //!
 //! ```text
 //!
