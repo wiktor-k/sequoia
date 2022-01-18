@@ -93,13 +93,12 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
         while let Some(name) = n.next() {
             let value = n.next().unwrap();
 
-            let (critical, name) = if !name.is_empty()
-                && name.starts_with('!')
-            {
-                (true, &name[1..])
-            } else {
-                (false, name)
-            };
+            let (critical, name) =
+                if let Some(name) = name.strip_prefix('!') {
+                    (true, name)
+                } else {
+                    (false, name)
+                };
 
             notations.push(
                 (critical,
