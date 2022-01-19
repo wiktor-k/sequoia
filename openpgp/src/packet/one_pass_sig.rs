@@ -62,7 +62,7 @@ impl fmt::Debug for OnePassSig3 {
 }
 
 impl OnePassSig3 {
-    /// Returns a new `Signature` packet.
+    /// Returns a new One-Pass Signature packet.
     pub fn new(typ: SignatureType) ->  Self {
         OnePassSig3 {
             common: Default::default(),
