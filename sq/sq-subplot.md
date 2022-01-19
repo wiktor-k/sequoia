@@ -861,6 +861,99 @@ then stdout doesn't contain "hello, world"
 then stdout doesn't contain "HELLO, WORLD"
 ~~~
 
+# ASCII Armor data representation: `sq armor`
+
+The scenarios in this chapter verify that `sq` can convert data into
+the "ASCII Armor" representation and back.
+
+## Convert data file to armored format to stdout
+
+_Requirement: We must be able to convert a file to armored format to
+stdout._
+
+~~~scenario
+given an installed sq
+given file hello.txt
+when I run sq armor hello.txt
+then stdout contains "-----BEGIN PGP ARMORED FILE-----"
+then stdout contains "-----END PGP ARMORED FILE-----"
+~~~
+
+## Convert data file to armored format to file
+
+_Requirement: We must be able to convert a file to armored format to a
+named file._
+
+~~~scenario
+given an installed sq
+given file hello.txt
+given file hello.asc
+when I run sq armor hello.txt -o hello.out
+then files hello.asc and hello.out match
+~~~
+
+
+## Convert data file to armored format with desired label
+
+_Requirement: We must be able to convert a file to armored format with
+the label we choose._
+
+~~~scenario
+given an installed sq
+given file hello.txt
+when I run sq armor hello.txt --label auto
+then stdout contains "-----BEGIN PGP ARMORED FILE-----"
+when I run sq armor hello.txt --label message
+then stdout contains "-----BEGIN PGP MESSAGE-----"
+when I run sq armor hello.txt --label cert
+then stdout contains "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+when I run sq armor hello.txt --label key
+then stdout contains "-----BEGIN PGP PRIVATE KEY BLOCK-----"
+when I run sq armor hello.txt --label sig
+then stdout contains "-----BEGIN PGP SIGNATURE-----"
+when I run sq armor hello.txt --label file
+then stdout contains "-----BEGIN PGP ARMORED FILE-----"
+~~~
+
+## Convert data file from armored format to stdout
+
+_Requirement: We must be able to convert a file from armored format to
+stdout._
+
+~~~scenario
+given an installed sq
+given file hello.asc
+when I run sq dearmor hello.asc
+then stdout contains "hello, world"
+~~~
+
+## Convert data file from armored format to file
+
+_Requirement: We must be able to convert a file from armored format to
+a named file._
+
+~~~scenario
+given an installed sq
+given file hello.txt
+given file hello.asc
+when I run sq dearmor hello.asc -o hello.out
+then files hello.txt and hello.out match
+~~~
+
+## Armor round trip
+
+_Requirement: We must be able to convert data to armored format and
+back._
+
+~~~scenario
+given an installed sq
+given file hello.txt
+when I run sq armor hello.txt -o hello.tmp
+when I run sq dearmor hello.tmp -o hello.out
+then files hello.txt and hello.out match
+~~~
+
+
 # Test data file
 
 We use this file as an input file in the tests. It is a very short
@@ -869,4 +962,14 @@ requirements and scenarios.
 
 ~~~{#hello.txt .file}
 hello, world
+~~~
+
+This is the same content, but in ASCII armored representation.
+
+~~~{#hello.asc .file}
+-----BEGIN PGP ARMORED FILE-----
+
+aGVsbG8sIHdvcmxkCg==
+=FOuc
+-----END PGP ARMORED FILE-----
 ~~~
