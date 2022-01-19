@@ -729,6 +729,24 @@ This isn't implemented yet, because Subplot needs to add support for
 redirecting stdin to come from a file first.
 
 
+## Split a keyring: `sq keyring split`
+
+The scenarios in this section verify that splitting a keyring into
+individual files, one per key: the `sq keyring split` subcommand.
+
+Or rather, there will be such scenarios here when Subplot provides
+tools for dealing with randomly named files. Until then, this section
+is a placeholder.
+
+~~~
+given an installed sq
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq keyring join alice.pgp bob.pgp -o ring.pgp
+when I run sq keyring split ring.pgp
+then the resulting files match alice,pgp and bob.pgp
+~~~
+
 # Encrypt and decrypt a file using public keys
 
 _Requirement: We must be able to encrypt a file using a certificate,
