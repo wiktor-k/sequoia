@@ -747,7 +747,52 @@ when I run sq keyring split ring.pgp
 then the resulting files match alice,pgp and bob.pgp
 ~~~
 
-# Encrypt and decrypt a file using public keys
+# Encryption and decryption: `sq encrypt` and `sq decrypt`
+
+This chapter has scenarios for verifying that encryption and
+decryption work. The overall approach is to do round trips: we
+encrypt, then decrypt, and is the result is identical to the input,
+all good.
+
+## Encrypt to stdout as ASCII armored
+
+_Requirement: We must be able to encrypt a file using a certificate,
+with output going to stdout.
+
+We also verify that the encrypted output doesn't contain the message
+in cleartext, just in case.
+
+~~~scenario
+given an installed sq
+given file hello.txt
+when I run sq key generate --export key.pgp
+when I run sq key extract-cert -o cert.pgp key.pgp
+when I run sq encrypt --recipient-cert cert.pgp hello.txt
+then stdout contains "-----BEGIN PGP MESSAGE-----"
+then stdout doesn't contain "hello, world"
+~~~
+
+
+## Encrypt to stdout as binary
+
+_Requirement: We must be able to encrypt a file using a certificate,
+with output going to stdout.
+
+We also verify that the encrypted output doesn't contain the message
+in cleartext, just in case.
+
+~~~scenario
+given an installed sq
+given file hello.txt
+when I run sq key generate --export key.pgp
+when I run sq key extract-cert -o cert.pgp key.pgp
+when I run sq encrypt --binary --recipient-cert cert.pgp hello.txt
+then stdout doesn't contain "-----BEGIN PGP MESSAGE-----"
+then stdout doesn't contain "hello, world"
+~~~
+
+
+## Encrypt and decrypt using asymmetric encryption
 
 _Requirement: We must be able to encrypt a file using a certificate,
 and then decrypt it using the corresponding key._
@@ -761,12 +806,36 @@ files, etc).
 ~~~scenario
 given an installed sq
 given file hello.txt
-when I run sq key generate --userid Tomjon --export tomjon.pgp
-when I run sq key extract-cert -o cert.pgp tomjon.pgp
-when I run sq encrypt -o e.pgp --recipient-cert cert.pgp hello.txt
-when I run sq decrypt -o output.txt --recipient-key tomjon.pgp e.pgp
+when I run sq key generate --export key.pgp
+when I run sq key extract-cert -o cert.pgp key.pgp
+when I run sq encrypt -o x.pgp --recipient-cert cert.pgp hello.txt
+when I run sq decrypt -o output.txt --recipient-key key.pgp x.pgp
 then files hello.txt and output.txt match
 ~~~
+
+
+## Encrypt for multiple recipients
+
+_Requirement: We must be able to encrypt a message for multiple
+recipients at a time._
+
+~~~scenario
+given an installed sq
+given file hello.txt
+when I run sq key generate --export alice.pgp
+when I run sq key extract-cert -o alice-cert.pgp alice.pgp
+when I run sq key generate --export bob.pgp
+when I run sq key extract-cert -o bob-cert.pgp bob.pgp
+
+when I run sq encrypt --recipient-cert alice-cert.pgp --recipient-cert bob-cert.pgp hello.txt -o x.pgp
+
+when I run sq decrypt --recipient-key alice.pgp -o alice.txt x.pgp
+then files hello.txt and alice.txt match
+
+when I run sq decrypt --recipient-key bob.pgp -o bob.txt x.pgp
+then files hello.txt and bob.txt match
+~~~
+
 
 # Sign a document and verify the signature
 
@@ -861,7 +930,7 @@ then stdout doesn't contain "hello, world"
 then stdout doesn't contain "HELLO, WORLD"
 ~~~
 
-# ASCII Armor data representation: `sq armor`
+# ASCII Armor data representation: `sq armor` and `sq dearmor`
 
 The scenarios in this chapter verify that `sq` can convert data into
 the "ASCII Armor" representation and back.
