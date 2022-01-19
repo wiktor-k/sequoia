@@ -517,6 +517,168 @@ then stdout contains "Alice"
 then stdout contains "Bob"
 ~~~
 
+## Filter a keyring: `sq keyring filter`
+
+The scenarios in this section verify that various ways of filtering
+the contents of a keyring work: the `sq keyring filter` subcommand
+variants.
+
+### We can extract only certificates to named file
+
+_Requirement: we can remove private keys from a keyring, leaving only
+certificates._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq keyring join alice.pgp bob.pgp -o ring.pgp
+when I run sq keyring filter --to-cert ring.pgp -o filtered.pgp
+when I run sq inspect filtered.pgp
+then stdout contains "OpenPGP Certificate."
+then stdout doesn't contain "Transferable Secret Key."
+then stdout contains "Alice"
+then stdout contains "Bob"
+~~~
+
+### We can filter to stdout
+
+_Requirement: we can get filter output to stdout instead of a named
+file._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq keyring join alice.pgp bob.pgp -o ring.pgp
+when I run sq keyring filter --to-cert ring.pgp
+then stdout contains "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+then stdout contains "-----END PGP PUBLIC KEY BLOCK-----"
+~~~
+
+### We can filter with binary output
+
+_Requirement: we can get filter output in binary form._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq keyring join alice.pgp bob.pgp -o ring.pgp
+when I run sq keyring filter --binary --to-cert ring.pgp
+then stdout doesn't contain "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+~~~
+
+### We can keep only matching certificates
+
+_Requirement: we can remove certificates that don't match filter
+criteria._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid Alice --userid Bob --export alice.pgp
+when I run sq keyring filter --prune-certs --name Alice alice.pgp -o filtered.pgp
+when I run sq inspect filtered.pgp
+then stdout contains "Alice"
+then stdout doesn't contain "Bob"
+~~~
+
+### We can filter for specific user id
+
+_Requirement: we can extract only keys and certificates with a
+specific user id._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq keyring join alice.pgp bob.pgp -o ring.pgp
+when I run sq keyring filter --userid Alice ring.pgp -o filtered.pgp
+when I run sq inspect filtered.pgp
+then stdout contains "Alice"
+then stdout doesn't contain "Bob"
+~~~
+
+### We can filter for any of several user ids
+
+_Requirement: we can extract only keys and certificates with any of
+specific user ids._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq keyring join alice.pgp bob.pgp -o ring.pgp
+when I run sq keyring filter --userid Alice --userid Bob ring.pgp -o filtered.pgp
+when I run sq inspect filtered.pgp
+then stdout contains "Alice"
+then stdout contains "Bob"
+~~~
+
+### We can filter for a name
+
+_Requirement: we can extract only keys and certificates with a name as
+part of a user ids._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid 'Alice <alice@example.com>' --export alice.pgp
+when I run sq key generate --userid 'Bob <bob@example.com>' --export bob.pgp
+when I run sq keyring join alice.pgp bob.pgp -o ring.pgp
+when I run sq keyring filter --name Alice ring.pgp -o filtered.pgp
+when I run sq inspect filtered.pgp
+then stdout contains "Alice"
+then stdout doesn't contain "Bob"
+~~~
+
+### We can filter for several names
+
+_Requirement: we can extract only keys and certificates with any of
+several names as part of the user id._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid 'Alice <alice@example.com>' --export alice.pgp
+when I run sq key generate --userid 'Bob <bob@example.com>' --export bob.pgp
+when I run sq keyring join alice.pgp bob.pgp -o ring.pgp
+when I run sq keyring filter --name Alice --name Bob ring.pgp -o filtered.pgp
+when I run sq inspect filtered.pgp
+then stdout contains "Alice"
+then stdout contains "Bob"
+~~~
+
+### We can filter for a domain
+
+_Requirement: we can extract only keys and certificates with a name as
+part of a user ids._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid 'Alice <alice@example.com>' --export alice.pgp
+when I run sq key generate --userid 'Bob <bob@sequoia-pgp.org>' --export bob.pgp
+when I run sq keyring join alice.pgp bob.pgp -o ring.pgp
+when I run sq keyring filter --domain example.com ring.pgp -o filtered.pgp
+when I run sq inspect filtered.pgp
+then stdout contains "Alice"
+then stdout doesn't contain "Bob"
+~~~
+
+### We can filter for several domains
+
+_Requirement: we can extract only keys and certificates with any of
+several names as part of the user id._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid 'Alice <alice@example.com>' --export alice.pgp
+when I run sq key generate --userid 'Bob <bob@sequoia-pgp.org>' --export bob.pgp
+when I run sq keyring join alice.pgp bob.pgp -o ring.pgp
+when I run sq keyring filter --domain example.com --domain sequoia-pgp.org ring.pgp -o filtered.pgp
+when I run sq inspect filtered.pgp
+then stdout contains "Alice"
+then stdout contains "Bob"
+~~~
+
 ## Listing contents of a keyring: `sq keyring list`
 
 The scenarios in this section verify the contents of a keyring can be listed.
