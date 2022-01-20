@@ -12,6 +12,7 @@ use openpgp::Result;
 use openpgp::cert::prelude::*;
 use openpgp::parse::Parse;
 use openpgp::Packet;
+use openpgp::packet::Key;
 use openpgp::packet::UserID;
 use openpgp::PacketPile;
 use openpgp::policy::StandardPolicy;
@@ -29,12 +30,32 @@ mod integration {
 
     const ALICE: &str = "<alice@example.org>";
 
-    // USERIDS is a vector of User IDs.  If it is empty, then a
-    // default User ID will be used and the *certificate* will be
-    // revoked.  If it contains at least one entry, then each entry
+    #[derive(PartialEq, Eq)]
+    enum Subcommand {
+        Certificate,
+        UserID(Vec<String>),
+        Subkey,
+    }
+
+    impl Subcommand {
+        fn userids(&self) -> &[String] {
+            if let Subcommand::UserID(ref userids) = self {
+                assert!(userids.len() > 0);
+                userids
+            } else {
+                &[]
+            }
+        }
+    }
+
+    // If subkey is not None, then a subkey will be revoked.
+    //
+    // Otherwise, USERIDS is a vector of User IDs.  If it is empty,
+    // then a default User ID will be used and the *certificate* will
+    // be revoked.  If it contains at least one entry, then each entry
     // will be added as a User ID, and the last User ID will be
     // revoked.
-    fn t(mut userids: Vec<&str>,
+    fn t(subcommand: &Subcommand,
          reason: ReasonForRevocation,
          reason_message: &str,
          stdin: bool,
@@ -50,6 +71,7 @@ mod integration {
 
         let gen = |userids: &[&str]| {
             let mut builder = CertBuilder::new()
+                .add_signing_subkey()
                 .set_creation_time(
                     time.map(|t| (t - Duration::hours(1)).into()));
             for &u in userids {
@@ -58,12 +80,14 @@ mod integration {
             builder.generate().map(|(key, _rev)| key)
         };
 
-        let userid = if userids.len() == 0 {
-            userids = vec![ ALICE ];
-            None
-        } else {
-            Some(userids[userids.len() - 1])
-        };
+        let mut userid: Option<&str> = None;
+        let mut userids: Vec<&str> = vec![ ALICE ];
+
+        if let Subcommand::UserID(_) = subcommand {
+            userids = subcommand.userids().iter()
+                .map(|u| u.as_str()).collect();
+            userid = userids.last().map(|u| *u)
+        }
 
         // We're going to revoke alice's certificate or a User ID.  If
         // we're doing it via a third-party revocation, then bob is
@@ -81,6 +105,8 @@ mod integration {
             alice.as_tsk().serialize(&mut revoker)?;
         }
 
+        let subkey: Key<_, _> = alice.with_policy(P, None).unwrap()
+            .keys().subkeys().nth(0).unwrap().key().clone();
 
         // Build up the command line.
         let mut cmd = Command::cargo_bin("sq")?;
@@ -96,8 +122,16 @@ mod integration {
                 reason_message
             ]);
         } else {
+            match subcommand {
+                Subcommand::Certificate => {
+                    cmd.arg("certificate");
+                }
+                Subcommand::Subkey => {
+                    cmd.args(&["subkey", &subkey.fingerprint().to_string()]);
+                }
+                Subcommand::UserID(_) => unreachable!(),
+            }
             cmd.args([
-                "certificate",
                 match reason {
                     ReasonForRevocation::KeyCompromised => "compromised",
                     ReasonForRevocation::KeyRetired => "retired",
@@ -203,7 +237,6 @@ mod integration {
                       String::from_utf8_lossy(&assertion.get_output().stdout));
         }
 
-        // Get the revocation certificate.
         {
             let vc = alice.with_policy(P, time.map(Into::into)).unwrap();
             assert!(matches!(vc.revocation_status(),
@@ -224,84 +257,8 @@ mod integration {
             }
         }
 
-        let sig = if third_party || userid.is_some() {
-            // We should get a certificate stub.
-            let result = Cert::from_bytes(&*stdout)?;
-
-            let vc = result.with_policy(P, time.map(Into::into))?;
-
-            // Make sure the certificate stub only contains the
-            // revoked User ID (the rest should be striped).
-            assert_eq!(vc.userids().count(), 1);
-
-            // Get the revocation status of the revoked object.
-            let status = if let Some(userid) = userid {
-                let mut status = None;
-                for u in vc.userids() {
-                    if u.value() == userid.as_bytes() {
-                        status = Some(u.revocation_status());
-                        break;
-                    }
-                }
-                if let Some(status) = status {
-                    status
-                } else {
-                    panic!("Revoked user ID {} not found on revoked certificate",
-                           userid);
-                }
-            } else {
-                vc.revocation_status()
-            };
-
-            // Make sure the revocation status is sane.
-            if third_party {
-                if let RevocationStatus::CouldBe(sigs) = status {
-                    assert_eq!(sigs.len(), 1);
-                    let sig = sigs.into_iter().next().unwrap();
-
-                    // Bob issued the revocation.
-                    assert_eq!(sig.get_issuers().into_iter().next(),
-                               Some(bob.fingerprint().into()));
-
-                    // Verify the revocation.
-                    if let Some(userid) = userid {
-                        sig.clone()
-                            .verify_userid_revocation(
-                                &bob.primary_key(),
-                                &alice.primary_key(),
-                                &UserID::from(userid))
-                            .context("revocation is not valid")?;
-                    } else {
-                        sig.clone()
-                            .verify_primary_key_revocation(
-                                &bob.primary_key(),
-                                &alice.primary_key())
-                            .context("revocation is not valid")?;
-                    }
-
-                    sig.clone()
-                } else {
-                    panic!("Unexpected revocation status: {:?}", status);
-                }
-            } else {
-                assert!(userid.is_some());
-                if let RevocationStatus::Revoked(sigs) = status {
-                    assert_eq!(sigs.len(), 1);
-                    let sig = sigs.into_iter().next().unwrap();
-
-                    // Alice issued the revocation.
-                    assert_eq!(sig.get_issuers().into_iter().next(),
-                               Some(alice.fingerprint().into()));
-
-                    // Since it is a self-siganture, sig has already
-                    // been validated.
-
-                    sig.clone()
-                } else {
-                    panic!("Unexpected revocation status: {:?}", status);
-                }
-            }
-        } else {
+        // Get the revocation certificate.
+        let sig = if ! third_party && subcommand == &Subcommand::Certificate {
             // We should get just a single signature packet.
             let pp = PacketPile::from_bytes(&*stdout)?;
 
@@ -325,13 +282,120 @@ mod integration {
             } else {
                 panic!("Expected a signature, got: {:?}", pp);
             }
+        } else {
+            // We should get a certificate stub.
+            let result = Cert::from_bytes(&*stdout)?;
+
+            let vc = result.with_policy(P, time.map(Into::into))?;
+
+            // Make sure the certificate stub only contains the
+            // revoked User ID (the rest should be striped).
+            assert_eq!(vc.userids().count(), 1);
+
+            // Get the revocation status of the revoked object.
+            let status = match subcommand {
+                Subcommand::Certificate => vc.revocation_status(),
+                Subcommand::Subkey => {
+                    let mut status = None;
+                    for k in vc.keys() {
+                        if k.fingerprint() == subkey.fingerprint() {
+                            status = Some(k.revocation_status());
+                            break;
+                        }
+                    }
+                    if let Some(status) = status {
+                        status
+                    } else {
+                        panic!("Revoked subkey {} not found on certificate",
+                               subkey.fingerprint());
+                    }
+                }
+                Subcommand::UserID(_) => {
+                    let userid = userid.unwrap();
+                    let mut status = None;
+                    for u in vc.userids() {
+                        if u.value() == userid.as_bytes() {
+                            status = Some(u.revocation_status());
+                            break;
+                        }
+                    }
+                    if let Some(status) = status {
+                        status
+                    } else {
+                        panic!("Revoked user ID {} not found on certificate",
+                               userid);
+                    }
+                }
+            };
+
+            // Make sure the revocation status is sane.
+            if third_party {
+                if let RevocationStatus::CouldBe(sigs) = status {
+                    assert_eq!(sigs.len(), 1);
+                    let sig = sigs.into_iter().next().unwrap();
+
+                    // Bob issued the revocation.
+                    assert_eq!(sig.get_issuers().into_iter().next(),
+                               Some(bob.fingerprint().into()));
+
+                    // Verify the revocation.
+                    match subcommand {
+                        Subcommand::Certificate => {
+                            sig.clone()
+                                .verify_primary_key_revocation(
+                                    &bob.primary_key(),
+                                    &alice.primary_key())
+                                .context("revocation is not valid")?;
+                        }
+                        Subcommand::Subkey => {
+                            sig.clone()
+                                .verify_subkey_revocation(
+                                    &bob.primary_key(),
+                                    &alice.primary_key(),
+                                    &subkey)
+                                .context("revocation is not valid")?;
+                        }
+                        Subcommand::UserID(_) => {
+                            sig.clone()
+                                .verify_userid_revocation(
+                                    &bob.primary_key(),
+                                    &alice.primary_key(),
+                                    &UserID::from(userid.unwrap()))
+                                .context("revocation is not valid")?;
+                        }
+                    }
+
+                    sig.clone()
+                } else {
+                    panic!("Unexpected revocation status: {:?}", status);
+                }
+            } else {
+                if let RevocationStatus::Revoked(sigs) = status {
+                    assert_eq!(sigs.len(), 1);
+                    let sig = sigs.into_iter().next().unwrap();
+
+                    // Alice issued the revocation.
+                    assert_eq!(sig.get_issuers().into_iter().next(),
+                               Some(alice.fingerprint().into()));
+
+                    // Since it is a self-siganture, sig has already
+                    // been validated.
+
+                    sig.clone()
+                } else {
+                    panic!("Unexpected revocation status: {:?}", status);
+                }
+            }
         };
 
         // Revocation reason.
-        if userid.is_some() {
-            assert_eq!(sig.typ(), SignatureType::CertificationRevocation);
-        } else {
-            assert_eq!(sig.typ(), SignatureType::KeyRevocation);
+        match subcommand {
+            Subcommand::Certificate =>
+                assert_eq!(sig.typ(), SignatureType::KeyRevocation),
+            Subcommand::Subkey =>
+                assert_eq!(sig.typ(), SignatureType::SubkeyRevocation),
+            Subcommand::UserID(_) =>
+                assert_eq!(sig.typ(), SignatureType::CertificationRevocation),
         }
         assert_eq!(sig.reason_for_revocation(),
                    Some((reason, reason_message.as_bytes())));
@@ -358,7 +422,7 @@ mod integration {
         Ok(())
     }
 
-    fn dispatch(userid: Vec<&str>,
+    fn dispatch(subcommand: Subcommand,
                 reasons: &[ReasonForRevocation],
                 msgs: &[&str],
                 stdin: &[bool],
@@ -381,7 +445,7 @@ mod integration {
                                            message: {:?}",
                                           third_party, time, stdin, notations,
                                           reason, msg);
-                                t(userid.clone(),
+                                t(&subcommand,
                                   *reason, *msg,
                                   *stdin, *third_party, *notations,
                                   *time)?;
@@ -421,7 +485,7 @@ mod integration {
         let now = Utc::now();
 
         dispatch(
-            vec![],
+            Subcommand::Certificate,
             CERT_REASONS,
             MSGS,
             // stdin
@@ -442,7 +506,7 @@ mod integration {
         let now = Utc::now();
 
         dispatch(
-            vec![],
+            Subcommand::Certificate,
             CERT_REASONS,
             MSGS,
             // stdin
@@ -463,7 +527,7 @@ mod integration {
         let now = Utc::now();
 
         dispatch(
-            vec![],
+            Subcommand::Certificate,
             CERT_REASONS,
             MSGS,
             // stdin
@@ -484,7 +548,7 @@ mod integration {
         let now = Utc::now();
 
         dispatch(
-            vec![],
+            Subcommand::Certificate,
             CERT_REASONS,
             MSGS,
             // stdin
@@ -501,7 +565,95 @@ mod integration {
     }
 
 
-    // Certificate revocation tests.
+    // Subkey revocation tests.
+    //
+    // We manually unroll to get some parallelism.  Otherwise, the
+    // tests take way too long.
+    #[test]
+    fn sq_revoke_subkey_stdin() -> Result<()> {
+        let now = Utc::now();
+
+        dispatch(
+            Subcommand::Subkey,
+            CERT_REASONS,
+            MSGS,
+            // stdin
+            &[true],
+            // third_party
+            &[false],
+            NOTATIONS,
+            // time
+            &[
+                None,
+                Some(now),
+                Some(now - Duration::hours(1))
+            ])
+    }
+
+    #[test]
+    fn sq_revoke_subkey() -> Result<()> {
+        let now = Utc::now();
+
+        dispatch(
+            Subcommand::Subkey,
+            CERT_REASONS,
+            MSGS,
+            // stdin
+            &[false],
+            // third_party
+            &[false],
+            NOTATIONS,
+            // time
+            &[
+                None,
+                Some(now),
+                Some(now - Duration::hours(1))
+            ])
+    }
+
+    #[test]
+    fn sq_revoke_subkey_third_party_stdin() -> Result<()> {
+        let now = Utc::now();
+
+        dispatch(
+            Subcommand::Subkey,
+            CERT_REASONS,
+            MSGS,
+            // stdin
+            &[true],
+            // third_party
+            &[true],
+            NOTATIONS,
+            // time
+            &[
+                None,
+                Some(now),
+                Some(now - Duration::hours(1))
+            ])
+    }
+
+    #[test]
+    fn sq_revoke_subkey_third_party() -> Result<()> {
+        let now = Utc::now();
+
+        dispatch(
+            Subcommand::Subkey,
+            CERT_REASONS,
+            MSGS,
+            // stdin
+            &[false],
+            // third_party
+            &[true],
+            NOTATIONS,
+            // time
+            &[
+                None,
+                Some(now),
+                Some(now - Duration::hours(1))
+            ])
+    }
+
+    // User ID revocation tests.
     //
     // We manually unroll to get some parallelism.  Otherwise, the
     // tests take way too long.
@@ -510,7 +662,7 @@ mod integration {
         let now = Utc::now();
 
         dispatch(
-            vec![ ALICE ],
+            Subcommand::UserID(vec![ ALICE.into() ]),
             USERID_REASONS,
             MSGS,
             // stdin
@@ -531,7 +683,7 @@ mod integration {
         let now = Utc::now();
 
         dispatch(
-            vec![ ALICE ],
+            Subcommand::UserID(vec![ ALICE.into() ]),
             USERID_REASONS,
             MSGS,
             // stdin
@@ -552,7 +704,7 @@ mod integration {
         let now = Utc::now();
 
         dispatch(
-            vec![ ALICE ],
+            Subcommand::UserID(vec![ ALICE.into() ]),
             USERID_REASONS,
             MSGS,
             // stdin
@@ -573,7 +725,7 @@ mod integration {
         let now = Utc::now();
 
         dispatch(
-            vec![ ALICE ],
+            Subcommand::UserID(vec![ ALICE.into() ]),
             USERID_REASONS,
             MSGS,
             // stdin
@@ -595,11 +747,11 @@ mod integration {
         let now = Utc::now();
 
         dispatch(
-            vec![
-                "<alice@example.org",
-                "<alice@some.org>",
-                "<alice@other.org>",
-            ],
+            Subcommand::UserID(vec![
+                "<alice@example.org".into(),
+                "<alice@some.org>".into(),
+                "<alice@other.org>".into(),
+            ]),
             USERID_REASONS,
             MSGS,
             // stdin
@@ -614,5 +766,4 @@ mod integration {
                 Some(now - Duration::hours(1))
             ])
     }
-
 }
