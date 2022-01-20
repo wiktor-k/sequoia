@@ -50,6 +50,13 @@ fn generate(config: Config, m: &ArgMatches) -> Result<()> {
         }
     }
 
+    // Creation time.
+    if let Some(t) = m.value_of("creation-time") {
+        builder = builder.set_creation_time(SystemTime::from(
+            crate::parse_iso8601(t, chrono::NaiveTime::from_hms(0, 0, 0))
+                .context(format!("Parsing --creation-time {}", t))?));
+    };
+
     // Expiration.
     match (m.value_of("expires"), m.value_of("expires-in")) {
         (None, None) => // Default expiration.

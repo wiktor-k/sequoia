@@ -538,6 +538,22 @@ $ sq key generate --userid \"<juliet@example.org>\" --userid \"Juliet Capulet\"
                              .long("with-password")
                              .help("Protects the key with a password"))
 
+                        .arg(Arg::with_name("creation-time")
+                             .long("creation-time").value_name("CREATION_TIME")
+                             .help("Sets the key's creation time to TIME (as ISO 8601)")
+                             .long_help("\
+Sets the key's creation time to TIME.  TIME is interpreted as an ISO 8601
+timestamp.  To set the creation time to June 9, 2011 at midnight UTC,
+you can do:
+
+$ sq key generate --creation-time 20110609 --export noam.pgp
+
+To include a time, add a T, the time and optionally the timezone (the
+default timezone is UTC):
+
+$ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
+"))
+
                         .group(ArgGroup::with_name("expiration-group")
                                .args(&["expires", "expires-in"]))
 

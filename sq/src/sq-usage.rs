@@ -416,6 +416,21 @@
 //!     -c, --cipher-suite <CIPHER-SUITE>
 //!             Selects the cryptographic algorithms for the key [default: cv25519]
 //!             [possible values: rsa3k, rsa4k, cv25519]
+//!         --creation-time <CREATION_TIME>
+//!             Sets the key's creation time to TIME.  TIME is interpreted as an ISO
+//!             8601
+//!             timestamp.  To set the creation time to June 9, 2011 at midnight
+//!             UTC,
+//!             you can do:
+//! 
+//!             $ sq key generate --creation-time 20110609 --export noam.pgp
+//! 
+//!             To include a time, add a T, the time and optionally the timezone
+//!             (the
+//!             default timezone is UTC):
+//! 
+//!             $ sq key generate --creation-time 20110609T1938+0200 --export
+//!             noam.pgp
 //!         --expires <TIME>
 //!             Makes the key expire at TIME (as ISO 8601). Use "never" to create
 //!             keys that do not expire.
