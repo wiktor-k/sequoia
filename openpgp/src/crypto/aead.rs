@@ -573,8 +573,6 @@ impl<W: io::Write> Encryptor<W> {
                 format!("Invalid AEAD chunk size: {}", chunk_size)).into());
         }
 
-        let mut scratch = Vec::with_capacity(chunk_size);
-        unsafe { scratch.set_len(chunk_size); }
 
         Ok(Encryptor {
             inner: Some(sink),
@@ -596,7 +594,7 @@ impl<W: io::Write> Encryptor<W> {
             chunk_index: 0,
             bytes_encrypted: 0,
             buffer: Vec::with_capacity(chunk_size),
-            scratch,
+            scratch: vec![0; chunk_size],
         })
     }
 
