@@ -94,6 +94,7 @@ On a Debian system, that means the following packages:
 
 [Subplot]: https://subplot.liw.fi/
 
+
 # Smoke test
 
 _Requirement: We must be able to invoke `sq` at all._
@@ -137,9 +138,9 @@ care of that. Here we merely verify that the new key looks OK.
 
 ~~~scenario
 given an installed sq
-when I run sq key generate --userid Tomjon --export tomjon.pgp
-when I run sq inspect tomjon.pgp
-then stdout contains "Tomjon"
+when I run sq key generate --userid Alice --export key.pgp
+when I run sq inspect key.pgp
+then stdout contains "Alice"
 then stdout contains "Expiration time: 20"
 then stdout contains "Key flags: certification"
 then stdout contains "Key flags: signing"
@@ -180,7 +181,7 @@ Note that `sq` always creates a key usable for certification.
 
 ~~~scenario
 given an installed sq
-when I run sq key generate --cannot-sign --export key.pgp
+when I run sq key generate --export key.pgp --cannot-sign
 when I run sq inspect key.pgp
 then stdout contains "Key flags: certification"
 then stdout doesn't contain "Key flags: signing"
@@ -194,7 +195,7 @@ for at-rest (storage) encryption._
 
 ~~~scenario
 given an installed sq
-when I run sq key generate --can-encrypt=storage --export key.pgp
+when I run sq key generate --export key.pgp --can-encrypt=storage
 when I run sq inspect key.pgp
 then stdout contains "Key flags: certification"
 then stdout doesn't contain "transport encryption"
@@ -208,7 +209,7 @@ for transport encryption._
 
 ~~~scenario
 given an installed sq
-when I run sq key generate --can-encrypt=transport --export key.pgp
+when I run sq key generate --export key.pgp --can-encrypt=transport
 when I run sq inspect key.pgp
 then stdout contains "Key flags: certification"
 then stdout contains "Key flags: transport encryption"
@@ -222,7 +223,7 @@ for signing, and can't be used for encryption._
 
 ~~~scenario
 given an installed sq
-when I run sq key generate --cannot-encrypt --export key.pgp
+when I run sq key generate --export key.pgp --cannot-encrypt
 when I run sq inspect key.pgp
 then stdout contains "Key flags: certification"
 then stdout contains "Key flags: signing"
@@ -238,7 +239,7 @@ the default ever changes.
 
 ~~~scenario
 given an installed sq
-when I run sq key generate --cipher-suite=cv25519 --export key.pgp
+when I run sq key generate --export key.pgp --cipher-suite=cv25519
 when I run sq inspect key.pgp
 then stdout contains "Public-key algo: EdDSA Edwards-curve Digital Signature Algorithm"
 then stdout contains "Public-key size: 256 bits"
@@ -250,7 +251,7 @@ _Requirement: We must be able to generate a 3072-bit RSA key._
 
 ~~~scenario
 given an installed sq
-when I run sq key generate --cipher-suite=rsa3k --export key.pgp
+when I run sq key generate --export key.pgp --cipher-suite=rsa3k
 when I run sq inspect key.pgp
 then stdout contains "Public-key algo: RSA"
 then stdout contains "Public-key size: 3072 bits"
@@ -262,7 +263,7 @@ _Requirement: We must be able to generate a 4096-bit RSA key._
 
 ~~~scenario
 given an installed sq
-when I run sq key generate --cipher-suite=rsa4k --export key.pgp
+when I run sq key generate --export key.pgp --cipher-suite=rsa4k
 when I run sq inspect key.pgp
 then stdout contains "Public-key algo: RSA"
 then stdout contains "Public-key size: 4096 bits"
@@ -314,7 +315,7 @@ inspect output is the last second of validity.
 
 ~~~scenario
 given an installed sq
-when I run sq key generate --expires=2038-01-19T03:14:07+00:00 --export key.pgp
+when I run sq key generate --export key.pgp --expires=2038-01-19T03:14:07+00:00
 when I run sq inspect key.pgp
 then stdout contains "Expiration time: 2038-01-19 03:14:06 UTC"
 ~~~
@@ -326,7 +327,7 @@ given time._
 
 ~~~scenario
 given an installed sq
-when I run sq key generate --expires-in=1y --export key.pgp
+when I run sq key generate --export key.pgp --expires-in=1y
 when I run sq inspect key.pgp
 then stdout contains "Expiration time: 20"
 ~~~
@@ -359,6 +360,7 @@ when I run sq key generate --export key.pgp --with-password
 when I run sq inspect key.pgp
 then stdout contains "Secret key: Encrypted"
 ~~~
+
 
 ## Certificate extraction: `sq key extract-cert`
 
@@ -517,11 +519,13 @@ then stdout contains "Alice"
 then stdout contains "Bob"
 ~~~
 
+
 ## Filter a keyring: `sq keyring filter`
 
 The scenarios in this section verify that various ways of filtering
 the contents of a keyring work: the `sq keyring filter` subcommand
 variants.
+
 
 ### We can extract only certificates to named file
 
@@ -679,6 +683,7 @@ then stdout contains "Alice"
 then stdout contains "Bob"
 ~~~
 
+
 ## Listing contents of a keyring: `sq keyring list`
 
 The scenarios in this section verify the contents of a keyring can be listed.
@@ -727,6 +732,7 @@ _Requirement: we can list keys in a keyring that we read from stdin._
 
 This isn't implemented yet, because Subplot needs to add support for
 redirecting stdin to come from a file first.
+
 
 
 ## Split a keyring: `sq keyring split`
@@ -837,6 +843,98 @@ then files hello.txt and bob.txt match
 ~~~
 
 
+## Encrypt and sign at the same time
+
+_Requirement: We must be able to sign and encrypt a message at the
+same time._
+
+~~~scenario
+given an installed sq
+given file hello.txt
+when I run sq key generate --export alice.pgp
+when I run sq key extract-cert -o alice-cert.pgp alice.pgp
+
+when I run sq encrypt --recipient-cert alice-cert.pgp --signer-key alice.pgp hello.txt -o x.pgp
+
+when I run sq decrypt --recipient-key alice.pgp -o alice.txt x.pgp --signer-cert alice-cert.pgp
+then files hello.txt and alice.txt match
+~~~
+
+
+## Detect bad signature when decrypting
+
+_Requirement: When decrypting a message, if a signature check fails,
+there should be output._
+
+~~~scenario
+given an installed sq
+given file hello.txt
+given file empty
+when I run sq key generate --export alice.pgp
+when I run sq key extract-cert -o alice-cert.pgp alice.pgp
+when I run sq key generate --export bob.pgp
+when I run sq key extract-cert -o bob-cert.pgp bob.pgp
+
+when I run sq encrypt --recipient-cert alice-cert.pgp --signer-key alice.pgp hello.txt -o x.pgp
+
+when I try to run sq decrypt --recipient-key alice.pgp -o alice.txt x.pgp --signer-cert bob-cert.pgp
+then exit code is 1
+then files alice.txt and empty match
+~~~
+
+
+
+
+# Certify user identities: `sq certify`
+
+The scenarios in this chapter verify the certification functionality:
+the subcommand `sq certify` in its various variations.
+
+## Certify an identity as ASCII armor
+
+_Requirement: We can certify a user identity on a key._
+
+~~~scenario
+given an installed sq
+given file hello.txt
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key extract-cert alice.pgp -o alice-cert.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq key extract-cert bob.pgp -o bob-cert.pgp
+
+when I run sq inspect bob-cert.pgp
+then stdout doesn't contain "Certifications:"
+
+when I run sq certify alice.pgp bob-cert.pgp Bob -o cert.pgp
+then file cert.pgp contains "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+then file cert.pgp contains "-----END PGP PUBLIC KEY BLOCK-----"
+when I run sq inspect cert.pgp
+then stdout contains "Certifications: 1,"
+~~~
+
+## Certify an identity as binary
+
+_Requirement: We can certify a user identity on a key._
+
+~~~scenario
+given an installed sq
+given file hello.txt
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key extract-cert alice.pgp -o alice-cert.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq key extract-cert bob.pgp -o bob-cert.pgp
+
+when I run sq inspect bob-cert.pgp
+then stdout doesn't contain "Certifications:"
+
+when I run sq certify alice.pgp bob-cert.pgp Bob -o cert.pgp --binary
+when I run cat cert.pgp
+then stdout doesn't contain "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+when I run sq inspect cert.pgp
+then stdout contains "Certifications: 1,"
+~~~
+
+
 # Sign a document and verify the signature: `sq sign` and `sq verify`
 
 This chapter verifies that digital signatures work in `sq`. Like with
@@ -897,6 +995,34 @@ when I run sq key generate --export key.pgp
 when I run sq key extract-cert key.pgp -o cert.pgp
 when I run sq sign --signer-key key.pgp hello.txt -o signed.txt
 when I run sq verify --signer-cert cert.pgp signed.txt
+then stdout contains "hello, world"
+~~~
+
+## File is signed with all required keys
+
+_Requirement: We can verify that a file is signed by all required
+keys._
+
+We verify this by signing a file twice, and verifying there are two
+signatures. We also verify that if there is only one signature, it's
+not enough, when we need two.
+
+~~~scenario
+given an installed sq
+given file hello.txt
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key extract-cert alice.pgp -o alice-cert.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq key extract-cert bob.pgp -o bob-cert.pgp
+
+when I run sq sign --signer-key alice.pgp hello.txt -o signed1.txt
+when I try to run sq verify --signer-cert alice-cert.pgp --signer-key bob-cert.pgp --signatures=2 signed1.txt
+then exit code is 1
+
+when I run sq sign --append --signer-key bob.pgp signed1.txt -o signed2.txt
+when I run sq verify --signer-cert alice-cert.pgp --signer-cert bob-cert.pgp --signatures=1 signed2.txt
+then stdout contains "hello, world"
+when I run sq verify --signer-cert alice-cert.pgp --signer-cert bob-cert.pgp --signatures=2 signed2.txt
 then stdout contains "hello, world"
 ~~~
 
@@ -996,6 +1122,71 @@ then exit code is 1
 ~~~
 
 
+## Append signature to already signed message
+
+_Requirement: We must be able to add a signature to an already signed
+message._
+
+~~~scenario
+given an installed sq
+given file hello.txt
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key extract-cert alice.pgp -o alice-cert.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq key extract-cert bob.pgp -o bob-cert.pgp
+
+when I run sq sign --signer-key alice.pgp hello.txt -o signed1.txt
+when I run sq sign --signer-key bob.pgp --append signed1.txt -o signed2.txt
+when I run sq verify signed2.txt --signer-cert alice-cert.pgp --signer-cert bob-cert.pgp
+then stdout contains "hello, world"
+then stderr contains "2 good signatures"
+~~~
+
+## Merge signed files
+
+_Requirement: We must be able to merge signatures of a file signed
+twice separately._
+
+~~~scenario
+given an installed sq
+given file hello.txt
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key extract-cert alice.pgp -o alice-cert.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq key extract-cert bob.pgp -o bob-cert.pgp
+
+when I run sq sign --signer-key alice.pgp hello.txt -o signed1.txt
+when I run sq sign --signer-key bob.pgp hello.txt -o signed2.txt
+when I run sq sign --merge=signed2.txt signed1.txt -o merged.txt
+when I run sq verify merged.txt --signer-cert alice-cert.pgp --signer-cert bob-cert.pgp
+then stdout contains "hello, world"
+then stderr contains "2 good signatures"
+~~~
+
+## Notarize signatures
+
+_Requirement: We must be able to sign a message and all its
+signatures, as if as a notary._
+
+~~~scenario
+given an installed sq
+given file hello.txt
+when I run sq key generate --userid Alice --export alice.pgp
+when I run sq key extract-cert alice.pgp -o alice-cert.pgp
+when I run sq key generate --userid Bob --export bob.pgp
+when I run sq key extract-cert bob.pgp -o bob-cert.pgp
+
+when I run sq sign --signer-key alice.pgp hello.txt -o signed.txt
+when I run sq sign --signer-key bob.pgp --notarize signed.txt -o notarized.txt
+when I run sq verify notarized.txt --signer-cert alice-cert.pgp --signer-cert bob-cert.pgp
+then stdout contains "hello, world"
+then stderr contains "Good level 1 notarization from"
+then stderr contains "2 good signatures"
+~~~
+
+
+
+
 # ASCII Armor data representation: `sq armor` and `sq dearmor`
 
 The scenarios in this chapter verify that `sq` can convert data into
@@ -1089,6 +1280,7 @@ then files hello.txt and hello.out match
 ~~~
 
 
+
 # Test data file
 
 We use this file as an input file in the tests. It is a very short
@@ -1107,4 +1299,9 @@ This is the same content, but in ASCII armored representation.
 aGVsbG8sIHdvcmxkCg==
 =FOuc
 -----END PGP ARMORED FILE-----
+~~~
+
+This is an empty file.
+
+~~~{#empty .file add-newline=no}
 ~~~
