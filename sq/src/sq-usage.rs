@@ -1006,6 +1006,20 @@
 //!             all intermediate introducers, and the certified certificate.
 //!             Multiple regular expressions may be specified.  In that case, at
 //!             least one must match.
+//!         --time <TIME>
+//!             Sets the certification time to TIME.  TIME is interpreted as an ISO
+//!             8601
+//!             timestamp.  To set the certification time to June 9, 2011 at
+//!             midnight UTC,
+//!             you can do:
+//! 
+//!             $ sq certify --time 20130721 neal.pgp ada.pgp ada
+//! 
+//!             To include a time, add a T, the time and optionally the timezone
+//!             (the
+//!             default timezone is UTC):
+//! 
+//!             $ sq certify --time 20130721T0550+0200 neal.pgp ada.pgp ada
 //!
 //! ARGS:
 //!     <CERTIFIER-KEY>

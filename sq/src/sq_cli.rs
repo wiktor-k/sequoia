@@ -1041,6 +1041,21 @@ $ sq certify juliet.pgp romeo.pgp \"<romeo@example.org>\"
                     .arg(Arg::with_name("binary")
                          .short("B").long("binary")
                          .help("Emits binary data"))
+                    .arg(Arg::with_name("time")
+                         .long("time").value_name("TIME")
+                         .help("Sets the certification time to TIME (as ISO 8601)")
+                         .long_help("\
+Sets the certification time to TIME.  TIME is interpreted as an ISO 8601
+timestamp.  To set the certification time to June 9, 2011 at midnight UTC,
+you can do:
+
+$ sq certify --time 20130721 neal.pgp ada.pgp ada
+
+To include a time, add a T, the time and optionally the timezone (the
+default timezone is UTC):
+
+$ sq certify --time 20130721T0550+0200 neal.pgp ada.pgp ada
+"))
                     .arg(Arg::with_name("depth")
                          .short("d").long("depth").value_name("TRUST_DEPTH")
                          .help("Sets the trust depth")

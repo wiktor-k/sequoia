@@ -1,5 +1,7 @@
 use std::time::{SystemTime, Duration};
 
+use anyhow::Context;
+
 use sequoia_openpgp as openpgp;
 use openpgp::Result;
 use openpgp::cert::prelude::*;
@@ -24,7 +26,6 @@ pub fn certify(config: Config, m: &clap::ArgMatches)
     let certifier = Cert::from_file(certifier)?;
     let private_key_store = m.value_of("private-key-store");
     let cert = Cert::from_file(cert)?;
-    let vc = cert.with_policy(&config.policy, None)?;
 
     let trust_depth: u8 = m.value_of("depth")
         .map(|s| s.parse()).unwrap_or(Ok(0))?;
@@ -40,9 +41,20 @@ pub fn certify(config: Config, m: &clap::ArgMatches)
 
     let local = m.is_present("local");
     let non_revocable = m.is_present("non-revocable");
+
+    let time = if let Some(t) = m.value_of("time") {
+        let time = SystemTime::from(
+            crate::parse_iso8601(t, chrono::NaiveTime::from_hms(0, 0, 0))
+                .context(format!("Parsing --time {}", t))?);
+        Some(time)
+    } else {
+        None
+    };
+
     let expires = m.value_of("expires");
     let expires_in = m.value_of("expires-in");
 
+    let vc = cert.with_policy(&config.policy, time)?;
 
     // Find the matching User ID.
     let mut u = None;
@@ -90,6 +102,11 @@ pub fn certify(config: Config, m: &clap::ArgMatches)
 
     if non_revocable {
         builder = builder.set_revocable(false)?;
+    }
+
+    // Creation time.
+    if let Some(time) = time {
+        builder = builder.set_signature_creation_time(time)?;
     }
 
     match (expires, expires_in) {
@@ -145,7 +162,7 @@ pub fn certify(config: Config, m: &clap::ArgMatches)
     let signers = get_certification_keys(
         &[certifier], &config.policy,
         private_key_store,
-        None)?;
+        time)?;
     assert_eq!(signers.len(), 1);
     let mut signer = signers.into_iter().next().unwrap();
 

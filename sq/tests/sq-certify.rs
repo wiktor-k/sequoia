@@ -1,17 +1,22 @@
 use std::fs::File;
+use std::time;
 use std::time::Duration;
 
 use assert_cli::Assert;
+use assert_cmd::Command;
 use tempfile::TempDir;
 
 use sequoia_openpgp as openpgp;
 use openpgp::Result;
 use openpgp::cert::prelude::*;
+use openpgp::KeyHandle;
 use openpgp::packet::signature::subpacket::NotationData;
 use openpgp::packet::signature::subpacket::NotationDataFlags;
 use openpgp::parse::Parse;
 use openpgp::policy::StandardPolicy;
 use openpgp::serialize::Serialize;
+
+const P: &StandardPolicy = &StandardPolicy::new();
 
 #[test]
 fn sq_certify() -> Result<()> {
@@ -41,10 +46,8 @@ fn sq_certify() -> Result<()> {
               "bob@example.org",
             ])
         .stdout().satisfies(|output| {
-            let p = &StandardPolicy::new();
-
             let cert = Cert::from_bytes(output).unwrap();
-            let vc = cert.with_policy(p, None).unwrap();
+            let vc = cert.with_policy(P, None).unwrap();
 
             for ua in vc.userids() {
                 if ua.userid().value() == b"bob@example.org" {
@@ -79,10 +82,8 @@ fn sq_certify() -> Result<()> {
               "--expires", "never"
             ])
         .stdout().satisfies(|output| {
-            let p = &StandardPolicy::new();
-
             let cert = Cert::from_bytes(output).unwrap();
-            let vc = cert.with_policy(p, None).unwrap();
+            let vc = cert.with_policy(P, None).unwrap();
 
             for ua in vc.userids() {
                 if ua.userid().value() == b"bob@example.org" {
@@ -122,10 +123,8 @@ fn sq_certify() -> Result<()> {
               "--expires-in", "1d",
             ])
         .stdout().satisfies(|output| {
-            let p = &StandardPolicy::new();
-
             let cert = Cert::from_bytes(output).unwrap();
-            let vc = cert.with_policy(p, None).unwrap();
+            let vc = cert.with_policy(P, None).unwrap();
 
             for ua in vc.userids() {
                 if ua.userid().value() == b"bob@example.org" {
@@ -174,16 +173,15 @@ fn sq_certify() -> Result<()> {
               "bob@example.org",
             ])
         .stdout().satisfies(|output| {
-            let p = &mut StandardPolicy::new();
-
             let cert = Cert::from_bytes(output).unwrap();
 
             // The standard policy will reject the
             // certification, because it has an unknown
             // critical notation.
-            let vc = cert.with_policy(p, None).unwrap();
+            let vc = cert.with_policy(P, None).unwrap();
             for ua in vc.userids() {
                 if ua.userid().value() == b"bob@example.org" {
+                    assert_eq!(ua.bundle().certifications().len(), 1);
                     let certifications: Vec<_>
                         = ua.certifications().collect();
                     assert_eq!(certifications.len(), 0);
@@ -191,11 +189,15 @@ fn sq_certify() -> Result<()> {
             }
 
             // Accept the critical notation.
+            let p = &mut StandardPolicy::new();
             p.good_critical_notations(&["foo"]);
             let vc = cert.with_policy(p, None).unwrap();
 
             for ua in vc.userids() {
                 if ua.userid().value() == b"bob@example.org" {
+                    // There should be a single signature.
+                    assert_eq!(ua.bundle().certifications().len(), 1);
+
                     let certifications: Vec<_>
                         = ua.certifications().collect();
                     assert_eq!(certifications.len(), 1);
@@ -240,6 +242,84 @@ fn sq_certify() -> Result<()> {
         },
                             "Bad certification")
         .unwrap();
+
+    Ok(())
+}
+
+#[test]
+fn sq_certify_creation_time() -> Result<()>
+{
+    // $ date +'%Y%m%dT%H%M%S%z'; date +'%s'
+    let iso8601 = "20220120T163236+0100";
+    let t = 1642692756;
+    let t = time::UNIX_EPOCH + time::Duration::new(t, 0);
+
+    let dir = TempDir::new()?;
+
+    let gen = |userid: &str| {
+        let builder = CertBuilder::new()
+            .add_signing_subkey()
+            .set_creation_time(t)
+            .add_userid(userid);
+        builder.generate().map(|(key, _rev)| key)
+    };
+
+    // Alice certifies bob's key.
+
+    let alice = "<alice@example.org>";
+    let alice_key = gen(alice)?;
+
+    let alice_pgp = dir.path().join("alice.pgp");
+    {
+        let mut file = File::create(&alice_pgp)?;
+        alice_key.as_tsk().serialize(&mut file)?;
+    }
+
+    let bob = "<bob@other.org>";
+    let bob_key = gen(bob)?;
+
+    let bob_pgp = dir.path().join("bob.pgp");
+    {
+        let mut file = File::create(&bob_pgp)?;
+        bob_key.serialize(&mut file)?;
+    }
+
+    // Build up the command line.
+    let mut cmd = Command::cargo_bin("sq")?;
+    cmd.args(["certify",
+              &alice_pgp.to_string_lossy(),
+              &bob_pgp.to_string_lossy(), bob,
+              "--time", iso8601 ]);
+
+    let assertion = cmd.assert().try_success()?;
+    let stdout = String::from_utf8_lossy(&assertion.get_output().stdout);
+
+    let cert = Cert::from_bytes(&*stdout)?;
+
+    let vc = cert.with_policy(P, t)?;
+
+    assert_eq!(vc.primary_key().creation_time(), t);
+
+    let mut userid = None;
+    for u in vc.userids() {
+        if u.userid().value() == bob.as_bytes() {
+            userid = Some(u);
+            break;
+        }
+    }
+
+    if let Some(userid) = userid {
+        let certifications: Vec<_> = userid.certifications().collect();
+        assert_eq!(certifications.len(), 1);
+        let certification = certifications.into_iter().next().unwrap();
+
+        assert_eq!(certification.get_issuers().into_iter().next(),
+                   Some(KeyHandle::from(alice_key.fingerprint())));
+
+        assert_eq!(certification.signature_creation_time(), Some(t));
+    } else {
+        panic!("missing user id");
+    }
 
     Ok(())
 }
