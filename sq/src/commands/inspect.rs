@@ -1,8 +1,6 @@
 use std::convert::TryFrom;
 use std::io::{self, Read};
 
-
-
 use sequoia_openpgp as openpgp;
 use crate::openpgp::{KeyHandle, Packet, Result};
 use crate::openpgp::cert::prelude::*;
@@ -15,6 +13,9 @@ use crate::openpgp::policy::Policy;
 use crate::openpgp::packet::key::SecretKeyMaterial;
 
 use super::dump::Convert;
+
+use crate::SECONDS_IN_YEAR;
+use crate::SECONDS_IN_DAY;
 
 pub fn inspect(m: &clap::ArgMatches, policy: &dyn Policy, output: &mut dyn io::Write)
                -> Result<()> {
@@ -406,25 +407,92 @@ fn inspect_certifications<'a, A>(output: &mut dyn io::Write,
     if print_certifications {
         let mut emit_warning = false;
         for sig in certs {
+            let time = if let Some(time) = sig.signature_creation_time() {
+                chrono::DateTime::<chrono::offset::Utc>::from(time)
+            } else {
+                // A signature must have a signature creation time
+                // subpacket to be valid.  This signature is not
+                // valid, so skip it.
+                continue;
+            };
+
             emit_warning = true;
+
+            writeln!(output, "  Certification: Creation time: {}", time)?;
+
+            let indent = "                 ";
+
+            if let Some(e) = sig.signature_expiration_time() {
+                let e = chrono::DateTime::<chrono::offset::Utc>::from(e);
+                let diff = e - time;
+                let years = diff.num_seconds() / (SECONDS_IN_YEAR as i64);
+                let rest = diff.num_seconds() - years * (SECONDS_IN_YEAR as i64);
+                let days = rest / (SECONDS_IN_DAY as i64);
+                let rest = rest - days * (SECONDS_IN_DAY as i64);
+
+                writeln!(output, "{}Expiration time: {} (after {}{}{}{}{})",
+                         indent,
+                         e,
+                         match years {
+                             0 => "".into(),
+                             1 => format!("{} year", years),
+                             _ => format!("{} years", years),
+                         },
+                         if years != 0 && days != 0 { ", " } else { "" },
+                         match days {
+                             0 => "".into(),
+                             1 => format!("{} day", days),
+                             _ => format!("{} days", days),
+                         },
+                         if years == 0 && days != 0 && rest != 0 { ", " } else { "" },
+                         if years == 0 {
+                             match rest {
+                                 0 => "".into(),
+                                 1 => format!("{} second", rest),
+                                 _ => format!("{} seconds", rest),
+                             }
+                         } else {
+                             "".into()
+                         })?;
+            }
+
+            if let Some((depth, amount)) = sig.trust_signature() {
+                writeln!(output, "{}Trust depth: {}", indent,
+                         depth)?;
+                writeln!(output, "{}Trust amount: {}", indent,
+                         amount)?;
+            }
+            for re in sig.regular_expressions() {
+                if let Ok(re) = String::from_utf8(re.to_vec()) {
+                    writeln!(output, "{}Regular expression: {:?}", indent,
+                             re)?;
+                } else {
+                    writeln!(output,
+                             "{}Regular expression (invalid UTF-8): {:?}",
+                             indent,
+                             String::from_utf8_lossy(re))?;
+                }
+            }
+
             let mut fps: Vec<_> = sig.issuer_fingerprints().collect();
             fps.sort();
             fps.dedup();
             let fps: Vec<KeyHandle> = fps.into_iter().map(|fp| fp.into()).collect();
             for fp in fps.iter() {
-                writeln!(output, "Alleged certifier: {}", fp)?;
+                writeln!(output, "{}Alleged certifier: {}", indent, fp)?;
             }
             let mut keyids: Vec<_> = sig.issuers().collect();
             keyids.sort();
             keyids.dedup();
             for keyid in keyids {
                 if ! fps.iter().any(|fp| fp.aliases(&keyid.into())) {
-                    writeln!(output, "Alleged certifier: {}", keyid)?;
+                    writeln!(output, "{}Alleged certifier: {}", indent,
+                             keyid)?;
                 }
             }
         }
         if emit_warning {
-            writeln!(output, "             Note: \
+            writeln!(output, "           Note: \
                               Certifications have NOT been verified!")?;
         }
     } else {
