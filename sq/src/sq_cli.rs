@@ -569,11 +569,11 @@ $ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
                              // Catch negative numbers.
                              .allow_hyphen_values(true)
                              .help("Makes the key expire after DURATION \
-                                    (as N[ymwd]) [default: 3y]")
+                                    (as N[ymwds]) [default: 3y]")
                              .long_help(
                                  "Makes the key expire after DURATION. \
-                                  Either \"N[ymwd]\", for N years, months, \
-                                  weeks, or days, or \"never\"."))
+                                  Either \"N[ymwds]\", for N years, months, \
+                                  weeks, days, seconds, or \"never\"."))
 
                         .group(ArgGroup::with_name("cap-sign")
                                .args(&["can-sign", "cannot-sign"]))
@@ -1122,11 +1122,11 @@ $ sq certify juliet.pgp romeo.pgp \"<romeo@example.org>\"
                          // Catch negative numbers.
                          .allow_hyphen_values(true)
                          .help("Makes the certification expire after DURATION \
-                                (as N[ymwd]) [default: 5y]")
+                                (as N[ymwds]) [default: 5y]")
                          .long_help(
                              "Makes the certification expire after DURATION. \
-                              Either \"N[ymwd]\", for N years, months, \
-                              weeks, or days, or \"never\".  [default: 5y]"))
+                              Either \"N[ymwds]\", for N years, months, \
+                              weeks, days, seconds, or \"never\".  [default: 5y]"))
 
                     .arg(Arg::with_name("certifier")
                          .value_name("CERTIFIER-KEY")

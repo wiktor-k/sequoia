@@ -106,16 +106,17 @@ fn parse_duration(expiry: &str) -> Result<Duration> {
         Some('m') | Some('M') => SECONDS_IN_YEAR / 12,
         Some('w') | Some('W') => 7 * SECONDS_IN_DAY,
         Some('d') | Some('D') => SECONDS_IN_DAY,
+        Some('s') | Some('S') => 1,
         None =>
             return Err(anyhow::anyhow!(
                 "--expiry: missing suffix \
-                 (try: '{}y', '{}m', '{}w' or '{}d' instead)",
-                digits, digits, digits, digits)),
+                 (try: '{}y', '{}m', '{}w', '{}d' or '{}s' instead)",
+                digits, digits, digits, digits, digits)),
         Some(suffix) =>
             return Err(anyhow::anyhow!(
                 "--expiry: invalid suffix '{}' \
-                 (try: '{}y', '{}m', '{}w' or '{}d' instead)",
-                suffix, digits, digits, digits, digits)),
+                 (try: '{}y', '{}m', '{}w', '{}d' or '{}s' instead)",
+                suffix, digits, digits, digits, digits, digits)),
     };
 
     if !junk.is_empty() {

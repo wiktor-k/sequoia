@@ -435,8 +435,8 @@
 //!             Makes the key expire at TIME (as ISO 8601). Use "never" to create
 //!             keys that do not expire.
 //!         --expires-in <DURATION>
-//!             Makes the key expire after DURATION. Either "N[ymwd]", for N years,
-//!             months, weeks, or days, or "never".
+//!             Makes the key expire after DURATION. Either "N[ymwds]", for N years,
+//!             months, weeks, days, seconds, or "never".
 //!     -e, --export <OUTFILE>
 //!             Writes the key to OUTFILE
 //!
@@ -984,8 +984,9 @@
 //!             Makes the certification expire at TIME (as ISO 8601). Use "never" to
 //!             create certifications that do not expire.
 //!         --expires-in <DURATION>
-//!             Makes the certification expire after DURATION. Either "N[ymwd]", for
-//!             N years, months, weeks, or days, or "never".  [default: 5y]
+//!             Makes the certification expire after DURATION. Either "N[ymwds]",
+//!             for N years, months, weeks, days, seconds, or "never".  [default:
+//!             5y]
 //!         --notation <NAME> <VALUE>
 //!             Adds a notation to the certification.  A user-defined notation's
 //!             name must be of the form "name@a.domain.you.control.org". If the
