@@ -276,6 +276,26 @@ clippy:
     CARGO_TARGET_DIR: /target
     CARGO_HOME: /cargo
 
+rust-stable-armv7:
+  tags:
+    - linux
+  stage: build
+  image: registry.gitlab.com/sequoia-pgp/build-docker-image/bullseye-cross-arm-prebuild:latest
+  before_script:
+    - *before_script_start
+    - cat .ci/snippet_for_cross_compilation_config.toml >> .cargo/config.toml
+    - rm rust-toolchain
+    - *before_script_end
+  script:
+    - CARGO_PACKAGES="-p buffered-reader -p sequoia-openpgp" $MAKE_TOP test
+  variables:
+    CARGO_TARGET_DIR: /target
+    CARGO_HOME: /cargo
+    CARGO_PACKAGES: -p buffered-reader -p sequoia-openpgp
+    CARGO_FLAGS: --target=armv7-unknown-linux-gnueabihf
+    PKG_CONFIG_PATH: /usr/lib/arm-linux-gnueabihf/pkgconfig
+    PKG_CONFIG_ALLOW_CROSS: 1
+
 rust-stable:arm64:
   tags:
     - docker-arm64
