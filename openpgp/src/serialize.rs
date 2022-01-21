@@ -1807,7 +1807,7 @@ impl<P, R> Marshal for Key4<P, R>
         let have_secret_key = P::significant_secrets() && self.has_secret();
 
         write_byte(o, 4)?; // Version.
-        write_be_u32(o, Timestamp::try_from(self.creation_time())?.into())?;
+        write_be_u32(o, self.creation_time_raw().into())?;
         write_byte(o, self.pk_algo().into())?;
         self.mpis().serialize(o)?;
 

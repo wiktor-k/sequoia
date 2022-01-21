@@ -915,6 +915,35 @@ impl<P, R> Key4<P, R>
     }
 }
 
+impl<P, R> Key4<P, R>
+where
+    P: key::KeyParts,
+    R: key::KeyRole,
+{
+    /// Creates an OpenPGP public key from the specified key material.
+    ///
+    /// This is an internal version for parse.rs that avoids going
+    /// through SystemTime.
+    pub(crate) fn make<T>(creation_time: T,
+                          pk_algo: PublicKeyAlgorithm,
+                          mpis: mpi::PublicKey,
+                          secret: Option<SecretKeyMaterial>)
+                          -> Result<Self>
+    where
+        T: Into<Timestamp>,
+    {
+        Ok(Key4 {
+            common: Default::default(),
+            creation_time: creation_time.into(),
+            pk_algo,
+            mpis,
+            secret,
+            p: std::marker::PhantomData,
+            r: std::marker::PhantomData,
+        })
+    }
+}
+
 impl<R> Key4<key::PublicParts, R>
     where R: key::KeyRole,
 {
@@ -1033,6 +1062,14 @@ impl<P, R> Key4<P, R>
     /// Gets the `Key`'s creation time.
     pub fn creation_time(&self) -> time::SystemTime {
         self.creation_time.into()
+    }
+
+    /// Gets the `Key`'s creation time without converting it to a
+    /// system time.
+    ///
+    /// This conversion may truncate the time to signed 32-bit time_t.
+    pub(crate) fn creation_time_raw(&self) -> Timestamp {
+        self.creation_time
     }
 
     /// Sets the `Key`'s creation time.

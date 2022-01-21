@@ -2010,4 +2010,19 @@ mod test {
             }
         }
     }
+
+    /// Problem on systems with 32-bit time_t.
+    #[test]
+    fn issue_802() -> Result<()> {
+        let pp = crate::PacketPile::from_bytes(b"-----BEGIN PGP ARMORED FILE-----
+
+xiEE/////xIJKyQDAwIIAQENAFYp8M2JngCfc04tIwMBCuU=
+-----END PGP ARMORED FILE-----
+")?;
+        let p = pp.path_ref(&[0]).unwrap();
+        let buf = p.to_vec().expect("Failed to serialize packet");
+        let q = Packet::from_bytes(&buf).unwrap();
+        assert_eq!(p, &q);
+        Ok(())
+    }
 }

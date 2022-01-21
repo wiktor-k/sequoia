@@ -2229,8 +2229,7 @@ impl Key4<key::UnspecifiedParts, key::UnspecifiedRole>
             -> Result<Key4<key::PublicParts, R>>
             where R: key::KeyRole
         {
-            Key4::new(Timestamp::from(creation_time),
-                      pk_algo, mpis)
+            Key4::make(creation_time, pk_algo, mpis, None)
         }
         fn s<R>(creation_time: u32,
                 pk_algo: PublicKeyAlgorithm,
@@ -2239,8 +2238,7 @@ impl Key4<key::UnspecifiedParts, key::UnspecifiedRole>
             -> Result<Key4<key::SecretParts, R>>
             where R: key::KeyRole
         {
-            Key4::with_secret(Timestamp::from(creation_time),
-                              pk_algo, mpis, secret)
+            Key4::make(creation_time, pk_algo, mpis, Some(secret))
         }
 
         let tag = php.header.ctb().tag();
