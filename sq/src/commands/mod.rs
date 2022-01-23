@@ -227,7 +227,6 @@ pub fn cert_stub(cert: Cert,
     if let Some(userid) = userid {
         for u in vc.userids() {
             if u.userid() == userid {
-                eprintln!("Emitting {:?}", u.userid());
                 found = true;
                 packets.push(Packet::from(userid.clone()));
                 packets.push(Packet::from(u.binding_signature().clone()));
