@@ -30,6 +30,7 @@ use crate::openpgp::serialize::stream::{
 };
 use crate::openpgp::policy::Policy;
 use crate::openpgp::types::KeyFlags;
+use crate::openpgp::types::RevocationStatus;
 
 use crate::{
     Config,
@@ -64,14 +65,33 @@ fn get_keys<C>(certs: &[C], p: &dyn Policy,
     -> Result<Vec<Box<dyn crypto::Signer + Send + Sync>>>
     where C: Borrow<Cert>
 {
+    let mut bad = Vec::new();
+
     let mut keys: Vec<Box<dyn crypto::Signer + Send + Sync>> = Vec::new();
     'next_cert: for tsk in certs {
         let tsk = tsk.borrow();
-        for key in tsk.keys().with_policy(p, timestamp).alive().revoked(false)
-            .key_flags(flags.clone())
-            .supported()
-            .map(|ka| ka.key())
+        let vc = match tsk.with_policy(p, timestamp) {
+            Ok(vc) => vc,
+            Err(err) => {
+                return Err(
+                    err.context(format!("Found no suitable key on {}", tsk)));
+            }
+        };
+
+        for ka in vc.keys().key_flags(flags.clone())
         {
+            let bad_ = [
+                matches!(ka.alive(), Err(_)),
+                matches!(ka.revocation_status(), RevocationStatus::Revoked(_)),
+                ! ka.pk_algo().is_supported(),
+            ];
+            if bad_.iter().any(|x| *x) {
+                bad.push((ka.fingerprint(), bad_));
+                continue;
+            }
+
+            let key = ka.key();
+
             if let Some(secret) = key.optional_secret() {
                 let unencrypted = match secret {
                     SecretKeyMaterial::Encrypted(ref e) => {
@@ -101,8 +121,52 @@ fn get_keys<C>(certs: &[C], p: &dyn Policy,
             }
         }
 
-        return Err(anyhow::anyhow!(
-            format!("Found no suitable signing key on {}", tsk)));
+        let timestamp = timestamp.map(|t| {
+            chrono::DateTime::<chrono::offset::Utc>::from(t)
+        });
+
+        let mut context = Vec::new();
+        for (fpr, [not_alive, revoked, not_supported]) in bad {
+            let id: String = if fpr == tsk.fingerprint() {
+                fpr.to_string()
+            } else {
+                format!("{}/{}", tsk.fingerprint(), fpr)
+            };
+
+            let preface = if let Some(t) = timestamp {
+                format!("{} was not considered because\n\
+                         at the specified time ({}) it was",
+                        id, t)
+            } else {
+                format!("{} was not considered because\nit is", fpr)
+            };
+
+            let mut reasons = Vec::new();
+            if not_alive {
+                reasons.push("not alive");
+            }
+            if revoked {
+                reasons.push("revoked");
+            }
+            if not_supported {
+                reasons.push("not supported");
+            }
+
+            context.push(format!("{}: {}",
+                                 preface, reasons.join(", ")));
+        }
+
+        if context.is_empty() {
+            return Err(anyhow::anyhow!(
+                format!("Found no suitable key on {}", tsk)));
+        } else {
+            let context = context.join("\n");
+            return Err(
+                anyhow::anyhow!(
+                    format!("Found no suitable key on {}", tsk))
+                    .context(context));
+        }
+
     }
 
     Ok(keys)
