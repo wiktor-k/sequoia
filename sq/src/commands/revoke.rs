@@ -229,10 +229,8 @@ key material"));
             if ! config.force {
                 let vc = cert.with_policy(NP, None)?;
                 let present = vc.userids().any(|u| {
-                    if let Ok(u) = String::from_utf8(u.value().to_vec()) {
-                        if &u == userid {
-                            return true;
-                        }
+                    if u.value() == userid.as_bytes() {
+                        return true;
                     }
                     false
                 });
