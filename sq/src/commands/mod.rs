@@ -57,7 +57,6 @@ pub mod net;
 pub mod certify;
 
 /// Returns suitable signing keys from a given list of Certs.
-#[allow(clippy::never_loop)]
 fn get_keys<C>(certs: &[C], p: &dyn Policy,
                private_key_store: Option<&str>,
                timestamp: Option<SystemTime>,
@@ -78,8 +77,7 @@ fn get_keys<C>(certs: &[C], p: &dyn Policy,
             }
         };
 
-        for ka in vc.keys().key_flags(flags.clone())
-        {
+        for ka in vc.keys().key_flags(flags.clone()) {
             let bad_ = [
                 matches!(ka.alive(), Err(_)),
                 matches!(ka.revocation_status(), RevocationStatus::Revoked(_)),
@@ -107,14 +105,14 @@ fn get_keys<C>(certs: &[C], p: &dyn Policy,
 
                 keys.push(Box::new(crypto::KeyPair::new(key.clone(), unencrypted)
                           .unwrap()));
-                break 'next_cert;
+                continue 'next_cert;
             } else if let Some(private_key_store) = private_key_store {
                 let password = rpassword::read_password_from_tty(
                     Some(&format!("Please enter password to key {}/{}: ", tsk, key))).unwrap().into();
                 match pks::unlock_signer(private_key_store, key.clone(), &password) {
                     Ok(signer) => {
                         keys.push(signer);
-                        break 'next_cert;
+                        continue 'next_cert;
                     },
                     Err(error) => eprintln!("Could not unlock key: {:?}", error),
                 }
@@ -166,7 +164,6 @@ fn get_keys<C>(certs: &[C], p: &dyn Policy,
                     format!("Found no suitable key on {}", tsk))
                     .context(context));
         }
-
     }
 
     Ok(keys)

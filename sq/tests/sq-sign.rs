@@ -1,18 +1,27 @@
 use std::fs::{self, File};
 use std::io;
 
+use assert_cmd::Command;
 use assert_cli::Assert;
 use tempfile::TempDir;
 
 use sequoia_openpgp as openpgp;
-use crate::openpgp::{Packet, PacketPile, Cert};
-use crate::openpgp::crypto::KeyPair;
-use crate::openpgp::packet::key::SecretKeyMaterial;
-use crate::openpgp::packet::signature::subpacket::NotationData;
-use crate::openpgp::packet::signature::subpacket::NotationDataFlags;
-use crate::openpgp::types::{CompressionAlgorithm, SignatureType};
-use crate::openpgp::parse::Parse;
-use crate::openpgp::serialize::stream::{Message, Signer, Compressor, LiteralWriter};
+use openpgp::Fingerprint;
+use openpgp::KeyHandle;
+use openpgp::Result;
+use openpgp::{Packet, PacketPile, Cert};
+use openpgp::cert::CertBuilder;
+use openpgp::crypto::KeyPair;
+use openpgp::packet::key::SecretKeyMaterial;
+use openpgp::packet::signature::subpacket::NotationData;
+use openpgp::packet::signature::subpacket::NotationDataFlags;
+use openpgp::types::{CompressionAlgorithm, SignatureType};
+use openpgp::parse::Parse;
+use openpgp::policy::StandardPolicy;
+use openpgp::serialize::stream::{Message, Signer, Compressor, LiteralWriter};
+use openpgp::serialize::Serialize;
+
+const P: &StandardPolicy = &StandardPolicy::new();
 
 fn artifact(filename: &str) -> String {
     format!("tests/data/{}", filename)
@@ -266,9 +275,6 @@ fn sq_sign_append() {
 #[test]
 #[allow(unreachable_code)]
 fn sq_sign_append_on_compress_then_sign() {
-    use crate::openpgp::policy::StandardPolicy as P;
-
-    let p = &P::new();
     let tmp_dir = TempDir::new().unwrap();
     let sig0 = tmp_dir.path().join("sig0");
 
@@ -276,7 +282,7 @@ fn sq_sign_append_on_compress_then_sign() {
     // message by foot.
     let tsk = Cert::from_file(&artifact("keys/dennis-simon-anton-private.pgp"))
         .unwrap();
-    let key = tsk.keys().with_policy(p, None).for_signing().next().unwrap().key();
+    let key = tsk.keys().with_policy(P, None).for_signing().next().unwrap().key();
     let sec = match key.optional_secret() {
         Some(SecretKeyMaterial::Unencrypted(ref u)) => u.clone(),
         _ => unreachable!(),
@@ -827,4 +833,74 @@ fn sq_sign_notarize_a_notarization() {
               &artifact("keys/erika-corinna-daniela-simone-antonia-nistp256.pgp"),
               &sig0.to_string_lossy()])
         .unwrap();
+}
+
+#[test]
+fn sq_multiple_signers() -> Result<()> {
+    let tmp = TempDir::new()?;
+
+    let gen = |userid: &str| {
+        CertBuilder::new()
+            .add_signing_subkey()
+            .add_userid(userid)
+            .generate().map(|(key, _rev)| key)
+    };
+
+    let alice = gen("<alice@some.org>")?;
+    let alice_pgp = tmp.path().join("alice.pgp");
+    let mut file = File::create(&alice_pgp)?;
+    alice.as_tsk().serialize(&mut file)?;
+
+    let bob = gen("<bob@some.org>")?;
+    let bob_pgp = tmp.path().join("bob.pgp");
+    let mut file = File::create(&bob_pgp)?;
+    bob.as_tsk().serialize(&mut file)?;
+
+    // Sign message.
+    let assertion = Command::cargo_bin("sq")?
+        .args([
+            "sign",
+            "--signer-key", alice_pgp.to_str().unwrap(),
+            "--signer-key", &bob_pgp.to_str().unwrap(),
+            "--detached",
+        ])
+        .write_stdin(&b"foo"[..])
+        .assert().try_success()?;
+
+    let stdout = String::from_utf8_lossy(&assertion.get_output().stdout);
+
+    let pp = PacketPile::from_bytes(&*stdout)?;
+
+    assert_eq!(pp.children().count(), 2,
+               "expected two packets");
+
+    let mut sigs: Vec<Fingerprint> = pp.children().map(|p| {
+        if let &Packet::Signature(ref sig) = p {
+            if let Some(KeyHandle::Fingerprint(fpr))
+                = sig.get_issuers().into_iter().next()
+            {
+                fpr
+            } else {
+                panic!("No issuer fingerprint subpacket!");
+            }
+        } else {
+            panic!("Expected a signature, got: {:?}", pp);
+        }
+    }).collect();
+    sigs.sort();
+
+    let alice_sig_fpr = alice.with_policy(P, None)?
+        .keys().for_signing().next().unwrap().fingerprint();
+    let bob_sig_fpr = bob.with_policy(P, None)?
+        .keys().for_signing().next().unwrap().fingerprint();
+
+    let mut expected = vec![
+        alice_sig_fpr,
+        bob_sig_fpr,
+    ];
+    expected.sort();
+
+    assert_eq!(sigs, expected);
+
+    Ok(())
 }
