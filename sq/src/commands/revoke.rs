@@ -229,10 +229,7 @@ key material"));
             if ! config.force {
                 let vc = cert.with_policy(NP, None)?;
                 let present = vc.userids().any(|u| {
-                    if u.value() == userid.as_bytes() {
-                        return true;
-                    }
-                    false
+                    u.value() == userid.as_bytes()
                 });
 
                 if ! present {
