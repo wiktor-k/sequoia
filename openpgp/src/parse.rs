@@ -5278,9 +5278,15 @@ impl<'a> PacketParser<'a> {
                         + aed.aead().digest_size()? as u64)?;
 
                     let data = self.data(amount)?;
+                    let schedule = aead::AEDv1Schedule::new(
+                        aed.symmetric_algo(),
+                        aed.aead(),
+                        chunk_size,
+                        aed.iv())?;
+
                     let dec = aead::Decryptor::new(
-                        1, aed.symmetric_algo(), aed.aead(), chunk_size,
-                        aed.iv(), key,
+                        aed.symmetric_algo(), aed.aead(), chunk_size,
+                        schedule, key.clone(),
                         &data[..cmp::min(data.len(), amount)])?;
                     let mut chunk = Vec::new();
                     dec.take(aed.chunk_size() as u64).read_to_end(&mut chunk)?;
@@ -5291,10 +5297,16 @@ impl<'a> PacketParser<'a> {
 
                 // This can't fail, because we create a decryptor
                 // above with the same parameters.
+                let schedule = aead::AEDv1Schedule::new(
+                    aed.symmetric_algo(),
+                    aed.aead(),
+                    chunk_size,
+                    aed.iv())?;
+
                 let reader = self.take_reader();
                 let mut reader = aead::BufferedReaderDecryptor::with_cookie(
-                    1, aed.symmetric_algo(), aed.aead(), chunk_size,
-                    aed.iv(), key, reader, Cookie::default()).unwrap();
+                    aed.symmetric_algo(), aed.aead(), chunk_size,
+                    schedule, key.clone(), reader, Cookie::default()).unwrap();
                 reader.cookie_mut().level = Some(self.recursion_depth());
 
                 t!("Pushing aead::Decryptor, level {:?}.",

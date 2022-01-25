@@ -2940,14 +2940,18 @@ impl<'a> Encryptor<'a> {
                                 aead.chunk_size as u64, aead.nonce)?;
             aed.serialize_headers(&mut inner)?;
 
+            use crate::crypto::aead::AEDv1Schedule;
+            let schedule = AEDv1Schedule::new(
+                aed.symmetric_algo(), aed.aead(), aead.chunk_size, aed.iv())?;
+
             writer::AEADEncryptor::new(
                 inner,
                 Cookie::new(level),
                 aed.symmetric_algo(),
                 aed.aead(),
                 aead.chunk_size,
-                aed.iv(),
-                &sk,
+                schedule,
+                sk,
             )
         } else {
             // Write the SEIP packet.
