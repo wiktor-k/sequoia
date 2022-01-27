@@ -424,7 +424,7 @@ docker-build-push:
   after_script: []
   only:
     refs:
-      - /docker/i # refs containing 'windows' keyword
+      - /docker/i # refs containing 'docker' keyword
       - tags
       - web
       - schedules
