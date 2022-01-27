@@ -3592,9 +3592,6 @@ mod test {
             .parts_into_secret()?.into_keypair()?;
         assert_eq!(alice.userids().len(), 1);
         assert_eq!(alice.userids().next().unwrap().self_signatures().count(), 1);
-        let creation_time =
-            alice.userids().next().unwrap().self_signatures().next().unwrap()
-                .signature_creation_time().unwrap();
 
         const TRIES: u64 = 5;
         assert!(TRIES * 10 < SIG_BACKDATE_BY);
@@ -3605,8 +3602,6 @@ mod test {
             // Get the binding signature so that we can modify it.
             let sig = alice.with_policy(p, None)?.userids().next().unwrap()
                 .binding_signature().clone();
-            assert_eq!(sig.signature_creation_time().unwrap(),
-                       creation_time + std::time::Duration::new(i, 0));
 
             let new_sig = match
                 SignatureBuilder::from(sig)
