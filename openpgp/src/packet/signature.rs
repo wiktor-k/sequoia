@@ -3596,7 +3596,9 @@ mod test {
             alice.userids().next().unwrap().self_signatures().next().unwrap()
                 .signature_creation_time().unwrap();
 
-        for i in 0..2 * SIG_BACKDATE_BY {
+        const TRIES: u64 = 5;
+        assert!(TRIES * 10 < SIG_BACKDATE_BY);
+        for i in 0..TRIES {
             assert_eq!(alice.userids().next().unwrap().self_signatures().count(),
                        1 + i as usize);
 
@@ -3616,13 +3618,10 @@ mod test {
                                      alice.primary_key().component(),
                                      &alice.userids().next().unwrap()) {
                     Ok(v) => v,
-                    Err(e) => if i < SIG_BACKDATE_BY {
+                    Err(e) => {
+                        eprintln!("Failed to make {} signatures on top of \
+                                   the original one.", i);
                         return Err(e); // Not cool.
-                    } else {
-                        assert!(e.to_string().contains(
-                            "Cannot create valid signature newer than \
-                             template"));
-                        return Ok(()); // Cool.
                     },
                 };
 
@@ -3634,10 +3633,7 @@ mod test {
             assert_eq!(sig, &new_sig);
         }
 
-        panic!("We were unexpectedly able to update binding signatures {} \
-                times.  This is either a very slow build environment, or \
-                there is a bug.  Please get in contact.",
-               2 * SIG_BACKDATE_BY);
+        Ok(())
     }
 
     /// Checks that subpackets are marked as authentic on signature
