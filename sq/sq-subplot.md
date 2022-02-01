@@ -452,9 +452,10 @@ This is for secret keys, with the output going to stdout in text form.
 given an installed sq
 when I run sq key generate --userid Alice --export alice.pgp
 when I run sq key generate --userid Bob --export bob.pgp
-when I run sq keyring join alice.pgp bob.pgp
-then stdout contains "-----BEGIN PGP PUBLIC KEY BLOCK-----"
-then stdout contains "-----END PGP PUBLIC KEY BLOCK-----"
+when I run sq keyring join alice.pgp bob.pgp -o ring.pgp
+when I run sq keyring list ring.pgp
+then stdout contains "Alice"
+then stdout contains "Bob"
 ~~~
 
 ### Join two keys into a textual keyring to a named file
