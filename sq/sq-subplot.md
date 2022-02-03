@@ -389,10 +389,11 @@ file._
 
 ~~~scenario
 given an installed sq
-when I run sq key generate --export key.pgp
+when I run sq key generate --export key.pgp --userid Alice
 when I run sq key extract-cert key.pgp -o cert.pgp
-then file cert.pgp contains "-----BEGIN PGP PUBLIC KEY BLOCK-----"
-then file cert.pgp contains "-----END PGP PUBLIC KEY BLOCK-----"
+when I run sq inspect cert.pgp
+then stdout contains "OpenPGP Certificate."
+then stdout contains "Alice"
 ~~~
 
 
@@ -1051,7 +1052,7 @@ then command fails
 ## Create cleartext signature
 
 _Requirement: We can create a signature such that the signed data is
-included in a readable form.
+included in a readable form._
 
 ~~~scenario
 given an installed sq
