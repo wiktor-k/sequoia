@@ -91,7 +91,8 @@ fn sign_data(opts: SignOpts) -> Result<()> {
             (config.create_or_stdout_safe(output_path)?, Vec::new(), None)
         };
 
-    let mut keypairs = super::get_signing_keys(&secrets, &config.policy, private_key_store, time)?;
+    let mut keypairs = super::get_signing_keys(
+        &secrets, &config.policy, private_key_store, time, None)?;
     if keypairs.is_empty() {
         return Err(anyhow::anyhow!("No signing keys found"));
     }
@@ -184,7 +185,8 @@ fn sign_message_(opts: SignOpts, output: &mut (dyn io::Write + Sync + Send)) -> 
         time,
         notations, ..
     } = opts;
-    let mut keypairs = super::get_signing_keys(&secrets, &config.policy, private_key_store, time)?;
+    let mut keypairs = super::get_signing_keys(
+        &secrets, &config.policy, private_key_store, time, None)?;
     if keypairs.is_empty() {
         return Err(anyhow::anyhow!("No signing keys found"));
     }
@@ -390,7 +392,8 @@ pub fn clearsign(config: Config,
                  notations: &[(bool, NotationData)])
                  -> Result<()>
 {
-    let mut keypairs = super::get_signing_keys(&secrets, &config.policy, private_key_store, time)?;
+    let mut keypairs = super::get_signing_keys(
+        &secrets, &config.policy, private_key_store, time, None)?;
     if keypairs.is_empty() {
         return Err(anyhow::anyhow!("No signing keys found"));
     }

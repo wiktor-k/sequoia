@@ -169,10 +169,9 @@ fn revoke(config: Config,
     let mut output = config.create_or_stdout_safe(None)?;
 
     let (secret, mut signer) = if let Some(secret) = secret.as_ref() {
-        if let Ok(keys) = super::get_certification_keys(&[ secret ],
-                                                        &config.policy,
-                                                        private_key_store,
-                                                        time) {
+        if let Ok(keys) = super::get_certification_keys(
+            &[ secret ], &config.policy, private_key_store, time, None)
+        {
             assert_eq!(keys.len(), 1);
             (secret, keys.into_iter().next().expect("have one"))
         } else {
@@ -190,10 +189,9 @@ does not contain a certification key with secret key material"));
             }
         }
     } else {
-        if let Ok(keys) = super::get_certification_keys(&[ &cert ],
-                                                        &config.policy,
-                                                        private_key_store,
-                                                        time) {
+        if let Ok(keys) = super::get_certification_keys(
+            &[ &cert ], &config.policy, private_key_store, time, None)
+        {
             assert_eq!(keys.len(), 1);
             (&cert, keys.into_iter().next().expect("have one"))
         } else {

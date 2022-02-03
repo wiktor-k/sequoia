@@ -1221,6 +1221,23 @@ $ sq certify --time 20130721T0550+0200 neal.pgp ada.pgp ada
     )]
     pub expires_in: Option<String>,
     #[clap(
+        long = "allow-not-alive-certifier",
+        help = "Don't fail if the certificate making the \
+                certification is not alive.",
+        long_help =
+            "Allows the key to make a certification even if \
+             the current time is prior to its creation time \
+             or the current time is at or after its expiration \
+             time.",
+    )]
+    pub allow_not_alive_certifier: bool,
+    #[clap(
+        long = "allow-revoked-certifier",
+        help = "Don't fail if the certificate making the \
+                certification is revoked.",
+    )]
+    pub allow_revoked_certifier: bool,
+    #[clap(
         long = "private-key-store",
         value_name = "KEY_STORE",
         help = "Provides parameters for private key store",

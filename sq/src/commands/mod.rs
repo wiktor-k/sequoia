@@ -55,15 +55,26 @@ pub mod keyring;
 pub mod net;
 pub mod certify;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GetKeysOptions {
+    AllowNotAlive,
+    AllowRevoked,
+}
+
 /// Returns suitable signing keys from a given list of Certs.
 fn get_keys<C>(certs: &[C], p: &dyn Policy,
                private_key_store: Option<&str>,
                timestamp: Option<SystemTime>,
-               flags: KeyFlags)
+               flags: KeyFlags,
+               options: Option<&[GetKeysOptions]>)
     -> Result<Vec<Box<dyn crypto::Signer + Send + Sync>>>
     where C: Borrow<Cert>
 {
     let mut bad = Vec::new();
+
+    let options = options.unwrap_or(&[][..]);
+    let allow_not_alive = options.contains(&GetKeysOptions::AllowNotAlive);
+    let allow_revoked = options.contains(&GetKeysOptions::AllowRevoked);
 
     let mut keys: Vec<Box<dyn crypto::Signer + Send + Sync>> = Vec::new();
     'next_cert: for tsk in certs {
@@ -78,8 +89,9 @@ fn get_keys<C>(certs: &[C], p: &dyn Policy,
 
         for ka in vc.keys().key_flags(flags.clone()) {
             let bad_ = [
-                matches!(ka.alive(), Err(_)),
-                matches!(ka.revocation_status(), RevocationStatus::Revoked(_)),
+                ! allow_not_alive && matches!(ka.alive(), Err(_)),
+                ! allow_revoked && matches!(ka.revocation_status(),
+                                            RevocationStatus::Revoked(_)),
                 ! ka.pk_algo().is_supported(),
             ];
             if bad_.iter().any(|x| *x) {
@@ -174,12 +186,13 @@ fn get_keys<C>(certs: &[C], p: &dyn Policy,
 /// appropriate key, then this returns an error.
 fn get_signing_keys<C>(certs: &[C], p: &dyn Policy,
                        private_key_store: Option<&str>,
-                       timestamp: Option<SystemTime>)
+                       timestamp: Option<SystemTime>,
+                       options: Option<&[GetKeysOptions]>)
     -> Result<Vec<Box<dyn crypto::Signer + Send + Sync>>>
     where C: Borrow<Cert>
 {
     get_keys(certs, p, private_key_store, timestamp,
-             KeyFlags::empty().set_signing())
+             KeyFlags::empty().set_signing(), options)
 }
 
 /// Returns suitable certification keys from a given list of Certs.
@@ -188,12 +201,13 @@ fn get_signing_keys<C>(certs: &[C], p: &dyn Policy,
 /// appropriate key, then this returns an error.
 fn get_certification_keys<C>(certs: &[C], p: &dyn Policy,
                              private_key_store: Option<&str>,
-                             timestamp: Option<SystemTime>)
+                             timestamp: Option<SystemTime>,
+                             options: Option<&[GetKeysOptions]>)
     -> Result<Vec<Box<dyn crypto::Signer + Send + Sync>>>
     where C: std::borrow::Borrow<Cert>
 {
     get_keys(certs, p, private_key_store, timestamp,
-             KeyFlags::empty().set_certification())
+             KeyFlags::empty().set_certification(), options)
 }
 
 // Returns the smallest valid certificate.
@@ -283,8 +297,8 @@ pub fn encrypt(opts: EncryptOpts) -> Result<()> {
             "Neither recipient nor password given"));
     }
 
-    let mut signers = get_signing_keys(&opts.signers, opts.policy,
-				       opts.private_key_store, opts.time)?;
+    let mut signers = get_signing_keys(
+        &opts.signers, opts.policy, opts.private_key_store, opts.time, None)?;
 
     // Build a vector of recipients to hand to Encryptor.
     let mut recipient_subkeys: Vec<Recipient> = Vec::new();

@@ -15,6 +15,7 @@ use crate::Config;
 use crate::parse_duration;
 use crate::SECONDS_IN_YEAR;
 use crate::commands::get_certification_keys;
+use crate::commands::GetKeysOptions;
 
 pub fn certify(config: Config, m: &clap::ArgMatches)
     -> Result<()>
@@ -157,12 +158,20 @@ pub fn certify(config: Config, m: &clap::ArgMatches)
         }
     }
 
+    let mut options = Vec::new();
+    if m.is_present("allow-not-alive-certifier") {
+        options.push(GetKeysOptions::AllowNotAlive);
+    }
+    if m.is_present("allow-revoked-certifier") {
+        options.push(GetKeysOptions::AllowRevoked);
+    }
 
     // Sign it.
     let signers = get_certification_keys(
         &[certifier], &config.policy,
         private_key_store,
-        time)?;
+        time,
+        Some(&options))?;
     assert_eq!(signers.len(), 1);
     let mut signer = signers.into_iter().next().unwrap();
 

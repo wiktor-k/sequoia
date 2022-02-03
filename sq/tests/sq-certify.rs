@@ -318,3 +318,182 @@ fn sq_certify_creation_time() -> Result<()>
 
     Ok(())
 }
+
+#[test]
+fn sq_certify_with_expired_key() -> Result<()>
+{
+    let seconds_in_day = 24 * 60 * 60;
+
+    let validity = time::Duration::new(30 * seconds_in_day, 0);
+    let creation_time = time::SystemTime::now() - 2 * validity;
+
+    let dir = TempDir::new()?;
+
+    // Alice's expired key certifies bob's not expired key.
+
+    let alice = "<alice@example.org>";
+    let alice_key = CertBuilder::new()
+        .add_signing_subkey()
+        .set_creation_time(creation_time)
+        .set_validity_period(validity)
+        .add_userid(alice)
+        .generate()
+        .map(|(key, _rev)| key)?;
+
+    let alice_pgp = dir.path().join("alice.pgp");
+    {
+        let mut file = File::create(&alice_pgp)?;
+        alice_key.as_tsk().serialize(&mut file)?;
+    }
+
+    // Bob's key has the same creation time, but it does not expire.
+    let bob = "<bob@other.org>";
+    let bob_key = CertBuilder::new()
+        .add_signing_subkey()
+        .set_creation_time(creation_time)
+        .add_userid(bob)
+        .generate()
+        .map(|(key, _rev)| key)?;
+
+    let bob_pgp = dir.path().join("bob.pgp");
+    {
+        let mut file = File::create(&bob_pgp)?;
+        bob_key.serialize(&mut file)?;
+    }
+
+    // Make sure using an expired key fails by default.
+    let mut cmd = Command::cargo_bin("sq")?;
+    cmd.args(["certify",
+              &alice_pgp.to_string_lossy(),
+              &bob_pgp.to_string_lossy(), bob ]);
+    cmd.assert().failure();
+
+
+    // Try again.
+    let mut cmd = Command::cargo_bin("sq")?;
+    cmd.args(["certify",
+              "--allow-not-alive-certifier",
+              &alice_pgp.to_string_lossy(),
+              &bob_pgp.to_string_lossy(), bob ]);
+
+    let assertion = cmd.assert().try_success()?;
+    let stdout = String::from_utf8_lossy(&assertion.get_output().stdout);
+
+    let cert = Cert::from_bytes(&*stdout)?;
+
+    let vc = cert.with_policy(P, None)?;
+
+    assert!(
+        creation_time.duration_since(vc.primary_key().creation_time()).unwrap()
+            < time::Duration::new(1, 0));
+
+    let mut userid = None;
+    for u in vc.userids() {
+        if u.userid().value() == bob.as_bytes() {
+            userid = Some(u);
+            break;
+        }
+    }
+
+    if let Some(userid) = userid {
+        let certifications: Vec<_> = userid.certifications().collect();
+        assert_eq!(certifications.len(), 1);
+        let certification = certifications.into_iter().next().unwrap();
+
+        assert_eq!(certification.get_issuers().into_iter().next(),
+                   Some(KeyHandle::from(alice_key.fingerprint())));
+    } else {
+        panic!("missing user id");
+    }
+
+    Ok(())
+}
+
+#[test]
+fn sq_certify_with_revoked_key() -> Result<()>
+{
+    let seconds_in_day = 24 * 60 * 60;
+
+    let creation_time =
+        time::SystemTime::now() - time::Duration::new(seconds_in_day, 0);
+
+    let dir = TempDir::new()?;
+
+    // Alice's revoked key certifies bob's not expired key.
+
+    let alice = "<alice@example.org>";
+    let (alice_key, revocation) = CertBuilder::new()
+        .add_signing_subkey()
+        .set_creation_time(creation_time)
+        .add_userid(alice)
+        .generate()?;
+    let alice_key = alice_key.insert_packets(revocation)?;
+
+    let alice_pgp = dir.path().join("alice.pgp");
+    {
+        let mut file = File::create(&alice_pgp)?;
+        alice_key.as_tsk().serialize(&mut file)?;
+    }
+
+    // Bob's key has the same creation time, but it does not expire.
+    let bob = "<bob@other.org>";
+    let bob_key = CertBuilder::new()
+        .add_signing_subkey()
+        .set_creation_time(creation_time)
+        .add_userid(bob)
+        .generate()
+        .map(|(key, _rev)| key)?;
+
+    let bob_pgp = dir.path().join("bob.pgp");
+    {
+        let mut file = File::create(&bob_pgp)?;
+        bob_key.serialize(&mut file)?;
+    }
+
+    // Make sure using an expired key fails by default.
+    let mut cmd = Command::cargo_bin("sq")?;
+    cmd.args(["certify",
+              &alice_pgp.to_string_lossy(),
+              &bob_pgp.to_string_lossy(), bob ]);
+    cmd.assert().failure();
+
+
+    // Try again.
+    let mut cmd = Command::cargo_bin("sq")?;
+    cmd.args(["certify",
+              "--allow-revoked-certifier",
+              &alice_pgp.to_string_lossy(),
+              &bob_pgp.to_string_lossy(), bob ]);
+
+    let assertion = cmd.assert().try_success()?;
+    let stdout = String::from_utf8_lossy(&assertion.get_output().stdout);
+
+    let cert = Cert::from_bytes(&*stdout)?;
+
+    let vc = cert.with_policy(P, None)?;
+
+    assert!(
+        creation_time.duration_since(vc.primary_key().creation_time()).unwrap()
+            < time::Duration::new(1, 0));
+
+    let mut userid = None;
+    for u in vc.userids() {
+        if u.userid().value() == bob.as_bytes() {
+            userid = Some(u);
+            break;
+        }
+    }
+
+    if let Some(userid) = userid {
+        let certifications: Vec<_> = userid.certifications().collect();
+        assert_eq!(certifications.len(), 1);
+        let certification = certifications.into_iter().next().unwrap();
+
+        assert_eq!(certification.get_issuers().into_iter().next(),
+                   Some(KeyHandle::from(alice_key.fingerprint())));
+    } else {
+        panic!("missing user id");
+    }
+
+    Ok(())
+}

@@ -948,6 +948,14 @@
 //!             of trust.  60 is usually used for partially trusted.  The default is
 //!             120.
 //!
+//!         --allow-not-alive-certifier
+//!             Allows the key to make a certification even if the current time is
+//!             prior to its creation time or the current time is at or after its
+//!             expiration time.
+//!
+//!         --allow-revoked-certifier
+//!             Don't fail if the certificate making the certification is revoked.
+//!
 //!     -B, --binary
 //!             Emits binary data
 //!
