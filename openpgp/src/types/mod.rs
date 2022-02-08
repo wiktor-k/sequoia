@@ -712,9 +712,7 @@ impl AEADAlgorithm {
     /// use sequoia_openpgp as openpgp;
     /// use openpgp::types::AEADAlgorithm;
     ///
-    /// assert!(AEADAlgorithm::EAX.is_supported());
-    ///
-    /// assert!(!AEADAlgorithm::OCB.is_supported());
+    /// assert!(! AEADAlgorithm::Private(100).is_supported());
     /// ```
     pub fn is_supported(&self) -> bool {
         self.is_supported_by_backend()
