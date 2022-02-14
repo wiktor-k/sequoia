@@ -213,7 +213,6 @@ impl fmt::Debug for Protected {
 #[derive(Clone, Debug)]
 pub struct Encrypted {
     ciphertext: Protected,
-    iv: Box<[u8]>,
 }
 assert_send_and_sync!(Encrypted);
 
@@ -282,29 +281,15 @@ mod has_access_to_prekey {
             sk
         }
 
-        /// Returns the schedule for use with the AEAD encryption.
-        fn schedule(iv: &[u8]) -> impl aead::Schedule {
-            aead::AEDv1Schedule::new(
-                SYMMETRIC_ALGO,
-                AEAD_ALGO,
-                4096,
-                iv).expect("valid parameters")
-        }
-
         /// Encrypts the given chunk of memory.
         pub fn new(p: Protected) -> Self {
-            let mut iv =
-                vec![0; AEAD_ALGO.iv_size()
-                            .expect("Mandatory algorithm unsupported")];
-            crate::crypto::random(&mut iv);
-
             let mut ciphertext = Vec::new();
             {
                 let mut encryptor =
                     aead::Encryptor::new(SYMMETRIC_ALGO,
                                          AEAD_ALGO,
                                          4096,
-                                         Self::schedule(&iv),
+                                         CounterSchedule::default(),
                                          Self::sealing_key(),
                                          &mut ciphertext)
                     .expect("Mandatory algorithm unsupported");
@@ -314,7 +299,6 @@ mod has_access_to_prekey {
 
             Encrypted {
                 ciphertext: ciphertext.into(),
-                iv: iv.into(),
             }
         }
 
@@ -332,7 +316,7 @@ mod has_access_to_prekey {
                                      SYMMETRIC_ALGO,
                                      AEAD_ALGO,
                                      4096,
-                                     Self::schedule(&self.iv),
+                                     CounterSchedule::default(),
                                      Self::sealing_key(),
                                      Box::new(ciphertext))
                 .expect("Mandatory algorithm unsupported");
@@ -340,6 +324,47 @@ mod has_access_to_prekey {
                 .expect("Encrypted memory modified or corrupted");
             let plaintext: Protected = plaintext.into();
             fun(&plaintext)
+        }
+    }
+
+    #[derive(Default)]
+    struct CounterSchedule {}
+
+    impl aead::Schedule for CounterSchedule {
+        fn next_chunk<F, R>(&self, index: u64, mut fun: F) -> R
+        where
+            F: FnMut(&[u8], &[u8]) -> R,
+        {
+            // The nonce is a simple counter.
+            let mut nonce_store = [0u8; aead::MAX_NONCE_LEN];
+            let nonce_len = AEAD_ALGO.iv_size()
+                .expect("Mandatory algorithm unsupported");
+            assert!(nonce_len >= 8);
+            let nonce = &mut nonce_store[..nonce_len];
+            let index_be: [u8; 8] = index.to_be_bytes();
+            nonce[nonce_len - 8..].copy_from_slice(&index_be);
+
+            // No AAD.
+            fun(nonce, &[])
+        }
+
+        fn final_chunk<F, R>(&self, index: u64, length: u64, mut fun: F) -> R
+        where
+            F: FnMut(&[u8], &[u8]) -> R
+        {
+            // The nonce is a simple counter.
+            let mut nonce_store = [0u8; aead::MAX_NONCE_LEN];
+            let nonce_len = AEAD_ALGO.iv_size()
+                .expect("Mandatory algorithm unsupported");
+            assert!(nonce_len >= 8);
+            let nonce = &mut nonce_store[..nonce_len];
+            let index_be: [u8; 8] = index.to_be_bytes();
+            nonce[nonce_len - 8..].copy_from_slice(&index_be);
+
+            // Plaintext bytes as AAD to prevent truncation.
+            let aad: [u8; 8] = length.to_be_bytes();
+
+            fun(nonce, &aad)
         }
     }
 }
