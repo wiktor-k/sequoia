@@ -3400,6 +3400,11 @@ mod test {
     }
 
     fn test_aead_messages(algo: AEADAlgorithm) -> Result<()> {
+        if ! algo.is_supported() {
+            eprintln!("Skipping because {} is not supported.", algo);
+            return Ok(());
+        }
+
         // AEAD data is of the form:
         //
         //   [ chunk1 ][ tag1 ] ... [ chunkN ][ tagN ][ tag ]
