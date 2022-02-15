@@ -13,11 +13,22 @@ use crate::crypto::aead::{Aead, CipherOp};
 use crate::seal;
 use crate::types::{AEADAlgorithm, SymmetricAlgorithm};
 
-trait GenericArrayExt {
+trait GenericArrayExt<T, N: ArrayLength<T>> {
     const LEN: usize;
+
+    /// Like [`GenericArray::from_slice`], but fallible.
+    fn try_from_slice(slice: &[T]) -> Result<&GenericArray<T, N>> {
+        if slice.len() == Self::LEN {
+            Ok(GenericArray::from_slice(slice))
+        } else {
+            Err(Error::InvalidArgument(
+                format!("Invalid slice length, want {}, got {}",
+                        Self::LEN, slice.len())).into())
+        }
+    }
 }
 
-impl<T, N: ArrayLength<T>> GenericArrayExt for GenericArray<T, N> {
+impl<T, N: ArrayLength<T>> GenericArrayExt<T, N> for GenericArray<T, N> {
     const LEN: usize = N::USIZE;
 }
 
@@ -98,21 +109,33 @@ impl AEADAlgorithm {
             AEADAlgorithm::EAX => match sym_algo {
                 SymmetricAlgorithm::AES128 => match op {
                     CipherOp::Encrypt => Ok(Box::new(
-                        Eax::<aes::Aes128, Encrypt>::with_key_and_nonce(key.into(), nonce.into()))),
+                        Eax::<aes::Aes128, Encrypt>::with_key_and_nonce(
+                            GenericArray::try_from_slice(key)?,
+                            GenericArray::try_from_slice(nonce)?))),
                     CipherOp::Decrypt => Ok(Box::new(
-                        Eax::<aes::Aes128, Decrypt>::with_key_and_nonce(key.into(), nonce.into()))),
+                        Eax::<aes::Aes128, Decrypt>::with_key_and_nonce(
+                            GenericArray::try_from_slice(key)?,
+                            GenericArray::try_from_slice(nonce)?))),
                 }
                 SymmetricAlgorithm::AES192 => match op {
                     CipherOp::Encrypt => Ok(Box::new(
-                        Eax::<aes::Aes192, Encrypt>::with_key_and_nonce(key.into(), nonce.into()))),
+                        Eax::<aes::Aes192, Encrypt>::with_key_and_nonce(
+                            GenericArray::try_from_slice(key)?,
+                            GenericArray::try_from_slice(nonce)?))),
                     CipherOp::Decrypt => Ok(Box::new(
-                        Eax::<aes::Aes192, Decrypt>::with_key_and_nonce(key.into(), nonce.into()))),
+                        Eax::<aes::Aes192, Decrypt>::with_key_and_nonce(
+                            GenericArray::try_from_slice(key)?,
+                            GenericArray::try_from_slice(nonce)?))),
                 }
                 SymmetricAlgorithm::AES256 => match op {
                     CipherOp::Encrypt => Ok(Box::new(
-                        Eax::<aes::Aes256, Encrypt>::with_key_and_nonce(key.into(), nonce.into()))),
+                        Eax::<aes::Aes256, Encrypt>::with_key_and_nonce(
+                            GenericArray::try_from_slice(key)?,
+                            GenericArray::try_from_slice(nonce)?))),
                     CipherOp::Decrypt => Ok(Box::new(
-                        Eax::<aes::Aes256, Decrypt>::with_key_and_nonce(key.into(), nonce.into()))),
+                        Eax::<aes::Aes256, Decrypt>::with_key_and_nonce(
+                            GenericArray::try_from_slice(key)?,
+                            GenericArray::try_from_slice(nonce)?))),
                 }
                 | SymmetricAlgorithm::IDEA
                 | SymmetricAlgorithm::TripleDES

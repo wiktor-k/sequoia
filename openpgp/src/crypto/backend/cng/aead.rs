@@ -10,11 +10,22 @@ use win_crypto_ng::symmetric::{BlockCipherKey, Aes};
 use win_crypto_ng::symmetric::block_cipher::generic_array::{GenericArray, ArrayLength};
 use win_crypto_ng::symmetric::block_cipher::generic_array::typenum::{U128, U192, U256};
 
-trait GenericArrayExt {
+trait GenericArrayExt<T, N: ArrayLength<T>> {
     const LEN: usize;
+
+    /// Like [`GenericArray::from_slice`], but fallible.
+    fn try_from_slice(slice: &[T]) -> Result<&GenericArray<T, N>> {
+        if slice.len() == Self::LEN {
+            Ok(GenericArray::from_slice(slice))
+        } else {
+            Err(Error::InvalidArgument(
+                format!("Invalid slice length, want {}, got {}",
+                        Self::LEN, slice.len())).into())
+        }
+    }
 }
 
-impl<T, N: ArrayLength<T>> GenericArrayExt for GenericArray<T, N> {
+impl<T, N: ArrayLength<T>> GenericArrayExt<T, N> for GenericArray<T, N> {
     const LEN: usize = N::USIZE;
 }
 
@@ -30,8 +41,8 @@ impl AEADAlgorithm {
         match self {
             AEADAlgorithm::EAX => match sym_algo {
                 | SymmetricAlgorithm::AES128 => {
-                    let key = GenericArray::from_slice(key);
-                    let nonce = GenericArray::from_slice(nonce);
+                    let key = GenericArray::try_from_slice(key)?;
+                    let nonce = GenericArray::try_from_slice(nonce)?;
                     Ok(match op {
                         CipherOp::Encrypt =>
                             Box::new(EaxOnline::<BlockCipherKey<Aes, U128>, Encrypt>::with_key_and_nonce(key, nonce)),
@@ -40,8 +51,8 @@ impl AEADAlgorithm {
                     })
                 }
                 SymmetricAlgorithm::AES192 => {
-                    let key = GenericArray::from_slice(key);
-                    let nonce = GenericArray::from_slice(nonce);
+                    let key = GenericArray::try_from_slice(key)?;
+                    let nonce = GenericArray::try_from_slice(nonce)?;
                     Ok(match op {
                         CipherOp::Encrypt =>
                             Box::new(EaxOnline::<BlockCipherKey<Aes, U192>, Encrypt>::with_key_and_nonce(key, nonce)),
@@ -50,8 +61,8 @@ impl AEADAlgorithm {
                     })
                 }
                 SymmetricAlgorithm::AES256 => {
-                    let key = GenericArray::from_slice(key);
-                    let nonce = GenericArray::from_slice(nonce);
+                    let key = GenericArray::try_from_slice(key)?;
+                    let nonce = GenericArray::try_from_slice(nonce)?;
                     Ok(match op {
                         CipherOp::Encrypt =>
                             Box::new(EaxOnline::<BlockCipherKey<Aes, U256>, Encrypt>::with_key_and_nonce(key, nonce)),
@@ -71,7 +82,9 @@ macro_rules! impl_aead {
         $(
         impl Aead for EaxOnline<$type, Encrypt> {
             fn update(&mut self, ad: &[u8]) { self.update_assoc(ad) }
-            fn digest_size(&self) -> usize { <eax::Tag as GenericArrayExt>::LEN }
+            fn digest_size(&self) -> usize {
+                <eax::Tag as GenericArrayExt<_, _>>::LEN
+            }
             fn digest(&mut self, digest: &mut [u8]) {
                 let tag = self.tag_clone();
                 digest[..tag.len()].copy_from_slice(&tag[..]);
@@ -90,7 +103,9 @@ macro_rules! impl_aead {
         $(
         impl Aead for EaxOnline<$type, Decrypt> {
             fn update(&mut self, ad: &[u8]) { self.update_assoc(ad) }
-            fn digest_size(&self) -> usize { <eax::Tag as GenericArrayExt>::LEN }
+            fn digest_size(&self) -> usize {
+                <eax::Tag as GenericArrayExt<_, _>>::LEN
+            }
             fn digest(&mut self, digest: &mut [u8]) {
                 let tag = self.tag_clone();
                 digest[..tag.len()].copy_from_slice(&tag[..]);
