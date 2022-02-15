@@ -213,6 +213,7 @@ impl fmt::Debug for Protected {
 #[derive(Clone, Debug)]
 pub struct Encrypted {
     ciphertext: Protected,
+    salt: [u8; 32],
 }
 assert_send_and_sync!(Encrypted);
 
@@ -272,9 +273,10 @@ mod has_access_to_prekey {
 
     impl Encrypted {
         /// Computes the sealing key used to encrypt the memory.
-        fn sealing_key() -> SessionKey {
+        fn sealing_key(salt: &[u8; 32]) -> SessionKey {
             let mut ctx = HASH_ALGO.context()
                 .expect("Mandatory algorithm unsupported");
+            ctx.update(salt);
             PREKEY.iter().for_each(|page| ctx.update(page));
             let mut sk: SessionKey = vec![0; 256/8].into();
             let _ = ctx.digest(&mut sk);
@@ -283,6 +285,8 @@ mod has_access_to_prekey {
 
         /// Encrypts the given chunk of memory.
         pub fn new(p: Protected) -> Self {
+            let mut salt = [0; 32];
+            crate::crypto::random(&mut salt);
             let mut ciphertext = Vec::new();
             {
                 let mut encryptor =
@@ -290,7 +294,7 @@ mod has_access_to_prekey {
                                          AEAD_ALGO,
                                          4096,
                                          CounterSchedule::default(),
-                                         Self::sealing_key(),
+                                         Self::sealing_key(&salt),
                                          &mut ciphertext)
                     .expect("Mandatory algorithm unsupported");
                 encryptor.write_all(&p).unwrap();
@@ -299,6 +303,7 @@ mod has_access_to_prekey {
 
             Encrypted {
                 ciphertext: ciphertext.into(),
+                salt,
             }
         }
 
@@ -317,7 +322,7 @@ mod has_access_to_prekey {
                                      AEAD_ALGO,
                                      4096,
                                      CounterSchedule::default(),
-                                     Self::sealing_key(),
+                                     Self::sealing_key(&self.salt),
                                      Box::new(ciphertext))
                 .expect("Mandatory algorithm unsupported");
             io::copy(&mut decryptor, &mut plaintext)
