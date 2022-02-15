@@ -365,6 +365,34 @@ impl Packet {
         }
     }
 
+    /// Returns the `Packet's` version, if the packet is versioned and
+    /// recognized.
+    ///
+    /// If the packet is not versioned, or we couldn't parse the
+    /// packet, this function returns `None`.
+    pub fn version(&self) -> Option<u8> {
+        match self {
+            Packet::Unknown(_) => None,
+            Packet::Signature(p) => Some(p.version()),
+            Packet::OnePassSig(p) => Some(p.version()),
+            Packet::PublicKey(p) => Some(p.version()),
+            Packet::PublicSubkey(p) => Some(p.version()),
+            Packet::SecretKey(p) => Some(p.version()),
+            Packet::SecretSubkey(p) => Some(p.version()),
+            Packet::Marker(_) => None,
+            Packet::Trust(_) => None,
+            Packet::UserID(_) => None,
+            Packet::UserAttribute(_) => None,
+            Packet::Literal(_) => None,
+            Packet::CompressedData(_) => None,
+            Packet::PKESK(p) => Some(p.version()),
+            Packet::SKESK(p) => Some(p.version()),
+            Packet::SEIP(p) => Some(p.version()),
+            Packet::MDC(_) => None,
+            Packet::AED(p) => Some(p.version()),
+        }
+    }
+
     /// Hashes most everything into state.
     ///
     /// This is an alternate implementation of [`Hash`], which does

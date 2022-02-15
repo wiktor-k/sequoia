@@ -4,6 +4,7 @@
 
 * Changes in 1.9.0
 ** New functionality
+   - Packet::version
    - SignatureBuilder::set_reference_time
    - SignatureBuilder::effective_signature_creation_time
 * Changes in 1.8.0
