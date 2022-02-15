@@ -27,12 +27,11 @@ impl AEADAlgorithm {
         op: CipherOp,
     ) -> Result<Box<dyn Aead>> {
 
-        let nonce = GenericArray::from_slice(nonce);
-
         match self {
             AEADAlgorithm::EAX => match sym_algo {
                 | SymmetricAlgorithm::AES128 => {
                     let key = GenericArray::from_slice(key);
+                    let nonce = GenericArray::from_slice(nonce);
                     Ok(match op {
                         CipherOp::Encrypt =>
                             Box::new(EaxOnline::<BlockCipherKey<Aes, U128>, Encrypt>::with_key_and_nonce(key, nonce)),
@@ -42,6 +41,7 @@ impl AEADAlgorithm {
                 }
                 SymmetricAlgorithm::AES192 => {
                     let key = GenericArray::from_slice(key);
+                    let nonce = GenericArray::from_slice(nonce);
                     Ok(match op {
                         CipherOp::Encrypt =>
                             Box::new(EaxOnline::<BlockCipherKey<Aes, U192>, Encrypt>::with_key_and_nonce(key, nonce)),
@@ -51,6 +51,7 @@ impl AEADAlgorithm {
                 }
                 SymmetricAlgorithm::AES256 => {
                     let key = GenericArray::from_slice(key);
+                    let nonce = GenericArray::from_slice(nonce);
                     Ok(match op {
                         CipherOp::Encrypt =>
                             Box::new(EaxOnline::<BlockCipherKey<Aes, U256>, Encrypt>::with_key_and_nonce(key, nonce)),
