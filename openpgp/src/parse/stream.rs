@@ -709,7 +709,7 @@ enum IMessageLayer {
         depth: isize,
         /// Do we expect an MDC packet?
         ///
-        /// I.e. is this a SEIP container?
+        /// I.e. is this a SEIPv1 container?
         expect_mdc: bool,
         sym_algo: SymmetricAlgorithm,
         aead_algo: Option<AEADAlgorithm>,
@@ -2414,7 +2414,8 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
 
                     v.structure.new_encryption_layer(
                         pp.recursion_depth(),
-                        pp.packet.tag() == packet::Tag::SEIP,
+                        pp.packet.tag() == packet::Tag::SEIP
+                            && pp.packet.version() == Some(1),
                         sym_algo,
                         if let Packet::AED(ref p) = pp.packet {
                             Some(p.aead())

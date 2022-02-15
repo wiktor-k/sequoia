@@ -194,7 +194,7 @@ impl MessageValidator {
     /// Unlike `push_token`, this function does not automatically
     /// account for changes in the depth.  If you use this function
     /// directly, you must push any required `Token::Pop` tokens.
-    pub fn push(&mut self, tag: Tag, path: &[usize]) {
+    pub fn push(&mut self, tag: Tag, version: Option<u8>, path: &[usize]) {
         if self.error.is_some() {
             return;
         }
@@ -204,7 +204,7 @@ impl MessageValidator {
             Tag::CompressedData => Token::CompressedData,
             Tag::SKESK => Token::SKESK,
             Tag::PKESK => Token::PKESK,
-            Tag::SEIP => Token::SEIP,
+            Tag::SEIP if version == Some(1) => Token::SEIPv1,
             Tag::MDC => Token::MDC,
             Tag::AED => Token::AED,
             Tag::OnePassSig => Token::OPS,
@@ -447,7 +447,7 @@ impl TryFrom<PacketPile> for Message {
                                      {:?} packet (at {:?}) not expected: {}",
                                     u.tag(), path, u.error())))
                                .into()),
-                _ => v.push(packet.tag(), &path),
+                _ => v.push(packet.tag(), packet.version(), &path),
             }
 
             match packet {
@@ -544,32 +544,32 @@ mod tests {
                 result: true,
             },
             TestVector {
-                s: &[SEIP, Literal, MDC, Pop],
+                s: &[SEIPv1, Literal, MDC, Pop],
                 result: true,
             },
             TestVector {
-                s: &[CompressedData, SEIP, Literal, MDC, Pop, Pop],
+                s: &[CompressedData, SEIPv1, Literal, MDC, Pop, Pop],
                 result: true,
             },
             TestVector {
-                s: &[CompressedData, SEIP, CompressedData, Literal,
+                s: &[CompressedData, SEIPv1, CompressedData, Literal,
                      Pop, MDC, Pop, Pop],
                 result: true,
             },
             TestVector {
-                s: &[SEIP, MDC, Pop],
+                s: &[SEIPv1, MDC, Pop],
                 result: false,
             },
             TestVector {
-                s: &[SKESK, SEIP, Literal, MDC, Pop],
+                s: &[SKESK, SEIPv1, Literal, MDC, Pop],
                 result: true,
             },
             TestVector {
-                s: &[PKESK, SEIP, Literal, MDC, Pop],
+                s: &[PKESK, SEIPv1, Literal, MDC, Pop],
                 result: true,
             },
             TestVector {
-                s: &[SKESK, SKESK, SEIP, Literal, MDC, Pop],
+                s: &[SKESK, SKESK, SEIPv1, Literal, MDC, Pop],
                 result: true,
             },
 
@@ -616,7 +616,7 @@ mod tests {
                 result: false,
             },
             TestVector {
-                s: &[OPS, OPS, SEIP, OPS, SEIP, Literal, MDC, Pop,
+                s: &[OPS, OPS, SEIPv1, OPS, SEIPv1, Literal, MDC, Pop,
                      SIG, MDC, Pop, SIG, SIG],
                 result: true,
             },
@@ -634,11 +634,11 @@ mod tests {
                 result: true,
             },
             TestVector {
-                s: &[SEIP, CompressedData, OpaqueContent, Pop, MDC, Pop],
+                s: &[SEIPv1, CompressedData, OpaqueContent, Pop, MDC, Pop],
                 result: true,
             },
             TestVector {
-                s: &[SEIP, OpaqueContent, Pop],
+                s: &[SEIPv1, OpaqueContent, Pop],
                 result: true,
             },
         ];
@@ -667,86 +667,101 @@ mod tests {
         use crate::packet::Tag::*;
 
         struct TestVector<'a> {
-            s: &'a [(Tag, isize)],
+            s: &'a [(Tag, Option<u8>, isize)],
             result: bool,
         }
 
         let test_vectors = [
             TestVector {
-                s: &[(Literal, 0)][..],
+                s: &[(Literal, None, 0)][..],
                 result: true,
             },
             TestVector {
-                s: &[(CompressedData, 0), (Literal, 1)],
+                s: &[(CompressedData, None, 0), (Literal, None, 1)],
                 result: true,
             },
             TestVector {
-                s: &[(CompressedData, 0), (CompressedData, 1), (Literal, 2)],
+                s: &[(CompressedData, None, 0), (CompressedData, None, 1),
+                     (Literal, None, 2)],
                 result: true,
             },
             TestVector {
-                s: &[(SEIP, 0), (Literal, 1), (MDC, 1)],
+                s: &[(SEIP, Some(1), 0), (Literal, None, 1), (MDC, None, 1)],
                 result: true,
             },
             TestVector {
-                s: &[(CompressedData, 0), (SEIP, 1), (Literal, 2), (MDC, 2)],
+                s: &[(CompressedData, None, 0), (SEIP, Some(1), 1),
+                     (Literal, None, 2), (MDC, None, 2)],
                 result: true,
             },
             TestVector {
-                s: &[(CompressedData, 0), (SEIP, 1),
-                     (CompressedData, 2), (Literal, 3), (MDC, 2)],
+                s: &[(CompressedData, None, 0), (SEIP, Some(1), 1),
+                     (CompressedData, None, 2), (Literal, None, 3),
+                     (MDC, None, 2)],
                 result: true,
             },
             TestVector {
-                s: &[(CompressedData, 0), (SEIP, 1),
-                     (CompressedData, 2), (Literal, 3), (MDC, 3)],
+                s: &[(CompressedData, None, 0), (SEIP, Some(1), 1),
+                     (CompressedData, None, 2), (Literal, None, 3),
+                     (MDC, None, 3)],
                 result: false,
             },
             TestVector {
-                s: &[(SEIP, 0), (MDC, 0)],
+                s: &[(SEIP, Some(1), 0), (MDC, None, 0)],
                 result: false,
             },
             TestVector {
-                s: &[(SKESK, 0), (SEIP, 0), (Literal, 1), (MDC, 1)],
+                s: &[(SKESK, None, 0), (SEIP, Some(1), 0), (Literal, None, 1),
+                     (MDC, None, 1)],
                 result: true,
             },
             TestVector {
-                s: &[(PKESK, 0), (SEIP, 0), (Literal, 1), (MDC, 1)],
+                s: &[(PKESK, None, 0), (SEIP, Some(1), 0), (Literal, None, 1),
+                     (MDC, None, 1)],
                 result: true,
             },
             TestVector {
-                s: &[(PKESK, 0), (SEIP, 0), (CompressedData, 1), (Literal, 2),
-                     (MDC, 1)],
+                s: &[(PKESK, None, 0), (SEIP, Some(1), 0),
+                     (CompressedData, None, 1), (Literal, None, 2),
+                     (MDC, None, 1)],
                 result: true,
             },
             TestVector {
-                s: &[(SKESK, 0), (SKESK, 0), (SEIP, 0), (Literal, 1), (MDC, 1)],
+                s: &[(SKESK, None, 0), (SKESK, None, 0), (SEIP, Some(1), 0),
+                     (Literal, None, 1), (MDC, None, 1)],
                 result: true,
             },
 
             TestVector {
-                s: &[(OnePassSig, 0), (Literal, 0), (Signature, 0)],
+                s: &[(OnePassSig, None, 0), (Literal, None, 0),
+                     (Signature, None, 0)],
                 result: true,
             },
             TestVector {
-                s: &[(OnePassSig, 0), (CompressedData, 0), (Literal, 1),
-                     (Signature, 0)],
+                s: &[(OnePassSig, None, 0), (CompressedData, None, 0),
+                     (Literal, None, 1),
+                     (Signature, None, 0)],
                 result: true,
             },
             TestVector {
-                s: &[(OnePassSig, 0), (OnePassSig, 0), (Literal, 0),
-                     (Signature, 0), (Signature, 0)],
+                s: &[(OnePassSig, None, 0), (OnePassSig, None, 0),
+                     (Literal, None, 0),
+                     (Signature, None, 0), (Signature, None, 0)],
                 result: true,
             },
             TestVector {
-                s: &[(OnePassSig, 0), (OnePassSig, 0), (Literal, 0),
-                     (Signature, 0)],
+                s: &[(OnePassSig, None, 0), (OnePassSig, None, 0),
+                     (Literal, None, 0),
+                     (Signature, None, 0)],
                 result: false,
             },
             TestVector {
-                s: &[(OnePassSig, 0), (OnePassSig, 0), (SEIP, 0),
-                     (OnePassSig, 1), (SEIP, 1), (Literal, 2), (MDC, 2),
-                     (Signature, 1), (MDC, 1), (Signature, 0), (Signature, 0)],
+                s: &[(OnePassSig, None, 0), (OnePassSig, None, 0),
+                     (SEIP, Some(1), 0),
+                     (OnePassSig, None, 1), (SEIP, Some(1), 1),
+                     (Literal, None, 2), (MDC, None, 2),
+                     (Signature, None, 1), (MDC, None, 1), (Signature, None, 0),
+                     (Signature, None, 0)],
                 result: true,
             },
 
@@ -756,16 +771,18 @@ mod tests {
             // that version to report that newer software is necessary
             // to process the message.", section 5.8 of RFC4880.
             TestVector {
-                s: &[(Marker, 0),
-                     (OnePassSig, 0), (Literal, 0), (Signature, 0)],
+                s: &[(Marker, None, 0),
+                     (OnePassSig, None, 0), (Literal, None, 0),
+                     (Signature, None, 0)],
                 result: true,
             },
         ];
 
         for v in &test_vectors {
             let mut l = MessageValidator::new();
-            for (token, depth) in v.s.iter() {
+            for (token, version, depth) in v.s.iter() {
                 l.push(*token,
+                       *version,
                        &(0..1 + *depth)
                            .map(|x| x as usize)
                            .collect::<Vec<_>>()[..]);
@@ -1208,7 +1225,7 @@ mod tests {
         use crate::packet::Tag;
 
         let mut l = MessageValidator::new();
-        l.push(Tag::Literal, &[0]);
+        l.push(Tag::Literal, None, &[0]);
         l.finish();
 
         assert!(matches!(l.check(), MessageValidity::Message));
@@ -1238,7 +1255,7 @@ mod tests {
 
         // Simple one-literal message.
         let mut l = MessageValidator::new();
-        l.push(Tag::Literal, &[0]);
+        l.push(Tag::Literal, None, &[0]);
         assert!(matches!(l.check(), MessageValidity::MessagePrefix));
         l.finish();
 

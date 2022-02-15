@@ -444,7 +444,8 @@ impl<'a> PacketParserBuilder<'a> {
         match PacketParser::parse(Box::new(self.bio), state, vec![ 0 ])? {
             ParserResult::Success(mut pp) => {
                 // We successfully parsed the first packet's header.
-                pp.state.message_validator.push(pp.packet.tag(), &[0]);
+                pp.state.message_validator.push(
+                    pp.packet.tag(), pp.packet.version(), &[0]);
                 pp.state.keyring_validator.push(pp.packet.tag());
                 pp.state.cert_validator.push(pp.packet.tag());
                 Ok(PacketParserResult::Some(pp))

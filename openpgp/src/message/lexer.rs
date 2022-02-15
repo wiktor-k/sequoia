@@ -25,8 +25,8 @@ pub enum Token {
     SKESK,
     /// An PK-ESK packet.
     PKESK,
-    /// A SEIP packet.
-    SEIP,
+    /// A version 1 SEIP packet.
+    SEIPv1,
     /// An MDC packet.
     MDC,
     /// An AED packet.

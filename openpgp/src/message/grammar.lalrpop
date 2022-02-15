@@ -16,9 +16,9 @@ CompressedData: () = {
     COMPRESSED_DATA Message POP
 };
 
-SeipPart: () = {
-    SEIP Message MDC POP,
-    SEIP OPAQUE_CONTENT POP,
+Seipv1Part: () = {
+    SEIPv1 Message MDC POP,
+    SEIPv1 OPAQUE_CONTENT POP,
 }
 
 AedPart: () = {
@@ -32,7 +32,7 @@ EncryptedPart: () = {
 };
 
 EncryptionContainer: () = {
-    SeipPart,
+    Seipv1Part,
     AedPart,
 };
 
@@ -68,7 +68,7 @@ extern {
         COMPRESSED_DATA => lexer::Token::CompressedData,
         SKESK => lexer::Token::SKESK,
         PKESK => lexer::Token::PKESK,
-        SEIP => lexer::Token::SEIP,
+        SEIPv1 => lexer::Token::SEIPv1,
         MDC => lexer::Token::MDC,
         AED => lexer::Token::AED,
         OPS => lexer::Token::OPS,
