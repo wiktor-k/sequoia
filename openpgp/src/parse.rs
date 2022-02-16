@@ -4922,6 +4922,12 @@ impl <'a> PacketParser<'a> {
     pub fn take_map(&mut self) -> Option<map::Map> {
         self.map.take()
     }
+
+    /// Checks if we are processing a signed message using the
+    /// Cleartext Signature Framework.
+    pub(crate) fn processing_csf_message(&self) -> bool {
+        Cookie::processing_csf_message(&self.reader)
+    }
 }
 
 /// This interface allows a caller to read the content of a

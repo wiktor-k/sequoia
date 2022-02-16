@@ -647,14 +647,23 @@ impl IMessageStructure {
         }
     }
 
-    fn push_signature(&mut self, sig: Signature) {
+    fn push_signature(&mut self, sig: Signature, csf_message: bool) {
         for layer in self.layers.iter_mut().rev() {
             match layer {
                 IMessageLayer::SignatureGroup {
                     ref mut sigs, ref mut count,
                 } if *count > 0 => {
                     sigs.push(sig);
-                    *count -= 1;
+                    if csf_message {
+                        // The CSF transformation does not know how
+                        // many signatures will follow, so we may end
+                        // up with too few synthesized OPS packets.
+                        // But, we only have one layer anyway, and no
+                        // notarizations, so we don't need to concern
+                        // ourself with the counter.
+                    } else {
+                        *count -= 1;
+                    }
                     return;
                 },
                 _ => (),
@@ -1719,6 +1728,11 @@ pub struct Decryptor<'a, H: VerificationHelper + DecryptionHelper> {
     /// The mode of operation.
     mode: Mode,
 
+    /// Whether we are actually processing a cleartext signature
+    /// framework message.  If so, we need to tweak our behavior a
+    /// bit.
+    processing_csf_message: Option<bool>,
+
     /// Signature verification relative to this time.
     ///
     /// This is needed for checking the signature's liveness.
@@ -2309,12 +2323,19 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
             time,
             clock_skew_tolerance: tolerance,
             policy,
+            processing_csf_message: None, // We don't know yet.
         };
 
         let mut pkesks: Vec<packet::PKESK> = Vec::new();
         let mut skesks: Vec<packet::SKESK> = Vec::new();
 
         while let PacketParserResult::Some(mut pp) = ppr {
+            // Check whether we are actually processing a cleartext
+            // signature framework message.
+            if v.processing_csf_message.is_none() {
+                v.processing_csf_message = Some(pp.processing_csf_message());
+            }
+
             v.policy.packet(&pp.packet)?;
             v.helper.inspect(&pp)?;
 
@@ -2330,8 +2351,19 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
                                .into());
                 }
             } else if let Err(err) = pp.possible_message() {
-                t!("Malformed message: {}", err);
-                return Err(err.context("Malformed OpenPGP message"));
+                if v.processing_csf_message.expect("set by now") {
+                    // Our CSF transformation yields just one OPS
+                    // packet per encountered 'Hash' algorithm header,
+                    // and it cannot know how many signatures are in
+                    // fact following.  Therefore, the message will
+                    // not be well-formed according to the grammar.
+                    // But, since we created the message structure
+                    // during the transformation, we know it is good,
+                    // even if it is a little out of spec.
+                } else {
+                    t!("Malformed message: {}", err);
+                    return Err(err.context("Malformed OpenPGP message"));
+                }
             }
 
             let sym_algo_hint = if let Packet::AED(ref aed) = pp.packet {
@@ -2488,7 +2520,8 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
         match p {
             Packet::Signature(sig) => {
                 sig.get_issuers().into_iter().for_each(|i| self.push_issuer(i));
-                self.structure.push_signature(sig);
+                self.structure.push_signature(
+                    sig, self.processing_csf_message.expect("set by now"));
             },
             _ => (),
         }
@@ -2603,8 +2636,14 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
                     }
 
                     if let Err(err) = possible_message {
-                        return Err(err.context(
-                            "Malformed OpenPGP message"));
+                        if self.processing_csf_message.expect("set by now") {
+                            // CSF transformation creates slightly out
+                            // of spec message structure.  See above
+                            // for longer explanation.
+                        } else {
+                            return Err(err.context(
+                                "Malformed OpenPGP message"));
+                        }
                     }
 
                     self.push_sig(p)?;
@@ -3692,6 +3731,49 @@ EK8=
 -----END PGP MESSAGE-----
 ")?;
 
+        Ok(())
+    }
+
+    /// Tests whether messages using the cleartext signature framework
+    /// with multiple signatures and signers are correctly handled.
+    #[test]
+    fn csf_multiple_signers() -> Result<()> {
+        struct H(bool);
+        impl VerificationHelper for H {
+            fn get_certs(&mut self, _ids: &[crate::KeyHandle])
+                         -> Result<Vec<Cert>> {
+                crate::cert::CertParser::from_bytes(
+                    crate::tests::key("InRelease.signers.pgp"))?
+                    .collect()
+            }
+
+            fn check(&mut self, m: MessageStructure)
+                     -> Result<()> {
+                for (i, layer) in m.into_iter().enumerate() {
+                    assert_eq!(i, 0);
+                    if let MessageLayer::SignatureGroup { results } = layer {
+                        assert_eq!(results.len(), 3);
+                        for result in results {
+                            assert!(result.is_ok());
+                        }
+                        self.0 = true;
+                    } else {
+                        panic!();
+                    }
+                }
+
+                Ok(())
+            }
+        }
+
+        let p = &P::new();
+        let mut verifier = VerifierBuilder::from_bytes(
+            crate::tests::message("InRelease"))?
+            .with_policy(p, None, H(false))?;
+        let mut b = Vec::new();
+        verifier.read_to_end(&mut b)?;
+        let h = verifier.into_helper();
+        assert!(h.0);
         Ok(())
     }
 }
