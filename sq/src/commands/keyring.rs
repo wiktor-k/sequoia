@@ -16,6 +16,7 @@ use openpgp::{
         CertParser,
     },
     Fingerprint,
+    KeyHandle,
     packet::{
         UserID,
         UserAttribute,
@@ -80,8 +81,24 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
             let any_ua_predicates = false;
             let ua_predicate = |_ua: &UserAttribute| false;
 
-            let any_key_predicates = false;
-            let key_predicate = |_key: &Key<_, _>| false;
+            let any_key_predicates = m.is_present("handle");
+            let handles: Vec<KeyHandle> =
+                if let Some(handles) = m.values_of("handle") {
+                    use std::str::FromStr;
+                    handles.into_iter().map(KeyHandle::from_str)
+                        .collect::<Result<_>>()?
+                } else {
+                    Vec::with_capacity(0)
+                };
+            let key_predicate = |key: &Key<_, _>| {
+                let mut keep = false;
+
+                for handle in &handles {
+                    keep |= handle.aliases(key.key_handle());
+                }
+
+                keep
+            };
 
             let filter_fn = |c: Cert| -> Option<Cert> {
                 if ! (any_uid_predicates
@@ -91,7 +108,7 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
                     Some(c)
                 } else if ! (c.userids().any(|c| uid_predicate(&c))
                              || c.user_attributes().any(|c| ua_predicate(&c))
-                             || c.keys().subkeys().any(|c| key_predicate(&c))) {
+                             || c.keys().any(|c| key_predicate(c.key()))) {
                     None
                 } else if m.is_present("prune-certs") {
                     let c = c
@@ -102,7 +119,8 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
                             ! any_ua_predicates || ua_predicate(&c)
                         })
                         .retain_subkeys(|c| {
-                            ! any_key_predicates || key_predicate(&c)
+                            ! any_key_predicates
+                                || key_predicate(c.key().role_as_unspecified())
                         });
                     if c.userids().count() == 0
                         && c.user_attributes().count() == 0

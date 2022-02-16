@@ -897,6 +897,9 @@
 //!         --email <ADDRESS>...
 //!             Parses user ids into name and email address and case-sensitively
 //!             matches on the email address, requiring an exact match.
+//!         --handle <FINGERPRINT|KEYID>...
+//!             Matches on both primary keys and subkeys, including those
+//!             certificates that match the given fingerprint or key id.
 //!         --name <NAME>...
 //!             Parses user ids into name and email and case-sensitively matches on
 //!             the name, requiring an exact match.

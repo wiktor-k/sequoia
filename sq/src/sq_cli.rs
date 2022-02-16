@@ -872,6 +872,14 @@ $ sq keyring filter --domain example.org --prune-certs certs.pgp
                                   address and case-sensitively matches \
                                   on the domain of the email address, \
                                   requiring an exact match."))
+                        .arg(Arg::with_name("handle")
+                             .long("handle").value_name("FINGERPRINT|KEYID")
+                             .multiple(true).number_of_values(1)
+                             .help("Matches on (sub)key fingerprints and key ids")
+                             .long_help(
+                                 "Matches on both primary keys and subkeys, \
+                                  including those certificates that match the \
+                                  given fingerprint or key id."))
                         .arg(Arg::with_name("prune-certs")
                              .short("P").long("prune-certs")
                              .help("Removes certificate components not \
