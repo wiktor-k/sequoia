@@ -869,10 +869,7 @@ impl Marshal for Fingerprint {
 impl SerializeInto for Fingerprint {}
 impl MarshalInto for Fingerprint {
     fn serialized_len(&self) -> usize {
-        match self {
-            Fingerprint::V4(_) => 20,
-            Fingerprint::Invalid(ref fp) => fp.len(),
-        }
+        self.as_bytes().len()
     }
 
     fn serialize_into(&self, buf: &mut [u8]) -> Result<usize> {
@@ -1514,19 +1511,11 @@ impl MarshalInto for SubpacketValue {
             Features(ref f) => f.as_slice().len(),
             SignatureTarget { ref digest, .. } => 2 + digest.len(),
             EmbeddedSignature(sig) => sig.serialized_len(),
-            IssuerFingerprint(ref fp) => match fp {
-                Fingerprint::V4(_) =>
-                    1 + (fp as &dyn MarshalInto).serialized_len(),
-                // Educated guess for unknown versions.
-                Fingerprint::Invalid(_) => 1 + fp.as_bytes().len(),
-            },
+            IssuerFingerprint(ref fp) =>
+                1 + (fp as &dyn MarshalInto).serialized_len(),
             PreferredAEADAlgorithms(ref p) => p.len(),
-            IntendedRecipient(ref fp) => match fp {
-                Fingerprint::V4(_) =>
-                    1 + (fp as &dyn MarshalInto).serialized_len(),
-                // Educated guess for unknown versions.
-                Fingerprint::Invalid(_) => 1 + fp.as_bytes().len(),
-            },
+            IntendedRecipient(ref fp) =>
+                1 + (fp as &dyn MarshalInto).serialized_len(),
             AttestedCertifications(digests) =>
                 digests.iter().map(|d| d.len()).sum(),
             Unknown { body, .. } => body.len(),
