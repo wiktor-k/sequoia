@@ -1334,7 +1334,7 @@ impl<'a> Signer<'a> {
             // Emit the signatures in reverse, so that the
             // one-pass-signature and signature packets "bracket" the
             // message.
-            for signer in self.signers.iter_mut() {
+            for signer in self.signers.iter_mut().rev() {
                 // Part of the signature packet is hashed in,
                 // therefore we need to clone the hash.
                 let hash = self.hash.clone();
@@ -3780,5 +3780,68 @@ mod test {
         } else {
             unreachable!();
         };
+    }
+
+    /// Tests that multiple signatures are in the correct order.
+    #[test]
+    fn issue_816() -> Result<()> {
+        use crate::{
+            packet::key::{Key4, PrimaryRole},
+            types::Curve,
+            KeyHandle,
+        };
+
+        let signer_a =
+            Key4::<_, PrimaryRole>::generate_ecc(true, Curve::Ed25519)?
+            .into_keypair()?;
+
+        let signer_b =
+            Key4::<_, PrimaryRole>::generate_ecc(true, Curve::Ed25519)?
+            .into_keypair()?;
+
+        let mut sink = Vec::new();
+        let message = Message::new(&mut sink);
+        let message = Signer::new(message, signer_a)
+            .add_signer(signer_b)
+            .build()?;
+        let mut message = LiteralWriter::new(message).build()?;
+        message.write_all(b"Make it so, number one!")?;
+        message.finalize()?;
+
+        let pp = crate::PacketPile::from_bytes(&sink)?;
+        assert_eq!(pp.children().count(), 5);
+
+        let first_signer: KeyHandle =
+            if let Packet::OnePassSig(ops) = pp.path_ref(&[0]).unwrap() {
+                ops.issuer().into()
+            } else {
+                panic!("expected ops packet")
+            };
+
+        let second_signer: KeyHandle =
+            if let Packet::OnePassSig(ops) = pp.path_ref(&[1]).unwrap() {
+                ops.issuer().into()
+            } else {
+                panic!("expected ops packet")
+            };
+
+        assert!(matches!(pp.path_ref(&[2]).unwrap(), Packet::Literal(_)));
+
+        // OPS and Signature packets "bracket" the literal, i.e. the
+        // last occurring ops packet is met by the first occurring
+        // signature packet.
+        if let Packet::Signature(sig) = pp.path_ref(&[3]).unwrap() {
+            assert!(sig.get_issuers()[0].aliases(&second_signer));
+        } else {
+            panic!("expected sig packet")
+        }
+
+        if let Packet::Signature(sig) = pp.path_ref(&[4]).unwrap() {
+            assert!(sig.get_issuers()[0].aliases(&first_signer));
+        } else {
+            panic!("expected sig packet")
+        }
+
+        Ok(())
     }
 }
