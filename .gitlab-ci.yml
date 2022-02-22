@@ -86,6 +86,35 @@ build-bookworm:arm64:
     CARGO_HOME: /cargo
   after_script: []
 
+sq-features:
+  tags:
+    - linux
+  stage: build
+  image: registry.gitlab.com/sequoia-pgp/build-docker-image/bookworm-prebuild:latest
+  only:
+    refs:
+      # Run unconditionally for branch names that contain sq and main,
+      # changes only applies to "branches" here
+      - sq #branch names containing 'sq'
+      - tags
+      - web
+      - schedules
+  parallel:
+    matrix:
+      - FEATURES:
+        - ""
+        - "autocrypt"
+        - "autocrypt,compression-bzip2"
+        - "compression-bzip2"
+  needs:
+    - codespell
+  script:
+    - cargo test --package sequoia-sq --no-default-features --features crypto-nettle --features $FEATURES
+  variables:
+    CARGO_TARGET_DIR: /target
+    CARGO_HOME: /cargo
+  after_script: []
+
 bookworm:
   tags:
     - linux
