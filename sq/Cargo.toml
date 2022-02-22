@@ -57,8 +57,8 @@ bench = false
 
 [features]
 default = [
-    "buffered-reader/compression-bzip2",
-    "sequoia-openpgp/default",
+    "crypto-nettle",
+    "compression-bzip2",
     "autocrypt",
 ]
 crypto-nettle = ["sequoia-openpgp/crypto-nettle"]
