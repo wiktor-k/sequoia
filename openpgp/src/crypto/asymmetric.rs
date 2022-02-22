@@ -62,15 +62,6 @@ impl Signer for Box<dyn Signer> {
         self.as_ref().public()
     }
 
-    /// Returns a list of hashes that this signer accepts.
-    ///
-    /// Some cryptographic libraries or hardware modules support signing digests
-    /// produced with only a limited set of hashing algorithms. This function
-    /// indicates to callers which algorithm digests are supported by this signer.
-    ///
-    /// The default implementation of this function allows all hash algorithms to
-    /// be used. Provide an explicit implementation only when a smaller subset
-    /// of hashing algorithms is valid for this `Signer` implementation.
     fn acceptable_hashes(&self) -> &[HashAlgorithm] {
         self.as_ref().acceptable_hashes()
     }
@@ -86,15 +77,6 @@ impl Signer for Box<dyn Signer + Send + Sync> {
         self.as_ref().public()
     }
 
-    /// Returns a list of hashes that this signer accepts.
-    ///
-    /// Some cryptographic libraries or hardware modules support signing digests
-    /// produced with only a limited set of hashing algorithms. This function
-    /// indicates to callers which algorithm digests are supported by this signer.
-    ///
-    /// The default implementation of this function allows all hash algorithms to
-    /// be used. Provide an explicit implementation only when a smaller subset
-    /// of hashing algorithms is valid for this `Signer` implementation.
     fn acceptable_hashes(&self) -> &[HashAlgorithm] {
         self.as_ref().acceptable_hashes()
     }
