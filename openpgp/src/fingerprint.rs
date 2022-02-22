@@ -232,10 +232,7 @@ impl Fingerprint {
 
     /// Common code for the above functions.
     fn convert_to_string(&self, pretty: bool) -> String {
-        let raw = match self {
-            Fingerprint::V4(ref fp) => &fp[..],
-            Fingerprint::Invalid(ref fp) => &fp[..],
-        };
+        let raw = self.as_bytes();
 
         // We currently only handle V4 fingerprints, which look like:
         //
@@ -250,8 +247,8 @@ impl Fingerprint {
             + if pretty {
                 // Every 2 bytes of output, we insert a space.
                 raw.len() / 2
-                // After 5 groups, there is another space.
-                + raw.len() / 10
+                // After half of the groups, there is another space.
+                + 1
             } else { 0 });
 
         for (i, b) in raw.iter().enumerate() {
@@ -259,7 +256,7 @@ impl Fingerprint {
                 output.push(b' ');
             }
 
-            if pretty && i > 0 && i % 10 == 0 {
+            if pretty && i > 0 && i * 2 == raw.len() {
                 output.push(b' ');
             }
 
