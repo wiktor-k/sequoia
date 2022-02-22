@@ -1457,6 +1457,10 @@ impl Marshal for SubpacketValue {
                     o.write_all(&[4])?;
                     o.write_all(fp.as_bytes())?;
                 },
+                Fingerprint::V5(_) => {
+                    o.write_all(&[5])?;
+                    o.write_all(fp.as_bytes())?;
+                },
                 _ => return Err(Error::InvalidArgument(
                     "Unknown kind of fingerprint".into()).into()),
             }
@@ -1467,6 +1471,10 @@ impl Marshal for SubpacketValue {
             IntendedRecipient(ref fp) => match fp {
                 Fingerprint::V4(_) => {
                     o.write_all(&[4])?;
+                    o.write_all(fp.as_bytes())?;
+                },
+                Fingerprint::V5(_) => {
+                    o.write_all(&[5])?;
                     o.write_all(fp.as_bytes())?;
                 },
                 _ => return Err(Error::InvalidArgument(
