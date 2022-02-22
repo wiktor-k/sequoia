@@ -4,7 +4,6 @@ use clap::{App, Arg, ArgGroup, SubCommand, AppSettings};
 
 pub fn build() -> App<'static, 'static> {
     configure(App::new("sq"),
-              cfg!(feature = "net"),
               cfg!(feature = "autocrypt"),
     )
 }
@@ -21,7 +20,6 @@ pub fn build() -> App<'static, 'static> {
 ///   - Inspection & packet manipulation    (6xx)
 pub fn configure(
     app: App<'static, 'static>,
-    feature_net: bool,
     feature_autocrypt: bool,
 ) -> App<'static, 'static> {
     let version = Box::leak(
@@ -1715,14 +1713,7 @@ as being human readable."))
                              .short("B").long("binary")
                              .help("Emits binary data"))
                 )
-        );
-
-    let app = if ! feature_net {
-        // Without networking support.
-        app
-    } else {
-        // With networking support.
-        app
+        )
         .subcommand(SubCommand::with_name("keyserver")
                     .display_order(410)
                     .about("Interacts with keyservers")
@@ -1817,8 +1808,7 @@ as being human readable."))
                                      .help("Uses the direct method \
                                             [default: advanced method]"))
                     )
-        )
-    };
+        );
 
     let app = if ! feature_autocrypt {
         // Without Autocrypt support.

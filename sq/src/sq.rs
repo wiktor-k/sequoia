@@ -692,7 +692,6 @@ fn main() -> Result<()> {
             _ => unreachable!(),
         },
 
-        #[cfg(feature = "net")]
         ("keyserver",  Some(m)) =>
             commands::net::dispatch_keyserver(config, m)?,
 
@@ -700,7 +699,6 @@ fn main() -> Result<()> {
 
         ("revoke",  Some(m)) => commands::revoke::dispatch(config, m)?,
 
-        #[cfg(feature = "net")]
         ("wkd",  Some(m)) => commands::net::dispatch_wkd(config, m)?,
 
         ("certify",  Some(m)) => {

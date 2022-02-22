@@ -52,7 +52,6 @@ pub mod key;
 pub mod merge_signatures;
 pub use self::merge_signatures::merge_signatures;
 pub mod keyring;
-#[cfg(feature = "net")]
 pub mod net;
 pub mod certify;
 
