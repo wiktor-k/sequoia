@@ -272,15 +272,7 @@ impl SKESK4 {
             Ok((sym, plain[1..].into()))
         } else {
             // No ESK, we return the derived key.
-
-            #[allow(deprecated)]
-            match self.s2k {
-                S2K::Simple{ .. } =>
-                    Err(Error::InvalidOperation(
-                        "SKESK4: Cannot use Simple S2K without ESK".into())
-                        .into()),
-                _ => Ok((self.sym_algo, key)),
-            }
+            Ok((self.sym_algo, key))
         }
     }
 }
@@ -657,5 +649,62 @@ mod test {
         let mut serialized = Vec::new();
         packets[0].serialize(&mut serialized).unwrap();
         assert_eq!(&raw[..], &serialized[..]);
+    }
+
+    /// Tests various S2K methods, with and without encrypted session
+    /// key.
+    #[test]
+    fn skesk4_s2k_variants() -> Result<()> {
+        use std::io::Read;
+        use crate::{
+            Cert,
+            Fingerprint,
+            packet::{SKESK, PKESK},
+            parse::stream::*,
+        };
+
+        struct H();
+        impl VerificationHelper for H {
+            fn get_certs(&mut self, _ids: &[crate::KeyHandle])
+                         -> Result<Vec<Cert>> {
+                Ok(Vec::new())
+            }
+
+            fn check(&mut self, _m: MessageStructure)
+                     -> Result<()> {
+                Ok(())
+            }
+        }
+
+        impl DecryptionHelper for H {
+            fn decrypt<D>(&mut self, _: &[PKESK], skesks: &[SKESK],
+                          _: Option<SymmetricAlgorithm>,
+                          mut decrypt: D) -> Result<Option<Fingerprint>>
+            where D: FnMut(SymmetricAlgorithm, &SessionKey) -> bool
+            {
+                assert_eq!(skesks.len(), 1);
+                let (cipher, sk) = skesks[0].decrypt(&"password".into())?;
+                assert_eq!(cipher, SymmetricAlgorithm::AES256);
+                let r = decrypt(cipher, &sk);
+                assert!(r);
+                Ok(None)
+            }
+        }
+
+        let p = &crate::policy::StandardPolicy::new();
+        for variant in &["simple", "salted", "iterated.min", "iterated.max"] {
+            for esk in &["", ".esk"] {
+                let name = format!("s2k/{}{}.pgp", variant, esk);
+                eprintln!("{}", name);
+                let mut verifier = DecryptorBuilder::from_bytes(
+                    crate::tests::message(&name))?
+                    .with_policy(p, None, H())?;
+                let mut b = Vec::new();
+                verifier.read_to_end(&mut b)?;
+                assert_eq!(&b, b"Hello World :)");
+            }
+        }
+
+        Ok(())
     }
 }
