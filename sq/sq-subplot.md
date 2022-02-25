@@ -317,7 +317,7 @@ inspect output is the last second of validity.
 given an installed sq
 when I run sq key generate --export key.pgp --expires=2038-01-19T03:14:07+00:00
 when I run sq inspect key.pgp
-then stdout contains "Expiration time: 2038-01-19 03:14:06 UTC"
+then stdout contains "Expiration time: 2038-01-19 03:14"
 ~~~
 
 ### Generate a key with a given duration
