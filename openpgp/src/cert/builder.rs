@@ -973,8 +973,8 @@ impl CertBuilder<'_> {
 
     /// Adds a custom subkey.
     ///
-    /// If `expiration` is `None`, the subkey uses the same expiration
-    /// time as the primary key.
+    /// If `validity` is `None`, the subkey will be valid for the same
+    /// period as the primary key.
     ///
     /// Likewise, if `cs` is `None`, the same cipher suite is used as
     /// for the primary key.
@@ -1055,6 +1055,9 @@ impl CertBuilder<'_> {
     ///   - Key metadata is added (key flags, key validity period).
     ///
     ///   [`SubkeyBinding`]: crate::types::SignatureType::SubkeyBinding
+    ///
+    /// If `validity` is `None`, the subkey will be valid for the same
+    /// period as the primary key.
     ///
     /// # Examples
     ///
