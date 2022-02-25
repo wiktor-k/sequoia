@@ -1336,7 +1336,8 @@ impl<'a, P, R, R2> ValidKeyAmalgamation<'a, P, R, R2>
     {
         if ! self.primary() {
             // First, check the certificate.
-            self.cert().alive()?;
+            self.cert().alive()
+                .context("The certificate is not live")?;
         }
 
         let sig = {
@@ -1349,6 +1350,11 @@ impl<'a, P, R, R2> ValidKeyAmalgamation<'a, P, R, R2>
         };
         if let Some(sig) = sig {
             sig.key_alive(self.key(), self.time())
+                .context(if self.primary() {
+                    "The primary key is not live"
+                } else {
+                    "The subkey is not live"
+                })
         } else {
             // There is no key expiration time on the binding
             // signature.  This key does not expire.
