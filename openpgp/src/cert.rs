@@ -1754,11 +1754,11 @@ impl Cert {
                      t!("check_one!({}, {:?}, {:?}, {}, ...)",
                         $desc, $sigs, $sig,
                         stringify!($verify_method));
-                     if let Ok(())
-                         = $sig.$verify_method(self.primary.key(),
+                     match $sig.$verify_method(self.primary.key(),
                                                self.primary.key(),
                                                $($verify_args),*)
                      {
+                       Ok(()) => {
                          t!("Sig {:02X}{:02X}, {:?} \
                              was out of place.  Belongs to {}.",
                             $sig.digest_prefix()[0],
@@ -1767,6 +1767,13 @@ impl Cert {
 
                          $sigs.push($sig);
                          continue 'outer;
+                       },
+                       Err(err) => {
+                         t!("Sig {:02X}{:02X}, type = {} \
+                             doesn't belong to {}: {:?}",
+                            sig.digest_prefix()[0], sig.digest_prefix()[1],
+                            sig.typ(), $desc, err);
+                       },
                      }
                    }
                  });
@@ -1794,10 +1801,11 @@ impl Cert {
                        $desc, stringify!($sigs), $sig,
                        stringify!($verify_method), stringify!($hash_method));
                     if let Some(key) = $lookup_fn(&sig) {
-                        if let Ok(()) = sig.$verify_method(&key,
-                                                           self.primary.key(),
-                                                           $($verify_args),*)
+                        match sig.$verify_method(&key,
+                                                 self.primary.key(),
+                                                 $($verify_args),*)
                         {
+                          Ok(()) => {
                             t!("Sig {:02X}{:02X}, {:?} \
                                 was out of place.  Belongs to {}.",
                                $sig.digest_prefix()[0],
@@ -1806,7 +1814,14 @@ impl Cert {
 
                             $sigs.push($sig);
                             continue 'outer;
-                        }
+                          },
+                          Err(err) => {
+                            t!("Sig {:02X}{:02X}, type = {} \
+                                doesn't belong to {}: {:?}",
+                               sig.digest_prefix()[0], sig.digest_prefix()[1],
+                               sig.typ(), $desc, err);
+                          },
+                       }
                     } else {
                         // Use hash prefix as heuristic.
                         let key = self.primary.key();
@@ -1834,7 +1849,20 @@ impl Cert {
                                     other components (found before? {:?})...",
                                    found_component);
                                 found_component = true;
+                            } else {
+                                t!("Sig {:02X}{:02X}, {:?} \
+                                    does not belong to {}: \
+                                    hash prefix mismatch",
+                                   $sig.digest_prefix()[0],
+                                   $sig.digest_prefix()[1],
+                                   $sig.typ(), $desc);
                             }
+                        } else {
+                            t!("Sig {:02X}{:02X}, type = {} \
+                                doesn't use a supported hash algorithm: \
+                                {:?} unsupported",
+                               sig.digest_prefix()[0], sig.digest_prefix()[1],
+                               sig.typ(), sig.hash_algo());
                         }
                     }
                   }
