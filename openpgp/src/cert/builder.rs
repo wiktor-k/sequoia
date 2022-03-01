@@ -207,6 +207,42 @@ assert_send_and_sync!(KeyBlueprint);
 /// [`UserAttribute`s]: crate::packet::user_attribute::UserAttribute
 /// [`Key`s]: crate::packet::Key
 ///
+/// # Security considerations
+///
+/// ## Expiration
+///
+/// There are two ways to invalidate cryptographic key material:
+/// revocation and liveness.  Both variants come with their own
+/// challenges.  Revocations rely on a robust channel to update
+/// certificates (and attackers may interfere with that).
+///
+/// On the other hand, liveness involves creating key material that
+/// expires after a certain time, then periodically extending the
+/// expiration time.  Again, consumers need a way to update
+/// certificates, but should that fail (maybe because it was
+/// interfered with), the consumer errs on the side of no longer
+/// trusting that key material.
+///
+/// Because of the way metadata is added to OpenPGP certificates,
+/// attackers who control the certificate lookup and update mechanism
+/// may strip components like signatures from the certificate.  This
+/// has implications for the robustness of relying on liveness.
+///
+/// If you first create a certificate that does not expire, and then
+/// change your mind and set an expiration time, an attacker can
+/// simply strip off that update, yielding the original certificate
+/// that does not expire.
+///
+/// Hence, to ensure robust key expiration, you must set an expiration
+/// with [`CertBuilder::set_validity_period`] when you create the
+/// certificate.
+///
+/// By default, the `CertBuilder` creates certificates that do not
+/// expire, because the expiration time is a policy decision and
+/// depends on the use case.  For general purpose certificates,
+/// [`CertBuilder::general_purpose`] sets the validity period to
+/// roughly three years.
+///
 /// # Examples
 ///
 /// Generate a general-purpose certificate with one User ID:
@@ -247,9 +283,11 @@ impl CertBuilder<'_> {
     /// [`CertBuilder::add_signing_subkey`],
     /// [`CertBuilder::add_transport_encryption_subkey`], etc.).
     ///
-    /// [`CertBuilder::add_signing_subkey`]: CertBuilder::add_signing_subkey()
-    /// [`CertBuilder::add_transport_encryption_subkey`]: CertBuilder::add_transport_encryption_subkey()
-    /// [`CertBuilder::add_userid`]: CertBuilder::add_userid()
+    /// By default, the generated certificate does not expire.  It is
+    /// recommended to set a suitable validity period using
+    /// [`CertBuilder::set_validity_period`].  See [this
+    /// section](CertBuilder#expiration) of the type's documentation
+    /// for security considerations of key expiration.
     ///
     /// # Examples
     ///
@@ -296,6 +334,9 @@ impl CertBuilder<'_> {
     /// and an encryption-capable subkey.  The encryption subkey is
     /// marked as being appropriate for both data in transit and data
     /// at rest.
+    ///
+    /// The certificate and all subkeys are valid for approximately
+    /// three years.
     ///
     /// # Examples
     ///
@@ -1189,8 +1230,14 @@ impl CertBuilder<'_> {
     /// after the validity period, the certificate is considered to be
     /// expired.
     ///
-    /// A value of None means that the certificate never expires.
-    //
+    /// The validity period starts with the creation time (see
+    /// [`CertBuilder::set_creation_time`]).
+    ///
+    /// A value of `None` means that the certificate never expires.
+    ///
+    /// See [this section](CertBuilder#expiration) of the type's
+    /// documentation for security considerations of key expiration.
+    ///
     /// # Examples
     ///
     /// ```
