@@ -866,7 +866,7 @@ then files hello.txt and alice.txt match
 ## Detect bad signature when decrypting
 
 _Requirement: When decrypting a message, if a signature check fails,
-there should be output._
+there should be no output._
 
 ~~~scenario
 given an installed sq
