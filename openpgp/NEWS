@@ -2,6 +2,7 @@
 #+TITLE: sequoia-openpgp NEWS – history of user-visible changes
 #+STARTUP: content hidestars
 
+* Changes in 1.9.0
 * Changes in 1.8.0
 ** New functionality
    - crypto::Signer::acceptable_hashes
