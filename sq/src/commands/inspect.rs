@@ -9,7 +9,7 @@ use openpgp::packet::{
     key::PublicParts,
 };
 use crate::openpgp::parse::{Parse, PacketParserResult};
-use crate::openpgp::policy::Policy;
+use crate::openpgp::policy::{Policy, HashAlgoSecurity};
 use crate::openpgp::packet::key::SecretKeyMaterial;
 
 use super::dump::Convert;
@@ -175,7 +175,7 @@ fn inspect_cert(policy: &dyn Policy,
             }
             Err(e) => print_error_chain(output, &e)?,
         }
-        inspect_certifications(output,
+        inspect_certifications(output, policy,
                                uidb.certifications(),
                                print_certifications)?;
         writeln!(output)?;
@@ -193,7 +193,7 @@ fn inspect_cert(policy: &dyn Policy,
             }
             Err(e) => print_error_chain(output, &e)?,
         }
-        inspect_certifications(output,
+        inspect_certifications(output, policy,
                                uab.certifications(),
                                print_certifications)?;
         writeln!(output)?;
@@ -209,7 +209,7 @@ fn inspect_cert(policy: &dyn Policy,
             }
             Err(e) => print_error_chain(output, &e)?,
         }
-        inspect_certifications(output,
+        inspect_certifications(output, policy,
                                ub.certifications(),
                                print_certifications)?;
         writeln!(output)?;
@@ -272,7 +272,8 @@ fn inspect_key(policy: &dyn Policy,
             writeln!(output, "{}      Key flags: {}", indent, flags)?;
         }
     }
-    inspect_certifications(output, bundle.certifications().iter(),
+    inspect_certifications(output, policy,
+                           bundle.certifications().iter(),
                            print_certifications)?;
 
     Ok(())
@@ -401,9 +402,12 @@ fn inspect_signatures(output: &mut dyn io::Write,
 }
 
 fn inspect_certifications<'a, A>(output: &mut dyn io::Write,
-                          certs: A,
-                          print_certifications: bool) -> Result<()> where
-        A: std::iter::Iterator<Item=&'a openpgp::packet::Signature> {
+                                 policy: &dyn Policy,
+                                 certs: A,
+                                 print_certifications: bool)
+    -> Result<()>
+    where A: std::iter::Iterator<Item=&'a openpgp::packet::Signature>
+{
     if print_certifications {
         let mut emit_warning = false;
         for sig in certs {
@@ -489,6 +493,18 @@ fn inspect_certifications<'a, A>(output: &mut dyn io::Write,
                     writeln!(output, "{}Alleged certifier: {}", indent,
                              keyid)?;
                 }
+            }
+
+            writeln!(output, "{}Hash algorithm: {}",
+                     indent, sig.hash_algo())?;
+            if let Err(err) = policy.signature(
+                sig, HashAlgoSecurity::CollisionResistance)
+            {
+                writeln!(output,
+                         "{}Certificate is not valid according to \
+                          the current policy:\n\
+                          {}  {}",
+                         indent, indent, err)?;
             }
         }
         if emit_warning {
