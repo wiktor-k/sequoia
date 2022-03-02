@@ -3089,7 +3089,6 @@ mod test {
 
     }
 
-    #[cfg(feature = "compression-deflate")]
     #[test]
     fn serialize_test_2() {
         // Given a packet in serialized form:
@@ -3163,6 +3162,21 @@ mod test {
                     assert_eq!(pile, pile2);
                 }
             } else {
+                // XXX: We should always parse the packet into a
+                // compressed data packet, even if we don't understand
+                // the algorithm.  See
+                // https://gitlab.com/sequoia-pgp/sequoia/-/issues/830.
+                // In the mean time, as a workaround, we check whether
+                // we support the algorithm.  Drop this once #830 is
+                // addressed.
+                if let Some(Packet::Unknown(u)) = po {
+                    // The first octet is the compression algorithm.
+                    let algo: CompressionAlgorithm = u.body()[0].into();
+                    if ! algo.is_supported() {
+                        continue;
+                    }
+                }
+
                 panic!("Expected a compressed data data packet.");
             }
         }
