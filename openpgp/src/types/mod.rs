@@ -840,7 +840,6 @@ impl CompressionAlgorithm {
     /// use openpgp::types::CompressionAlgorithm;
     ///
     /// assert!(CompressionAlgorithm::Uncompressed.is_supported());
-    /// assert!(CompressionAlgorithm::Zip.is_supported());
     ///
     /// assert!(!CompressionAlgorithm::Private(101).is_supported());
     /// ```
