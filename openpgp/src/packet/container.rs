@@ -435,6 +435,7 @@ impl Packet {
 
     /// Retrieves the packet's unprocessed body.
     #[cfg(test)]
+    #[allow(dead_code)] // Not used if no compression feature is enabled.
     pub(crate) fn unprocessed_body(&self) -> Option<&[u8]> {
         self.container_ref().and_then(|c| match c.body() {
             Body::Unprocessed(bytes) => Some(&bytes[..]),

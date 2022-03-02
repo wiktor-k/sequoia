@@ -672,7 +672,7 @@ mod test {
     use crate::packet::CompressedData;
     use crate::packet::seip::SEIP1;
     use crate::packet::Tag;
-    use crate::parse::{Parse, PacketParser};
+    use crate::parse::Parse;
 
     #[test]
     fn deserialize_test_1 () {
@@ -827,6 +827,7 @@ mod test {
     #[test]
     fn consume_content_1 () {
         use std::io::Read;
+        use crate::parse::PacketParser;
         // A message containing a compressed packet that contains a
         // literal packet.  When we read some of the compressed
         // packet, we expect recurse() to not recurse.
