@@ -134,7 +134,6 @@ use std::collections::hash_map::DefaultHasher;
 use std::cmp;
 use std::cmp::Ordering;
 use std::convert::TryFrom;
-use std::convert::TryInto;
 use std::hash::Hasher;
 use std::path::Path;
 use std::mem;
@@ -2902,7 +2901,7 @@ impl TryFrom<Packet> for Cert {
     type Error = anyhow::Error;
 
     fn try_from(p: Packet) -> Result<Self> {
-        vec![ p ].try_into()
+        Cert::from_packets(std::iter::once(p))
     }
 }
 
@@ -3700,6 +3699,8 @@ impl<'a> Preferences<'a> for ValidCert<'a>
 
 #[cfg(test)]
 mod test {
+    use std::convert::TryInto;
+
     use crate::serialize::Serialize;
     use crate::policy::StandardPolicy as P;
     use crate::types::Curve;
