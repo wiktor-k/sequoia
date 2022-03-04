@@ -346,15 +346,6 @@ impl<'a, S: Schedule> Decryptor<'a, S> {
         let final_digest_size = self.digest_size;
 
         for _ in 0..n_chunks {
-            let mut aead = self.schedule.next_chunk(self.chunk_index, |iv, ad| {
-                self.aead.context(self.sym_algo, &self.key, iv,
-                                  CipherOp::Decrypt)
-                    .map(|mut aead| {
-                        aead.update(ad);
-                        aead
-                    })
-            })?;
-
             // Do a little dance to avoid exclusively locking
             // `self.source`.
             let to_read = chunk_digest_size + final_digest_size;
@@ -394,6 +385,17 @@ impl<'a, S: Schedule> Decryptor<'a, S> {
                 // A chunk has to include at least one byte and a tag.
                 return Err(Error::ManipulatedMessage.into());
             } else {
+                let mut aead = self.schedule.next_chunk(
+                    self.chunk_index,
+                    |iv, ad| {
+                        self.aead.context(self.sym_algo, &self.key, iv,
+                                          CipherOp::Decrypt)
+                            .map(|mut aead| {
+                                aead.update(ad);
+                                aead
+                            })
+                    })?;
+
                 // Decrypt the chunk and check the tag.
                 let to_decrypt = chunk.len() - self.digest_size;
 
