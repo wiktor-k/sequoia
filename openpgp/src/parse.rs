@@ -1067,30 +1067,75 @@ impl Default for PacketParserSettings {
 
 impl S2K {
     /// Reads an S2K from `php`.
-    fn parse<T: BufferedReader<Cookie>>(php: &mut PacketHeaderParser<T>) -> Result<Self>
+    fn parse_v4<T: BufferedReader<Cookie>>(php: &mut PacketHeaderParser<T>)
+                                           -> Result<Self> {
+        Self::parse_common(php, None)
+    }
+
+    /// Reads an S2K from `php` with optional explicit S2K length.
+    fn parse_common<T: BufferedReader<Cookie>>(php: &mut PacketHeaderParser<T>,
+                                               s2k_len: Option<u8>)
+                                               -> Result<Self>
     {
+        if s2k_len == Some(0) {
+            return Err(Error::MalformedPacket(
+                "Invalid size for S2K object: 0 octets".into()).into());
+        }
+
+        let check_size = |expected| {
+            if let Some(got) = s2k_len {
+                if got != expected {
+                    return Err(Error::MalformedPacket(format!(
+                        "Invalid size for S2K object: {} octets, expected {}",
+                        got, expected)));
+                }
+            }
+            Ok(())
+        };
+
         let s2k = php.parse_u8("s2k_type")?;
         #[allow(deprecated)]
         let ret = match s2k {
-            0 => S2K::Simple {
-                hash: HashAlgorithm::from(php.parse_u8("s2k_hash_algo")?),
+            0 => {
+                check_size(2)?;
+                S2K::Simple {
+                    hash: HashAlgorithm::from(php.parse_u8("s2k_hash_algo")?),
+                }
             },
-            1 => S2K::Salted {
-                hash: HashAlgorithm::from(php.parse_u8("s2k_hash_algo")?),
-                salt: Self::read_salt(php)?,
+            1 => {
+                check_size(10)?;
+                S2K::Salted {
+                    hash: HashAlgorithm::from(php.parse_u8("s2k_hash_algo")?),
+                    salt: Self::read_salt(php)?,
+                }
             },
-            3 => S2K::Iterated {
-                hash: HashAlgorithm::from(php.parse_u8("s2k_hash_algo")?),
-                salt: Self::read_salt(php)?,
-                hash_bytes: S2K::decode_count(php.parse_u8("s2k_count")?),
+            3 => {
+                check_size(11)?;
+                S2K::Iterated {
+                    hash: HashAlgorithm::from(php.parse_u8("s2k_hash_algo")?),
+                    salt: Self::read_salt(php)?,
+                    hash_bytes: S2K::decode_count(php.parse_u8("s2k_count")?),
+                }
             },
             100..=110 => S2K::Private {
                 tag: s2k,
-                parameters: None,
+                parameters: if let Some(l) = s2k_len {
+                    Some(
+                        php.parse_bytes("parameters", l as usize - 1 /* Tag */)?
+                            .into())
+                } else {
+                    None
+                },
             },
             u => S2K::Unknown {
                 tag: u,
-                parameters: None,
+                parameters: if let Some(l) = s2k_len {
+                    Some(
+                        php.parse_bytes("parameters", l as usize - 1 /* Tag */)?
+                            .into())
+                } else {
+                    None
+                },
             },
         };
 
@@ -1111,7 +1156,7 @@ impl<'a> Parse<'a, S2K> for S2K {
         let bio = buffered_reader::Generic::with_cookie(
             reader, None, Cookie::default());
         let mut parser = PacketHeaderParser::new_naked(bio);
-        Self::parse(&mut parser)
+        Self::parse_v4(&mut parser)
     }
 }
 
@@ -2183,7 +2228,7 @@ impl Key4<key::UnspecifiedParts, key::UnspecifiedRole>
                 // Encrypted, S2K & SHA-1 checksum
                 254 | 255 => {
                     let sk: SymmetricAlgorithm = php_try!(php.parse_u8("sym_algo")).into();
-                    let s2k = php_try!(S2K::parse(&mut php));
+                    let s2k = php_try!(S2K::parse_v4(&mut php));
                     let s2k_supported = s2k.is_supported();
                     let cipher =
                         php_try!(php.parse_bytes_eof("encrypted_mpis"))
@@ -2640,7 +2685,7 @@ impl SKESK4 {
     {
         make_php_try!(php);
         let sym_algo = php_try!(php.parse_u8("sym_algo"));
-        let s2k = php_try!(S2K::parse(&mut php));
+        let s2k = php_try!(S2K::parse_v4(&mut php));
         let s2k_supported = s2k.is_supported();
         let esk = php_try!(php.parse_bytes_eof("esk"));
 
@@ -2672,7 +2717,7 @@ impl SKESK5 {
             php_try!(php.parse_u8("sym_algo")).into();
         let aead_algo: AEADAlgorithm =
             php_try!(php.parse_u8("aead_algo")).into();
-        let s2k = php_try!(S2K::parse(&mut php));
+        let s2k = php_try!(S2K::parse_v4(&mut php));
         let s2k_supported = s2k.is_supported();
         let iv_size = php_try!(aead_algo.iv_size());
         let digest_size = php_try!(aead_algo.digest_size());
