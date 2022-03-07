@@ -1559,12 +1559,94 @@ impl SignatureBuilder {
     /// The reference time is used when no time is specified.  The
     /// reference time is the current time by default and is evaluated
     /// on demand.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::time::{Duration, SystemTime};
+    /// use sequoia_openpgp as openpgp;
+    /// use openpgp::types::SignatureType;
+    /// use openpgp::packet::prelude::*;
+    ///
+    /// # fn main() -> openpgp::Result<()> {
+    /// #
+    /// // If we don't set a reference time, then the current time is used
+    /// // when the signature is created.
+    /// let sig = SignatureBuilder::new(SignatureType::PositiveCertification);
+    /// let ct = sig.effective_signature_creation_time()?.expect("creation time");
+    /// assert!(SystemTime::now().duration_since(ct).expect("ct is in the past")
+    ///         < Duration::new(1, 0));
+    ///
+    /// // If we set a reference time and don't set a creation time,
+    /// // then that time is used for the creation time.
+    /// let t = std::time::UNIX_EPOCH + Duration::new(1646660000, 0);
+    /// let sig = sig.set_reference_time(t);
+    /// assert_eq!(sig.effective_signature_creation_time()?, Some(t));
+    /// # Ok(()) }
+    /// ```
     pub fn set_reference_time<T>(mut self, reference_time: T) -> Self
     where
         T: Into<Option<SystemTime>>,
     {
         self.reference_time = reference_time.into();
         self
+    }
+
+    /// Returns the signature creation time that would be used if a
+    /// signature were created now.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::time::{Duration, SystemTime};
+    /// use sequoia_openpgp as openpgp;
+    /// use openpgp::types::SignatureType;
+    /// use openpgp::packet::prelude::*;
+    ///
+    /// # fn main() -> openpgp::Result<()> {
+    /// #
+    /// // If we don't set a creation time, then the current time is used.
+    /// let sig = SignatureBuilder::new(SignatureType::PositiveCertification);
+    /// let ct = sig.effective_signature_creation_time()?.expect("creation time");
+    /// assert!(SystemTime::now().duration_since(ct).expect("ct is in the past")
+    ///         < Duration::new(1, 0));
+    ///
+    /// // If we set a signature creation time, then we should get it back.
+    /// let t = SystemTime::now() - Duration::new(24 * 60 * 60, 0);
+    /// let sig = sig.set_signature_creation_time(t)?;
+    /// assert!(t.duration_since(
+    ///             sig.effective_signature_creation_time()?.unwrap()).unwrap()
+    ///         < Duration::new(1, 0));
+    /// # Ok(()) }
+    /// ```
+    pub fn effective_signature_creation_time(&self)
+        -> Result<Option<SystemTime>>
+    {
+        use std::time;
+
+        let now = || self.reference_time.unwrap_or_else(crate::now);
+
+        if ! self.overrode_creation_time {
+            // See if we want to backdate the signature.
+            if let Some(orig) = self.original_creation_time {
+                let now = now();
+                let t =
+                    (orig + time::Duration::new(1, 0)).max(
+                        now - time::Duration::new(SIG_BACKDATE_BY, 0));
+
+                if t > now {
+                    return Err(Error::InvalidOperation(
+                        "Cannot create valid signature newer than template"
+                            .into()).into());
+                }
+
+                Ok(Some(t))
+            } else {
+                Ok(Some(now()))
+            }
+        } else {
+            Ok(self.signature_creation_time())
+        }
     }
 
     /// Adjusts signature prior to signing.
@@ -1612,29 +1694,13 @@ impl SignatureBuilder {
     /// # Ok(()) }
     /// ```
     pub fn pre_sign(mut self, signer: &dyn Signer) -> Result<Self> {
-        use std::time;
         self.pk_algo = signer.public().pk_algo();
 
         // Set the creation time.
         if ! self.overrode_creation_time {
-            self =
-                // See if we want to backdate the signature.
-                if let Some(oct) = self.original_creation_time {
-                    let t =
-                        (oct + time::Duration::new(1, 0)).max(
-                            crate::now() -
-                                time::Duration::new(SIG_BACKDATE_BY, 0));
-
-                    if t > crate::now() {
-                        return Err(Error::InvalidOperation(
-                            "Cannot create valid signature newer than template"
-                                .into()).into());
-                    }
-
-                    self.set_signature_creation_time(t)?
-                } else {
-                    self.set_signature_creation_time(crate::now())?
-                };
+            if let Some(t) = self.effective_signature_creation_time()? {
+                self = self.set_signature_creation_time(t)?;
+            }
         }
 
         // Make sure we have an issuer packet.
