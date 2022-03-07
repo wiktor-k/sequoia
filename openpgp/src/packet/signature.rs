@@ -445,6 +445,7 @@ impl SignatureFields {
 // IMPORTANT: implement PartialEq, Eq, and Hash.
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct SignatureBuilder {
+    reference_time: Option<SystemTime>,
     overrode_creation_time: bool,
     original_creation_time: Option<SystemTime>,
     fields: SignatureFields,
@@ -469,6 +470,7 @@ impl SignatureBuilder {
     /// Returns a new `SignatureBuilder` object.
     pub fn new(typ: SignatureType) ->  Self {
         SignatureBuilder {
+            reference_time: None,
             overrode_creation_time: false,
             original_creation_time: None,
             fields: SignatureFields {
@@ -1552,6 +1554,19 @@ impl SignatureBuilder {
         self.sign(signer, digest)
     }
 
+    /// Sets the signature builder's default reference time.
+    ///
+    /// The reference time is used when no time is specified.  The
+    /// reference time is the current time by default and is evaluated
+    /// on demand.
+    pub fn set_reference_time<T>(mut self, reference_time: T) -> Self
+    where
+        T: Into<Option<SystemTime>>,
+    {
+        self.reference_time = reference_time.into();
+        self
+    }
+
     /// Adjusts signature prior to signing.
     ///
     /// This function is called implicitly when a signature is created
@@ -1683,6 +1698,7 @@ impl From<Signature4> for SignatureBuilder {
         fields.unhashed_area_mut().remove_all(SubpacketTag::IssuerFingerprint);
 
         SignatureBuilder {
+            reference_time: None,
             overrode_creation_time: false,
             original_creation_time: creation_time,
             fields,
