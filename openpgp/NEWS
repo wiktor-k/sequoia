@@ -12,6 +12,8 @@
      PublicKeyAlgorithm}'s Display implementation now provides short
      names by default. The long descriptions are provided by the
      alternate formatter (e.g. =format!("{:#}", ...)=)
+   - cert::KeyBuilder
+   - cert::SubkeyBuilder
 ** Deprecated functionality
    - Error::UnsupportedCert, use Error::UnsupportedCert2 instead
    - DataFormat::MIME, no replacement, see #863 for details

@@ -185,7 +185,7 @@ pub mod bundle;
 mod parser;
 mod revoke;
 
-pub use self::builder::{CertBuilder, CipherSuite};
+pub use self::builder::{CertBuilder, CipherSuite, KeyBuilder, SubkeyBuilder};
 
 pub use parser::{
     CertParser,

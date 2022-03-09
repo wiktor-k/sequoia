@@ -3,9 +3,11 @@ use std::marker::PhantomData;
 
 use crate::packet;
 use crate::packet::{
-    key,
     Key,
     key::Key4,
+    key::KeyRole,
+    key::SecretKey as KeySecretKey,
+    key::SecretParts as KeySecretParts,
 };
 use crate::Result;
 use crate::packet::Signature;
@@ -24,6 +26,12 @@ use crate::types::{
     SignatureType,
     SymmetricAlgorithm,
     RevocationKey,
+};
+
+mod key;
+pub use key::{
+    KeyBuilder,
+    SubkeyBuilder,
 };
 
 /// Groups symmetric and asymmetric algorithms.
@@ -133,8 +141,8 @@ impl CipherSuite {
     }
 
     fn generate_key<K, R>(self, flags: K)
-        -> Result<Key<key::SecretParts, R>>
-        where R: key::KeyRole,
+        -> Result<Key<KeySecretParts, R>>
+        where R: KeyRole,
               K: AsRef<KeyFlags>,
     {
         use crate::types::Curve;
@@ -1481,7 +1489,7 @@ impl CertBuilder<'_> {
 
     /// Creates the primary key and a direct key signature.
     fn primary_key(&self, creation_time: std::time::SystemTime)
-        -> Result<(key::SecretKey, Signature, Box<dyn Signer>)>
+        -> Result<(KeySecretKey, Signature, Box<dyn Signer>)>
     {
         let mut key = self.primary.ciphersuite
             .unwrap_or(self.ciphersuite)
