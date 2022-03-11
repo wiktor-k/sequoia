@@ -212,11 +212,11 @@ assert_send_and_sync!(KeyBlueprint);
 /// ## Expiration
 ///
 /// There are two ways to invalidate cryptographic key material:
-/// revocation and liveness.  Both variants come with their own
+/// revocation and freshness.  Both variants come with their own
 /// challenges.  Revocations rely on a robust channel to update
 /// certificates (and attackers may interfere with that).
 ///
-/// On the other hand, liveness involves creating key material that
+/// On the other hand, freshness involves creating key material that
 /// expires after a certain time, then periodically extending the
 /// expiration time.  Again, consumers need a way to update
 /// certificates, but should that fail (maybe because it was
@@ -226,7 +226,7 @@ assert_send_and_sync!(KeyBlueprint);
 /// Because of the way metadata is added to OpenPGP certificates,
 /// attackers who control the certificate lookup and update mechanism
 /// may strip components like signatures from the certificate.  This
-/// has implications for the robustness of relying on liveness.
+/// has implications for the robustness of relying on freshness.
 ///
 /// If you first create a certificate that does not expire, and then
 /// change your mind and set an expiration time, an attacker can
