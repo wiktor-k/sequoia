@@ -21,6 +21,9 @@
 //!
 //! [Section 11.3 of RFC 4880]: https://tools.ietf.org/html/rfc4880#section-11.3
 
+// XXX: For Token.  Drop this once Token is private.
+#![allow(deprecated)]
+
 use std::convert::TryFrom;
 use std::fmt;
 use std::io;
@@ -35,7 +38,7 @@ use crate::packet::Tag;
 use crate::parse::Parse;
 
 mod lexer;
-lalrpop_util::lalrpop_mod!(#[allow(clippy::all)] grammar, "/message/grammar.rs");
+lalrpop_util::lalrpop_mod!(#[allow(clippy::all, deprecated)] grammar, "/message/grammar.rs");
 
 use self::lexer::{Lexer, LexicalError};
 pub use self::lexer::Token;

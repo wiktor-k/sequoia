@@ -13,6 +13,8 @@ pub(crate) type LexerItem<Tok, Loc, Error>
 /// extensions.
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[deprecated(since = "1.9.0",
+             note = "Not covered by SemVer guarantees, DO NOT match on it.")]
 pub enum Token {
     /// A Literal data packet.
     Literal,

@@ -7,6 +7,8 @@
    - Packet::version
    - SignatureBuilder::set_reference_time
    - SignatureBuilder::effective_signature_creation_time
+** Deprecated functionality
+   - message::Token is not covered by SemVer guarantees, DO NOT match on it
 * Changes in 1.8.0
 ** New functionality
    - crypto::Signer::acceptable_hashes
