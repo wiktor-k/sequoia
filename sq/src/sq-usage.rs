@@ -1274,7 +1274,7 @@
 //!             Writes the WKD to WEB-ROOT. Transfer this directory to the
 //!             webserver.
 //!     <FQDN>
-//!             Generates a WKD for FQDN
+//!             Generates a WKD for a fully qualified domain name
 //!
 //!     <CERT-RING>
 //!             Adds certificates from CERT-RING to the WKD
