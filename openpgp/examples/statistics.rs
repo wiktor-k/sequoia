@@ -15,6 +15,7 @@ use anyhow::Context;
 use sequoia_openpgp as openpgp;
 
 use crate::openpgp::{Packet, Fingerprint, KeyID, KeyHandle};
+use crate::openpgp::crypto::mpi;
 use crate::openpgp::types::*;
 use crate::openpgp::packet::{user_attribute, header::BodyLength, Tag};
 use crate::openpgp::packet::signature::subpacket::SubpacketTag;
@@ -84,6 +85,12 @@ fn main() -> openpgp::Result<()> {
 
     // Key statistics.
     let mut pk_algo_size: HashMap<PublicKeyAlgorithm, HashMap<usize, usize>> =
+        Default::default();
+
+    // ECDH Parameter (KDF and KEK) statistics.
+    let mut ecdh_params: HashMap<(HashAlgorithm, SymmetricAlgorithm), usize> =
+        Default::default();
+    let mut ecdh_params_by_curve: HashMap<(Curve, HashAlgorithm, SymmetricAlgorithm), usize> =
         Default::default();
 
     // Current certificate.
@@ -268,6 +275,24 @@ fn main() -> openpgp::Result<()> {
                         = Default::default();
                     size_hash.insert(bits, 1);
                     pk_algo_size.insert(pk, size_hash);
+                }
+
+                fn inc<T>(counter: &mut HashMap<T, usize>, key: T)
+                where
+                    T: std::hash::Hash + Eq,
+                {
+                    if let Some(count) = counter.get_mut(&key) {
+                        *count += 1;
+                    } else {
+                        counter.insert(key, 1);
+                    }
+                }
+
+                if let mpi::PublicKey::ECDH { curve, hash, sym, .. } = k.mpis() {
+                    inc(&mut ecdh_params,
+                        (hash.clone(), sym.clone()));
+                    inc(&mut ecdh_params_by_curve,
+                        (curve.clone(), hash.clone(), sym.clone()));
                 }
             };
             match packet {
@@ -565,6 +590,42 @@ fn main() -> openpgp::Result<()> {
             for (size, count) in sizes {
                 println!("{:>50} {:>9} {:>9}", pk.to_string(), size, count);
             }
+        }
+    }
+
+    if !ecdh_params.is_empty() {
+        println!();
+        println!("# ECDH Parameter statistics");
+        println!();
+        println!("{:>70} {:>9}", "", "count",);
+        println!("----------------------------------------\
+                  ----------------------------------------");
+
+        // Sort by the number of occurrences.
+        let mut params = ecdh_params.iter()
+            .map(|((hash, sym), count)| {
+                (format!("{:?}, {:?}", hash, sym), count)
+            }).collect::<Vec<_>>();
+        params.sort_unstable_by(|a, b| b.1.cmp(a.1));
+        for (a, n) in params {
+            println!("{:>70} {:>9}", a, n);
+        }
+
+        println!();
+        println!("# ECDH Parameter statistics by curve");
+        println!();
+        println!("{:>70} {:>9}", "", "count",);
+        println!("----------------------------------------\
+                  ----------------------------------------");
+
+        // Sort by the number of occurrences.
+        let mut params = ecdh_params_by_curve.iter()
+            .map(|((curve, hash, sym), count)| {
+                (format!("{:?}, {:?}, {:?}", curve, hash, sym), count)
+            }).collect::<Vec<_>>();
+        params.sort_unstable_by(|a, b| b.1.cmp(a.1));
+        for (a, n) in params {
+            println!("{:>70} {:>9}", a, n);
         }
     }
 
