@@ -362,7 +362,7 @@ impl KeyServer {
     }
 }
 
-trait AClient {
+trait AClient: Send + Sync {
     fn do_get(&mut self, uri: Url) -> ResponseFuture;
     fn do_request(&mut self, request: Request<Body>) -> ResponseFuture;
 }
