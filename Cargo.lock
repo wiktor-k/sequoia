@@ -1382,7 +1382,7 @@ dependencies = [
  "httpdate",
  "itoa 1.0.1",
  "pin-project-lite",
- "socket2 0.4.4",
+ "socket2",
  "tokio",
  "tower-service",
  "tracing",
@@ -2617,7 +2617,7 @@ dependencies = [
  "quickcheck",
  "rand 0.8.5",
  "sequoia-openpgp",
- "socket2 0.3.19",
+ "socket2",
  "tempfile",
  "thiserror",
  "tokio",
@@ -2914,17 +2914,6 @@ name = "smawk"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f67ad224767faa3c7d8b6d91985b78e70a1324408abcb1cfcc2be4c06bc06043"
-
-[[package]]
-name = "socket2"
-version = "0.3.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "122e570113d28d773067fab24266b66753f6ea915758651696b6e35e49f88d6e"
-dependencies = [
- "cfg-if 1.0.0",
- "libc",
- "winapi",
-]
 
 [[package]]
 name = "socket2"
@@ -3322,7 +3311,7 @@ dependencies = [
  "mio",
  "num_cpus",
  "pin-project-lite",
- "socket2 0.4.4",
+ "socket2",
  "tokio-macros",
  "winapi",
 ]
