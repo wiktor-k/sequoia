@@ -2,13 +2,13 @@
 title: "Sequoia-PGP sq"
 subtitle: "integration tests, requirements, acceptance criteria"
 author: "The Sequoia-PGP project"
-template: rust
 bindings:
 - subplot/sq-subplot.yaml
 - lib/files.yaml
 - lib/runcmd.yaml
-functions:
-- subplot/sq-subplot.rs
+impls:
+  rust:
+  - subplot/sq-subplot.rs
 ...
 
 # Introduction
