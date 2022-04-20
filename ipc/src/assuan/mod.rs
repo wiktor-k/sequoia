@@ -74,6 +74,21 @@ enum WriteState {
 }
 assert_send_and_sync!(WriteState);
 
+/// Percent-escapes the given string.
+pub fn escape<S: AsRef<str>>(s: S) -> String {
+    let mut r = String::with_capacity(s.as_ref().len());
+    for c in s.as_ref().chars() {
+        match c {
+            '%' => r.push_str("%25"),
+            ' ' => r.push('+'),
+            n if n.is_ascii() && (n as u8) < 32 =>
+                r.push_str(&format!("%{:02X}", n as u8)),
+            _ => r.push(c),
+        }
+    }
+    r
+}
+
 impl Client {
     /// Connects to the server.
     pub async fn connect<P>(path: P) -> Result<Client> where P: AsRef<Path> {
@@ -103,7 +118,7 @@ impl Client {
     /// [`Connection::cancel()`]: Client::cancel()
     ///
     /// Note: `command` is passed as-is.  Control characters, like
-    /// `%`, must be %-escaped.
+    /// `%`, must be %-escaped using [`escape`].
     pub fn send<'a, C: 'a>(&'a mut self, command: C) -> Result<()>
         where C: AsRef<[u8]>
     {
