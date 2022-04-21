@@ -344,7 +344,7 @@ impl Agent {
     /// Creates a signature over the `digest` produced by `algo` using
     /// `key` with the secret bits managed by the agent.
     pub async fn sign<'a>(&'a mut self,
-                          key: &'a KeyPair<'a>,
+                          key: &'a KeyPair,
                           algo: HashAlgorithm, digest: &'a [u8])
         -> Result<crypto::mpi::Signature>
     {
@@ -354,7 +354,7 @@ impl Agent {
     /// Decrypts `ciphertext` using `key` with the secret bits managed
     /// by the agent.
     pub async fn decrypt<'a>(&'a mut self,
-                          key: &'a KeyPair<'a>,
+                          key: &'a KeyPair,
                           ciphertext: &'a crypto::mpi::Ciphertext)
         -> Result<crypto::SessionKey>
     {
@@ -409,7 +409,7 @@ impl Agent {
 struct SigningRequest<'a, 'b, 'c>
 {
     c: &'a mut assuan::Client,
-    key: &'b KeyPair<'b>,
+    key: &'b KeyPair,
     algo: HashAlgorithm,
     digest: &'c [u8],
     options: Vec<String>,
@@ -419,7 +419,7 @@ struct SigningRequest<'a, 'b, 'c>
 impl<'a, 'b, 'c> SigningRequest<'a, 'b, 'c>
 {
     fn new(c: &'a mut assuan::Client,
-           key: &'b KeyPair<'b>,
+           key: &'b KeyPair,
            algo: HashAlgorithm,
            digest: &'c [u8])
            -> Self {
@@ -593,7 +593,7 @@ impl<'a, 'b, 'c> Future for SigningRequest<'a, 'b, 'c>
 struct DecryptionRequest<'a, 'b, 'c>
 {
     c: &'a mut assuan::Client,
-    key: &'b KeyPair<'b>,
+    key: &'b KeyPair,
     ciphertext: &'c crypto::mpi::Ciphertext,
     options: Vec<String>,
     state: DecryptionRequestState,
@@ -602,7 +602,7 @@ struct DecryptionRequest<'a, 'b, 'c>
 impl<'a, 'b, 'c> DecryptionRequest<'a, 'b, 'c>
 {
     fn new(c: &'a mut assuan::Client,
-           key: &'b KeyPair<'b>,
+           key: &'b KeyPair,
            ciphertext: &'c crypto::mpi::Ciphertext)
            -> Self {
         Self {
@@ -779,20 +779,20 @@ impl<'a, 'b, 'c> Future for DecryptionRequest<'a, 'b, 'c>
 /// A `KeyPair` is a combination of public and secret key.  This
 /// particular implementation does not have the secret key, but
 /// diverges the cryptographic operations to `gpg-agent`.
-pub struct KeyPair<'a> {
-    public: &'a Key<key::PublicParts, key::UnspecifiedRole>,
+pub struct KeyPair {
+    public: Key<key::PublicParts, key::UnspecifiedRole>,
     agent_socket: PathBuf,
     password_prompt: String,
 }
 
-impl<'a> KeyPair<'a> {
+impl KeyPair {
     /// Returns a `KeyPair` for `key` with the secret bits managed by
     /// the agent.
     ///
     /// This provides a convenient, synchronous interface for use with
     /// the low-level Sequoia crate.
-    pub fn new<R>(ctx: &Context, key: &'a Key<key::PublicParts, R>)
-                  -> Result<KeyPair<'a>>
+    pub fn new<R>(ctx: &Context, key: &Key<key::PublicParts, R>)
+                  -> Result<KeyPair>
         where R: key::KeyRole
     {
         Ok(KeyPair {
@@ -801,7 +801,7 @@ impl<'a> KeyPair<'a> {
                  unlock the OpenPGP secret key:\n\
                  ID {:X}, created {}.",
                 key.keyid(), Timestamp::try_from(key.creation_time()).unwrap()),
-            public: key.role_as_unspecified(),
+            public: key.role_as_unspecified().clone(),
             agent_socket: ctx.socket("agent")?.into(),
         })
     }
@@ -878,9 +878,9 @@ impl<'a> KeyPair<'a> {
     }
 }
 
-impl<'a> crypto::Signer for KeyPair<'a> {
+impl crypto::Signer for KeyPair {
     fn public(&self) -> &Key<key::PublicParts, key::UnspecifiedRole> {
-        self.public
+        &self.public
     }
 
     fn sign(&mut self, hash_algo: HashAlgorithm, digest: &[u8])
@@ -913,9 +913,9 @@ impl<'a> crypto::Signer for KeyPair<'a> {
     }
 }
 
-impl<'a> crypto::Decryptor for KeyPair<'a> {
+impl crypto::Decryptor for KeyPair {
     fn public(&self) -> &Key<key::PublicParts, key::UnspecifiedRole> {
-        self.public
+        &self.public
     }
 
     fn decrypt(&mut self, ciphertext: &crypto::mpi::Ciphertext,
