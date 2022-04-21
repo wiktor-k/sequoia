@@ -68,7 +68,7 @@ impl Sexp {
 
         match value {
             Sexp::String(ref s) => match recipient.mpis() {
-                PublicKey::RSA { .. } | PublicKey::ElGamal { .. } if padding =>
+                PublicKey::RSA { .. } | PublicKey::ElGamal { .. } => if padding
                 {
                     // The session key is padded.  The format is
                     // described in g10/pubkey-enc.c (note that we,
@@ -111,13 +111,10 @@ impl Sexp {
                     s = &s[1..];
 
                     Ok(s.to_vec().into())
-                },
-
-                PublicKey::RSA { .. } | PublicKey::ElGamal { .. } => {
+                } else {
                     // The session key is not padded.  Currently, this
                     // happens if the session key is decrypted using
                     // scdaemon.
-                    assert!(! padding); // XXX: Don't assert that.
                     Ok(s.to_vec().into())
                 },
 
