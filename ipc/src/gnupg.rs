@@ -14,8 +14,9 @@ use std::task::{Poll, self};
 use std::pin::Pin;
 
 use sequoia_openpgp as openpgp;
-use openpgp::types::HashAlgorithm;
+use openpgp::types::{HashAlgorithm, Timestamp};
 use openpgp::fmt::hex;
+use openpgp::cert::ValidCert;
 use openpgp::crypto;
 use openpgp::packet::prelude::*;
 use openpgp::parse::Parse;
@@ -342,24 +343,22 @@ impl Agent {
 
     /// Creates a signature over the `digest` produced by `algo` using
     /// `key` with the secret bits managed by the agent.
-    pub async fn sign<'a, R>(&'a mut self,
-                       key: &'a Key<key::PublicParts, R>,
-                       algo: HashAlgorithm, digest: &'a [u8])
+    pub async fn sign<'a>(&'a mut self,
+                          key: &'a KeyPair<'a>,
+                          algo: HashAlgorithm, digest: &'a [u8])
         -> Result<crypto::mpi::Signature>
-        where R: key::KeyRole
     {
         SigningRequest::new(&mut self.c, key, algo, digest).await
     }
 
     /// Decrypts `ciphertext` using `key` with the secret bits managed
     /// by the agent.
-    pub async fn decrypt<'a, R>(&'a mut self,
-                          key: &'a Key<key::PublicParts, R>,
+    pub async fn decrypt<'a>(&'a mut self,
+                          key: &'a KeyPair<'a>,
                           ciphertext: &'a crypto::mpi::Ciphertext)
         -> Result<crypto::SessionKey>
-        where R: key::KeyRole
     {
-        DecryptionRequest::new(&mut self.c, key, ciphertext).await
+        DecryptionRequest::new(self, key, ciphertext).await
     }
 
     /// Computes options that we want to communicate.
@@ -407,22 +406,20 @@ impl Agent {
     }
 }
 
-struct SigningRequest<'a, 'b, 'c, R>
-    where R: key::KeyRole
+struct SigningRequest<'a, 'b, 'c>
 {
     c: &'a mut assuan::Client,
-    key: &'b Key<key::PublicParts, R>,
+    key: &'b KeyPair<'b>,
     algo: HashAlgorithm,
     digest: &'c [u8],
     options: Vec<String>,
     state: SigningRequestState,
 }
 
-impl<'a, 'b, 'c, R> SigningRequest<'a, 'b, 'c, R>
-    where R: key::KeyRole
+impl<'a, 'b, 'c> SigningRequest<'a, 'b, 'c>
 {
     fn new(c: &'a mut assuan::Client,
-           key: &'b Key<key::PublicParts, R>,
+           key: &'b KeyPair<'b>,
            algo: HashAlgorithm,
            digest: &'c [u8])
            -> Self {
@@ -439,6 +436,7 @@ enum SigningRequestState {
     Start,
     Options,
     SigKey,
+    SetKeyDesc,
     SetHash,
     PkSign(Vec<u8>),
 }
@@ -460,8 +458,7 @@ fn protocol_error<T>(response: &assuan::Response) -> Result<T> {
         .into())
 }
 
-impl<'a, 'b, 'c, R> Future for SigningRequest<'a, 'b, 'c, R>
-    where R: key::KeyRole
+impl<'a, 'b, 'c> Future for SigningRequest<'a, 'b, 'c>
 {
     type Output = Result<crypto::mpi::Signature>;
 
@@ -477,7 +474,7 @@ impl<'a, 'b, 'c, R> Future for SigningRequest<'a, 'b, 'c, R>
             match state {
                 Start => {
                     if options.is_empty() {
-                        let grip = Keygrip::of(key.mpis())?;
+                        let grip = Keygrip::of(key.public.mpis())?;
                         client.send(format!("SIGKEY {}", grip))?;
                         *state = SigKey;
                     } else {
@@ -502,7 +499,7 @@ impl<'a, 'b, 'c, R> Future for SigningRequest<'a, 'b, 'c, R>
                         if let Some(option) = options.pop() {
                             client.send(option)?;
                         } else {
-                            let grip = Keygrip::of(key.mpis())?;
+                            let grip = Keygrip::of(key.public.mpis())?;
                             client.send(format!("SIGKEY {}", grip))?;
                             *state = SigKey;
                         }
@@ -511,6 +508,26 @@ impl<'a, 'b, 'c, R> Future for SigningRequest<'a, 'b, 'c, R>
                 },
 
                 SigKey => match client.as_mut().poll_next(cx)? {
+                    Poll::Ready(Some(r)) => match r {
+                        assuan::Response::Ok { .. }
+                        | assuan::Response::Comment { .. }
+                        | assuan::Response::Status { .. } =>
+                            (), // Ignore.
+                        assuan::Response::Error { ref message, .. } =>
+                            return Poll::Ready(operation_failed(message)),
+                        _ =>
+                            return Poll::Ready(protocol_error(&r)),
+                    },
+                    Poll::Ready(None) => {
+                        client.send(
+                            format!("SETKEYDESC {}",
+                                    assuan::escape(&key.password_prompt)))?;
+                        *state = SetKeyDesc;
+                    },
+                    Poll::Pending => return Poll::Pending,
+                },
+
+                SetKeyDesc => match client.as_mut().poll_next(cx)? {
                     Poll::Ready(Some(r)) => match r {
                         assuan::Response::Ok { .. }
                         | assuan::Response::Comment { .. }
@@ -573,21 +590,19 @@ impl<'a, 'b, 'c, R> Future for SigningRequest<'a, 'b, 'c, R>
     }
 }
 
-struct DecryptionRequest<'a, 'b, 'c, R>
-    where R: key::KeyRole
+struct DecryptionRequest<'a, 'b, 'c>
 {
     c: &'a mut assuan::Client,
-    key: &'b Key<key::PublicParts, R>,
+    key: &'b KeyPair<'b>,
     ciphertext: &'c crypto::mpi::Ciphertext,
     options: Vec<String>,
     state: DecryptionRequestState,
 }
 
-impl<'a, 'b, 'c, R> DecryptionRequest<'a, 'b, 'c, R>
-    where R: key::KeyRole
+impl<'a, 'b, 'c> DecryptionRequest<'a, 'b, 'c>
 {
     fn new(c: &'a mut assuan::Client,
-           key: &'b Key<key::PublicParts, R>,
+           key: &'b KeyPair<'b>,
            ciphertext: &'c crypto::mpi::Ciphertext)
            -> Self {
         Self {
@@ -605,12 +620,12 @@ enum DecryptionRequestState {
     Start,
     Options,
     SetKey,
+    SetKeyDesc,
     PkDecrypt,
     Inquire(Vec<u8>, bool), // Buffer and padding.
 }
 
-impl<'a, 'b, 'c, R> Future for DecryptionRequest<'a, 'b, 'c, R>
-    where R: key::KeyRole
+impl<'a, 'b, 'c> Future for DecryptionRequest<'a, 'b, 'c>
 {
     type Output = Result<crypto::SessionKey>;
 
@@ -626,7 +641,7 @@ impl<'a, 'b, 'c, R> Future for DecryptionRequest<'a, 'b, 'c, R>
             match state {
                 Start => {
                     if options.is_empty() {
-                        let grip = Keygrip::of(key.mpis())?;
+                        let grip = Keygrip::of(key.public.mpis())?;
                         client.send(format!("SETKEY {}", grip))?;
                         *state = SetKey;
                     } else {
@@ -651,7 +666,7 @@ impl<'a, 'b, 'c, R> Future for DecryptionRequest<'a, 'b, 'c, R>
                         if let Some(option) = options.pop() {
                             client.send(option)?;
                         } else {
-                            let grip = Keygrip::of(key.mpis())?;
+                            let grip = Keygrip::of(key.public.mpis())?;
                             client.send(format!("SETKEY {}", grip))?;
                             *state = SetKey;
                         }
@@ -660,6 +675,26 @@ impl<'a, 'b, 'c, R> Future for DecryptionRequest<'a, 'b, 'c, R>
                 },
 
                 SetKey => match client.as_mut().poll_next(cx)? {
+                    Poll::Ready(Some(r)) => match r {
+                        assuan::Response::Ok { .. }
+                        | assuan::Response::Comment { .. }
+                        | assuan::Response::Status { .. } =>
+                            (), // Ignore.
+                        assuan::Response::Error { ref message, .. } =>
+                            return Poll::Ready(operation_failed(message)),
+                        _ =>
+                            return Poll::Ready(protocol_error(&r)),
+                    },
+                    Poll::Ready(None) => {
+                        client.send(
+                            format!("SETKEYDESC {}",
+                                    assuan::escape(&key.password_prompt)))?;
+                        *state = SetKeyDesc;
+                    },
+                    Poll::Pending => return Poll::Pending,
+                },
+
+                SetKeyDesc => match client.as_mut().poll_next(cx)? {
                     Poll::Ready(Some(r)) => match r {
                         assuan::Response::Ok { .. }
                         | assuan::Response::Comment { .. }
@@ -729,7 +764,7 @@ impl<'a, 'b, 'c, R> Future for DecryptionRequest<'a, 'b, 'c, R>
 
                         return Poll::Ready(
                             Sexp::from_bytes(&data)?.finish_decryption(
-                            key, ciphertext, *padding)
+                            &key.public, ciphertext, *padding)
                         );
                     },
                     Poll::Pending => return Poll::Pending,
@@ -747,6 +782,7 @@ impl<'a, 'b, 'c, R> Future for DecryptionRequest<'a, 'b, 'c, R>
 pub struct KeyPair<'a> {
     public: &'a Key<key::PublicParts, key::UnspecifiedRole>,
     agent_socket: PathBuf,
+    password_prompt: String,
 }
 
 impl<'a> KeyPair<'a> {
@@ -760,9 +796,85 @@ impl<'a> KeyPair<'a> {
         where R: key::KeyRole
     {
         Ok(KeyPair {
+            password_prompt: format!(
+                "Please enter the passphrase to \
+                 unlock the OpenPGP secret key:\n\
+                 ID {:X}, created {}.",
+                key.keyid(), Timestamp::try_from(key.creation_time()).unwrap()),
             public: key.role_as_unspecified(),
             agent_socket: ctx.socket("agent")?.into(),
         })
+    }
+
+    /// Changes the password prompt to include information about the
+    /// cert.
+    ///
+    /// Use this function to give more context to the user when she is
+    /// prompted for a password.  This function will generate a prompt
+    /// that is very similar to the prompts that GnuPG generates.
+    ///
+    /// To set an arbitrary password prompt, use
+    /// [`KeyPair::with_password_prompt`].
+    pub fn with_cert(self, cert: &ValidCert) -> Self {
+        let primary_id = cert.keyid();
+        let keyid = self.public.keyid();
+        let prompt = match (primary_id == keyid,
+                            cert.primary_userid()
+                            .map(|uid| uid.clone())
+                            .ok())
+        {
+            (true, Some(uid)) => format!(
+                "Please enter the passphrase to \
+                 unlock the OpenPGP secret key:\n\
+                 {}\n\
+                 ID {:X}, created {}.",
+                uid.userid(),
+                keyid,
+                Timestamp::try_from(self.public.creation_time())
+                    .expect("creation time is representable"),
+            ),
+            (false, Some(uid)) => format!(
+                "Please enter the passphrase to \
+                 unlock the OpenPGP secret key:\n\
+                 {}\n\
+                 ID {:X}, created {} (main key ID {}).",
+                uid.userid(),
+                keyid,
+                Timestamp::try_from(self.public.creation_time())
+                    .expect("creation time is representable"),
+                primary_id,
+            ),
+            (true, None) => format!(
+                "Please enter the passphrase to \
+                 unlock the OpenPGP secret key:\n\
+                 ID {:X}, created {}.",
+                keyid,
+                Timestamp::try_from(self.public.creation_time())
+                    .expect("creation time is representable"),
+            ),
+            (false, None) => format!(
+                "Please enter the passphrase to \
+                 unlock the OpenPGP secret key:\n\
+                 ID {:X}, created {} (main key ID {}).",
+                keyid,
+                Timestamp::try_from(self.public.creation_time())
+                    .expect("creation time is representable"),
+                primary_id,
+            ),
+        };
+        self.with_password_prompt(prompt)
+    }
+
+    /// Changes the password prompt.
+    ///
+    /// Use this function to give more context to the user when she is
+    /// prompted for a password.
+    ///
+    /// To set an password prompt that uses information from the
+    /// OpenPGP certificate, use [`KeyPair::with_cert`].
+    pub fn with_password_prompt(mut self, prompt: String) -> Self {
+        self.password_prompt = prompt;
+        self
     }
 }
 
@@ -789,7 +901,7 @@ impl<'a> crypto::Signer for KeyPair<'a> {
 
                     rt.block_on(async move {
                         let mut a = Agent::connect_to(&self.agent_socket).await?;
-                        let sig = a.sign(self.public, hash_algo, digest).await?;
+                        let sig = a.sign(self, hash_algo, digest).await?;
                         Ok(sig)
                     })
                 },
@@ -820,7 +932,7 @@ impl<'a> crypto::Decryptor for KeyPair<'a> {
 
                     rt.block_on(async move {
                         let mut a = Agent::connect_to(&self.agent_socket).await?;
-                        let sk = a.decrypt(self.public, ciphertext).await?;
+                        let sk = a.decrypt(self, ciphertext).await?;
                         Ok(sk)
                     })
                 },

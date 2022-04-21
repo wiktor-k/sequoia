@@ -38,10 +38,13 @@ fn main() -> openpgp::Result<()> {
         ).collect::<Result<Vec<_>, _>>()?;
 
     // Construct a KeyPair for every signing-capable (sub)key.
+    use openpgp::cert::amalgamation::ValidAmalgamation;
     let mut signers = certs.iter().flat_map(|cert| {
         cert.keys().with_policy(p, None).alive().revoked(false).for_signing()
             .filter_map(|ka| {
-                KeyPair::new(&ctx, ka.key()).ok()
+                KeyPair::new(&ctx, ka.key())
+                    .map(|kp| kp.with_cert(ka.cert()))
+                    .ok()
             })
     }).collect::<Vec<KeyPair>>();
 
