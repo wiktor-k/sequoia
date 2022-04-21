@@ -101,6 +101,7 @@ impl Context {
 
         /// Whether we're dealing with gpg that expects Windows or Unix-style paths.
         #[derive(Copy, Clone)]
+        #[allow(dead_code)]
         enum Mode {
             Windows,
             Unix
@@ -108,10 +109,9 @@ impl Context {
 
         impl Mode {
             fn native() -> Self {
-                match () {
-                    _ if cfg!(windows) => Mode::Windows,
-                    _ if cfg!(unix) => Mode::Unix,
-                    _ => unimplemented!(),
+                platform! {
+                    unix => Mode::Unix,
+                    windows => Mode::Windows,
                 }
             }
         }

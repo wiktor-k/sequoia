@@ -27,15 +27,13 @@ pub(crate) type IpcStream = tokio::net::UnixStream;
 ///
 /// This function panics if not called from within a Tokio runtime.
 pub(crate) fn sock_connect(path: impl AsRef<Path>) -> Result<IpcStream> {
-
-    #[cfg(unix)]
-    {
+    platform! {
+      unix => {
         let stream = std::os::unix::net::UnixStream::connect(path)?;
         stream.set_nonblocking(true)?;
         Ok(tokio::net::UnixStream::from_std(stream)?)
-    }
-    #[cfg(windows)]
-    {
+      },
+      windows => {
         use std::net::{Ipv4Addr, TcpStream};
 
         let rendezvous = read_port_and_nonce(path.as_ref())?;
@@ -72,6 +70,7 @@ pub(crate) fn sock_connect(path: impl AsRef<Path>) -> Result<IpcStream> {
 
         stream.set_nonblocking(true)?;
         Ok(tokio::net::TcpStream::from_std(stream)?)
+      },
     }
 }
 
