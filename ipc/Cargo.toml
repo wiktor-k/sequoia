@@ -49,6 +49,7 @@ lalrpop = ">=0.17"
 [dev-dependencies]
 clap = "2.33"
 quickcheck = { version = "1", default-features = false }
+tokio = { version = "1", features = [ "macros" ] }
 
 [lib]
 bench = false
