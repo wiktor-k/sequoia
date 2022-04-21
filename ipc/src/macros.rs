@@ -60,12 +60,12 @@ macro_rules! tracer {
 /// Using this macro makes sure that missing support for new platform
 /// is a compile-time error.
 macro_rules! platform {
-    { unix => { $($unix:tt)* }, windows => { $($windows:tt)* } } => {
+    { unix => $unix:expr, windows => $windows:expr $(,)? } => {
         if cfg!(unix) {
-            #[cfg(unix)] { $($unix)* }
+            #[cfg(unix)] { $unix }
             #[cfg(not(unix))] { unreachable!() }
         } else if cfg!(windows) {
-            #[cfg(windows)] { $($windows)* }
+            #[cfg(windows)] { $windows }
             #[cfg(not(windows))] { unreachable!() }
         } else {
             #[cfg(not(any(unix, windows)))] compile_error!("Unsupported platform");
