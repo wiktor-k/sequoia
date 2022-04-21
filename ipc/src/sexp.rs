@@ -67,7 +67,7 @@ impl Sexp {
             .into_iter().next().ok_or_else(not_a_session_key)?;
 
         match value {
-            Sexp::String(ref s) => match recipient.mpis() {
+            Sexp::String(s) => match recipient.mpis() {
                 PublicKey::RSA { .. } | PublicKey::ElGamal { .. } => if padding
                 {
                     // The session key is padded.  The format is
@@ -81,7 +81,8 @@ impl Sexp {
                     //   * (mpi_get_buffer already removed the leading zero).
                     //   *
                     //   * RND are non-zero random bytes.
-                    let mut s = &s[..];
+                    let s_ = s.into_protected();
+                    let mut s = &s_[..];
 
                     // The leading 0 may or may not be swallowed along
                     // the way due to MPI encoding.
@@ -115,25 +116,26 @@ impl Sexp {
                     // The session key is not padded.  Currently, this
                     // happens if the session key is decrypted using
                     // scdaemon.
-                    Ok(s.to_vec().into())
+                    Ok(s.into_protected().into())
                 },
 
                 PublicKey::ECDH { curve, .. } => {
                     // The shared point has been computed by the
                     // remote agent.  The shared point is not padded.
-                    let s_: mpi::ProtectedMPI = s.to_vec().into();
+                    let s_: mpi::ProtectedMPI = s.into_protected().into();
                     #[allow(non_snake_case)]
                     let S: Protected = s_.decode_point(curve)?.0.into();
-                    // XXX: Erase shared point from s.
 
                     // Now finish the decryption.
                     openpgp::crypto::ecdh::decrypt_unwrap(recipient, &S, ciphertext)
                 },
 
-                _ =>
+                _ => {
+                    let _ = s.into_protected();
                     Err(Error::InvalidArgument(
                         format!("Don't know how to handle key {:?}", recipient))
-                        .into()),
+                        .into())
+                },
             }
             Sexp::List(..) => Err(not_a_session_key()),
         }
@@ -390,6 +392,21 @@ impl String_ {
         o.write_all(self)?;
         Ok(())
     }
+
+    /// Creates a Protected memory region from this String.
+    ///
+    /// Securely erases the contents of the original String.
+    pub fn into_protected(mut self) -> Protected {
+        let r = Protected::from(&self.0[..]);
+        unsafe {
+            memsec::memzero(self.0.as_mut_ptr(), self.0.len());
+            if let Some(p) = self.1.as_mut() {
+                memsec::memzero(p.as_mut_ptr(), p.len());
+            }
+        }
+        r
+    }
+
 }
 
 impl From<&str> for String_ {
