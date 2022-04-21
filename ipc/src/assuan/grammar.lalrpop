@@ -1,9 +1,8 @@
 // -*- mode: Rust; -*-
 //
-// This implements parsing of [S-Expressions] encoded using the
-// canonical and basic transport encoding.
+// This implements parsing of [Assuan] messages.
 //
-// [S-Expressions]: https://people.csail.mit.edu/rivest/Sexp.txt
+// [Assuan]: https://www.gnupg.org/documentation/manuals/assuan/index.html
 
 use crate::assuan::{
     Response,
