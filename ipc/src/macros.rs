@@ -55,6 +55,24 @@ macro_rules! tracer {
     }
 }
 
+/// Platform abstraction.
+///
+/// Using this macro makes sure that missing support for new platform
+/// is a compile-time error.
+macro_rules! platform {
+    { unix => { $($unix:tt)* }, windows => { $($windows:tt)* } } => {
+        if cfg!(unix) {
+            #[cfg(unix)] { $($unix)* }
+            #[cfg(not(unix))] { unreachable!() }
+        } else if cfg!(windows) {
+            #[cfg(windows)] { $($windows)* }
+            #[cfg(not(windows))] { unreachable!() }
+        } else {
+            #[cfg(not(any(unix, windows)))] compile_error!("Unsupported platform");
+            unreachable!()
+        }
+    }
+}
 
 /// A very simple profiling tool.
 ///
