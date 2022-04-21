@@ -9,7 +9,6 @@ use sequoia_ipc as ipc;
 use openpgp::cert::prelude::*;
 use openpgp::crypto::SessionKey;
 use openpgp::types::SymmetricAlgorithm;
-use openpgp::packet::key;
 use openpgp::parse::{
     Parse,
     stream::{
@@ -55,7 +54,7 @@ fn main() -> openpgp::Result<()> {
 
     // Now, create a decryptor with a helper using the given Certs.
     let mut decryptor = DecryptorBuilder::from_reader(io::stdin())?
-        .with_policy(p, None, Helper::new(&ctx, p, certs))?;
+        .with_policy(p, None, Helper::new(&ctx, p, certs)?)?;
 
     // Finally, stream the decrypted data to stdout.
     io::copy(&mut decryptor, &mut io::stdout())?;
@@ -66,16 +65,14 @@ fn main() -> openpgp::Result<()> {
 /// This helper provides secrets for the decryption, fetches public
 /// keys for the signature verification and implements the
 /// verification policy.
-struct Helper<'a> {
-    ctx: &'a Context,
-    keys: HashMap<openpgp::KeyID,
-                  openpgp::packet::Key<key::PublicParts, key::UnspecifiedRole>>,
+struct Helper {
+    keys: HashMap<openpgp::KeyID, KeyPair>,
 }
 
-impl<'a> Helper<'a> {
+impl Helper {
     /// Creates a Helper for the given Certs with appropriate secrets.
-    fn new(ctx: &'a Context, policy: &'a dyn Policy, certs: Vec<openpgp::Cert>)
-        -> Self
+    fn new(ctx: &Context, policy: &dyn Policy, certs: Vec<openpgp::Cert>)
+        -> openpgp::Result<Self>
     {
         // Map (sub)KeyIDs to secrets.
         let mut keys = HashMap::new();
@@ -83,16 +80,17 @@ impl<'a> Helper<'a> {
             for ka in cert.keys().with_policy(policy, None)
                 .for_storage_encryption().for_transport_encryption()
             {
-                let key = ka.key();
-                keys.insert(key.keyid(), key.clone().into());
+                let pair = KeyPair::new(ctx, ka.key())?
+                    .with_cert(ka.cert());
+                keys.insert(ka.key().keyid(), pair);
             }
         }
 
-        Helper { ctx, keys, }
+        Ok(Helper { keys })
     }
 }
 
-impl<'a> DecryptionHelper for Helper<'a> {
+impl DecryptionHelper for Helper {
     fn decrypt<D>(&mut self,
                   pkesks: &[openpgp::packet::PKESK],
                   _skesks: &[openpgp::packet::SKESK],
@@ -103,9 +101,8 @@ impl<'a> DecryptionHelper for Helper<'a> {
     {
         // Try each PKESK until we succeed.
         for pkesk in pkesks {
-            if let Some(key) = self.keys.get(pkesk.recipient()) {
-                let mut pair = KeyPair::new(self.ctx, key)?;
-                if pkesk.decrypt(&mut pair, sym_algo)
+            if let Some(pair) = self.keys.get_mut(pkesk.recipient()) {
+                if pkesk.decrypt(pair, sym_algo)
                     .map(|(algo, session_key)| decrypt(algo, &session_key))
                     .unwrap_or(false)
                 {
@@ -119,7 +116,7 @@ impl<'a> DecryptionHelper for Helper<'a> {
     }
 }
 
-impl<'a> VerificationHelper for Helper<'a> {
+impl VerificationHelper for Helper {
     fn get_certs(&mut self, _ids: &[openpgp::KeyHandle])
                        -> openpgp::Result<Vec<openpgp::Cert>> {
         Ok(Vec::new()) // Feed the Certs to the verifier here.
