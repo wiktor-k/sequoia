@@ -60,6 +60,7 @@ use openpgp::{
     serialize::Serialize,
 };
 
+#[macro_use] mod macros;
 pub mod pks;
 pub mod updates;
 pub mod wkd;
@@ -159,6 +160,8 @@ pub struct KeyServer {
     client: Box<dyn AClient>,
     uri: Url,
 }
+
+assert_send_and_sync!(KeyServer);
 
 impl KeyServer {
     /// Returns a handle for the given URI.
