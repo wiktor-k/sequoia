@@ -44,7 +44,6 @@ regex-syntax = "0.6"
 sha1collisiondetection = { version = "0.2.3", default-features = false, features = ["std"] }
 thiserror = "1.0.2"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
-backtrace = "0.3.3"
 
 # RustCrypto crates.
 aes = { version = "0.6.0", optional = true }
@@ -87,7 +86,6 @@ lalrpop = ">=0.17"
 
 [dev-dependencies]
 quickcheck = { version = "1", default-features = false }
-quickcheck_macros = { version = "1", default-features = false }
 rand = { version = "0.8" }
 rpassword = "5.0"
 criterion = { version = "0.3.4", features = ["html_reports"] }
