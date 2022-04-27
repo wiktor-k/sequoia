@@ -501,7 +501,7 @@ pub enum PublicKey {
         y: MPI,
     },
 
-    /// DJBs "Twisted" Edwards curve DSA public key.
+    /// DJB's "Twisted" Edwards curve DSA public key.
     EdDSA {
         /// Curve we're using. Must be curve 25519.
         curve: Curve,
@@ -509,7 +509,7 @@ pub enum PublicKey {
         q: MPI,
     },
 
-    /// NISTs Elliptic curve DSA public key.
+    /// NIST's Elliptic Curve DSA public key.
     ECDSA {
         /// Curve we're using.
         curve: Curve,
@@ -517,15 +517,15 @@ pub enum PublicKey {
         q: MPI,
     },
 
-    /// Elliptic curve ElGamal public key.
+    /// Elliptic Curve Diffie-Hellman public key.
     ECDH {
         /// Curve we're using.
         curve: Curve,
         /// Public point.
         q: MPI,
-        /// Hash algorithm used for key derivation.
+        /// Algorithm used to derive the Key Encapsulation Key.
         hash: HashAlgorithm,
-        /// Algorithm used w/the derived key.
+        /// Algorithm used to encapsulate the session key.
         sym: SymmetricAlgorithm,
     },
 
@@ -673,19 +673,19 @@ pub enum SecretKeyMaterial {
         x: ProtectedMPI,
     },
 
-    /// DJBs "Twisted" Edwards curve DSA secret key.
+    /// DJB's "Twisted" Edwards curve DSA secret key.
     EdDSA {
         /// Secret scalar.
         scalar: ProtectedMPI,
     },
 
-    /// NISTs Elliptic curve DSA secret key.
+    /// NIST's Elliptic Curve DSA secret key.
     ECDSA {
         /// Secret scalar.
         scalar: ProtectedMPI,
     },
 
-    /// Elliptic curve ElGamal secret key.
+    /// Elliptic Curve Diffie-Hellman public key.
     ECDH {
         /// Secret scalar.
         scalar: ProtectedMPI,
