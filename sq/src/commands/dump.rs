@@ -349,8 +349,8 @@ impl PacketDumper {
                     },
                     mpi::PublicKey::ECDH { curve, q, hash, sym } => {
                         writeln!(output, "{}  Curve: {}", ii, curve)?;
-                        writeln!(output, "{}  Hash algo: {}", ii, hash)?;
-                        writeln!(output, "{}  Symmetric algo: {}", ii,
+                        writeln!(output, "{}  KDF hash algo: {}", ii, hash)?;
+                        writeln!(output, "{}  KEK symmetric algo: {}", ii,
                                  sym)?;
                         pd.dump_mpis(output, &ii, &[q.value()], &["q"])?;
                     },
