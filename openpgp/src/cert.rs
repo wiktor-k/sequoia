@@ -5750,23 +5750,18 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
     /// Tests that secrets are kept when merging.
     #[test]
     fn merge_keeps_secrets() -> Result<()> {
-        let primary_sec: Key<_, key::PrimaryRole> =
-            key::Key4::generate_ecc(true, Curve::Ed25519)?.into();
-        let primary_pub = primary_sec.clone().take_secret().0;
+        let (cert_s, _) =
+            CertBuilder::general_purpose(None, Some("uid")).generate()?;
+        let cert_p = cert_s.clone().strip_secret_key_material();
 
-        let cert_p =
-            Cert::try_from(vec![primary_pub.clone().into()])?;
-        let cert_s =
-            Cert::try_from(vec![primary_sec.clone().into()])?;
-        let cert = cert_p.merge_public_and_secret(cert_s)?;
-        assert!(cert.primary_key().has_secret());
+        // Merge key into cert.
+        let cert = cert_p.clone().merge_public_and_secret(cert_s.clone())?;
+        assert!(cert.keys().all(|ka| ka.has_secret()));
 
-        let cert_p =
-            Cert::try_from(vec![primary_pub.clone().into()])?;
-        let cert_s =
-            Cert::try_from(vec![primary_sec.clone().into()])?;
-        let cert = cert_s.merge_public_and_secret(cert_p)?;
-        assert!(cert.primary_key().has_secret());
+        // Merge cert into key.
+        let cert = cert_s.clone().merge_public_and_secret(cert_p.clone())?;
+        assert!(cert.keys().all(|ka| ka.has_secret()));
+
         Ok(())
     }
 
