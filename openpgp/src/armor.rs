@@ -558,8 +558,6 @@ pub struct Reader<'a> {
     kind: Option<Kind>,
     mode: ReaderMode,
     decode_buffer: Vec<u8>,
-    crc: Crc,
-    expect_crc: Option<u32>,
     initialized: bool,
     headers: Vec<(String, String)>,
     finalized: bool,
@@ -748,8 +746,6 @@ impl<'a> Reader<'a> {
             kind: None,
             mode,
             decode_buffer: Vec::<u8>::with_capacity(1024),
-            crc: Crc::new(),
-            expect_crc: None,
             headers: Vec::new(),
             initialized: false,
             finalized: false,
@@ -1232,8 +1228,6 @@ impl<'a> Reader<'a> {
                     &base64data, base64::STANDARD)
                     .map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
 
-                self.crc.update(&self.decode_buffer);
-
                 let copied = cmp::min(buf.len(), self.decode_buffer.len());
                 buf[..copied].copy_from_slice(&self.decode_buffer[..copied]);
                 crate::vec_drain_prefix(&mut self.decode_buffer, copied);
@@ -1242,13 +1236,9 @@ impl<'a> Reader<'a> {
             } else {
                 // We can decode directly into the caller-supplied
                 // buffer.
-                let decoded = base64::decode_config_slice(
+                base64::decode_config_slice(
                     &base64data, base64::STANDARD, buf)
-                    .map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
-
-                self.crc.update(&buf[..decoded]);
-
-                decoded
+                    .map_err(|e| Error::new(ErrorKind::InvalidData, e))?
             };
 
             self.prefix_remaining = prefix_remaining;
@@ -1281,20 +1271,6 @@ impl<'a> Reader<'a> {
                     && data[1..5].iter().all(is_base64_char)
                 {
                     /* Found.  */
-                    let crc = match base64::decode_config(
-                        &data[1..5], base64::STANDARD)
-                    {
-                        Ok(d) => d,
-                        Err(e) => return Err(Error::new(ErrorKind::InvalidInput, e)),
-                    };
-
-                    assert_eq!(crc.len(), 3);
-                    let crc =
-                        (crc[0] as u32) << 16
-                        | (crc[1] as u32) << 8
-                        | crc[2] as u32;
-
-                    self.expect_crc = Some(crc);
                     5
                 } else {
                     0
@@ -1333,13 +1309,6 @@ impl<'a> Reader<'a> {
                 }
             };
             self.source.consume(consumed);
-
-            if let Some(crc) = self.expect_crc {
-                if self.crc.finalize() != crc {
-                    return Err(Error::new(ErrorKind::InvalidInput,
-                                          "Bad CRC sum."));
-                }
-            }
         }
 
         Ok(decoded)
@@ -1938,7 +1907,12 @@ mod test {
             ReaderMode::Tolerant(Some(Kind::File)));
         let mut buf = [0; 5];
         let e = r.read(&mut buf);
-        assert!(e.is_err());
+        // Quoting RFC4880++:
+        //
+        // > An implementation MUST NOT reject an OpenPGP object when
+        // > the CRC24 footer is present, missing, malformed, or
+        // > disagrees with the computed CRC24 sum.
+        assert!(e.is_ok());
     }
 
     #[test]
