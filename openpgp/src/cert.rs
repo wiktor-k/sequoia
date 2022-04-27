@@ -315,7 +315,7 @@ impl<C> ComponentBundles<C>
         // We dedup by component (not bundles!).  To do this, we need
         // to sort the bundles by their components.
 
-        self.bundles.sort_unstable_by(
+        self.bundles.sort_by(
             |a, b| cmp(&a.component, &b.component));
 
         self.bundles.dedup_by(|a, b| {
@@ -324,6 +324,8 @@ impl<C> ComponentBundles<C>
                 merge(&mut a.component, &mut b.component);
 
                 // Recall: if a and b are equal, a will be dropped.
+                // Also, the elements are given in the opposite order
+                // from their order in the vector.
                 b.self_signatures.append(&mut a.self_signatures);
                 b.attestations.append(&mut a.attestations);
                 b.certifications.append(&mut a.certifications);
@@ -1470,17 +1472,28 @@ impl Cert {
         self.userids.sort_and_dedup(UserID::cmp, |_, _| {});
         self.user_attributes.sort_and_dedup(UserAttribute::cmp, |_, _| {});
         // XXX: If we have two keys with the same public parts and
-        // different non-empty secret parts, then one will be dropped
-        // (non-deterministicly)!
+        // different non-empty secret parts, then the one that comes
+        // first will be dropped, the one that comes later will be
+        // kept.
         //
         // This can happen if:
         //
         //   - One is corrupted
         //   - There are two versions that are encrypted differently
+        //
+        // If the order of the keys is unpredictable, this effect is
+        // unpredictable!  However, if we merge two canonicalized
+        // certs with Cert::merge_public_and_secret, then we know the
+        // order: the version in `self` comes first, the version in
+        // `other` comes last.
         self.subkeys.sort_and_dedup(Key::public_cmp,
             |a, b| {
                 // Recall: if a and b are equal, a will be dropped.
-                if ! b.has_secret() && a.has_secret() {
+                // Also, the elements are given in the opposite order
+                // from their order in the vector.
+                //
+                // Prefer the secret in `a`, i.e. the "later" one.
+                if a.has_secret() {
                     std::mem::swap(a, b);
                 }
             });
@@ -2188,17 +2201,27 @@ impl Cert {
     /// If `other` is a different certificate, then an error is
     /// returned.
     ///
-    /// This routine merges duplicate packets.  This is different from
-    /// [`Cert::insert_packets`], which prefers keys in the packets that
-    /// are being merged into the certificate.
+    /// This routine merges duplicate packets.  If the same (sub)key
+    /// is present in both `self` and `other`, then
     ///
-    /// [`Cert::insert_packets`]: Cert::insert_packets()
+    ///   - if both keys have secret key material, then the version in
+    ///     `other` is preferred,
+    ///
+    ///   - if only one key has secret key material, then this copy is
+    ///     preferred.
+    ///
+    /// This is different from [`Cert::insert_packets`], which
+    /// unconditionally prefers keys in the packets that are being
+    /// merged into the certificate.
     ///
     /// It is important to only merge key material from trusted
     /// sources using this function, because it may be used to import
     /// secret key material.  Secret key material is not authenticated
     /// by OpenPGP, and there are plausible attack scenarios where a
     /// malicious actor injects secret key material.
+    ///
+    /// To merge only public key material, which is always safe, use
+    /// [`Cert::merge_public`].
     ///
     /// # Examples
     ///
@@ -2224,9 +2247,8 @@ impl Cert {
                 "Primary key mismatch".into()).into());
         }
 
-        if ! self.primary.key().has_secret()
-            && other.primary.key().has_secret()
-        {
+        // Prefer the secret in `other`.
+        if other.primary.key().has_secret() {
             std::mem::swap(self.primary.key_mut(), other.primary.key_mut());
         }
 
@@ -5761,6 +5783,48 @@ Pu1xwz57O4zo1VYf6TqHJzVC3OMvMUM2hhdecMUe5x6GorNaj6g=
         // Merge cert into key.
         let cert = cert_s.clone().merge_public_and_secret(cert_p.clone())?;
         assert!(cert.keys().all(|ka| ka.has_secret()));
+
+        Ok(())
+    }
+
+    /// Tests that secrets that are merged in are preferred to
+    /// existing secrets.
+    #[test]
+    fn merge_prefers_merged_in_secrets() -> Result<()> {
+        let pw: crate::crypto::Password = "foo".into();
+        let (cert_encrypted_secrets, _) =
+            CertBuilder::general_purpose(None, Some("uid"))
+            .set_password(Some(pw.clone()))
+            .generate()?;
+
+        let mut cert_plain_secrets = cert_encrypted_secrets.clone();
+        for ka in cert_encrypted_secrets.keys().secret() {
+            assert!(! ka.has_unencrypted_secret());
+            let key = ka.key().clone().decrypt_secret(&pw)?;
+            assert!(key.has_unencrypted_secret());
+
+            let key: Packet = if ka.primary() {
+                key.role_into_primary().into()
+            } else {
+                key.role_into_subordinate().into()
+            };
+
+            cert_plain_secrets =
+                cert_plain_secrets.insert_packets(vec![key])?;
+        }
+        assert!(
+            cert_plain_secrets.keys().all(|ka| ka.has_unencrypted_secret()));
+
+        // Merge unencrypted secrets into encrypted secrets.
+        let cert = cert_encrypted_secrets.clone().merge_public_and_secret(
+            cert_plain_secrets.clone())?;
+        assert!(cert.keys().all(|ka| ka.has_unencrypted_secret()));
+
+        // Merge encrypted secrets into unencrypted secrets.
+        let cert = cert_plain_secrets.clone().merge_public_and_secret(
+            cert_encrypted_secrets.clone())?;
+        assert!(cert.keys().all(|ka| ka.has_secret()
+                                && ! ka.has_unencrypted_secret()));
 
         Ok(())
     }
