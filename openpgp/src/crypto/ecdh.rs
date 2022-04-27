@@ -198,8 +198,6 @@ fn pkcs5_unpad(sk: Protected, target_len: usize) -> Result<Protected> {
 fn aes_key_wrap(algo: SymmetricAlgorithm, key: &Protected,
                 plaintext: &Protected)
                 -> Result<Vec<u8>> {
-    use crate::SymmetricAlgorithm::*;
-
     if plaintext.len() % 8 != 0 {
         return Err(Error::InvalidArgument(
             "Plaintext must be a multiple of 8".into()).into());
@@ -209,10 +207,7 @@ fn aes_key_wrap(algo: SymmetricAlgorithm, key: &Protected,
         return Err(Error::InvalidArgument("Bad key size".into()).into());
     }
 
-    let mut cipher = match algo {
-        AES128 | AES192 | AES256 => algo.make_encrypt_ecb(key)?,
-        _ => return Err(Error::UnsupportedSymmetricAlgorithm(algo).into()),
-    };
+    let mut cipher = algo.make_encrypt_ecb(key)?;
 
     //   Inputs:  Plaintext, n 64-bit values {P1, P2, ..., Pn}, and
     //            Key, K (the KEK).
@@ -273,8 +268,6 @@ fn aes_key_wrap(algo: SymmetricAlgorithm, key: &Protected,
 fn aes_key_unwrap(algo: SymmetricAlgorithm, key: &Protected,
                   ciphertext: &[u8])
                   -> Result<Protected> {
-    use crate::SymmetricAlgorithm::*;
-
     if ciphertext.len() % 8 != 0 {
         return Err(Error::InvalidArgument(
             "Ciphertext must be a multiple of 8".into()).into());
@@ -284,10 +277,7 @@ fn aes_key_unwrap(algo: SymmetricAlgorithm, key: &Protected,
         return Err(Error::InvalidArgument("Bad key size".into()).into());
     }
 
-    let mut cipher = match algo {
-        AES128 | AES192 | AES256 => algo.make_decrypt_ecb(key)?,
-        _ => return Err(Error::UnsupportedSymmetricAlgorithm(algo).into()),
-    };
+    let mut cipher = algo.make_decrypt_ecb(key)?;
 
     //   Inputs:  Ciphertext, (n+1) 64-bit values {C0, C1, ..., Cn}, and
     //            Key, K (the KEK).

@@ -97,6 +97,12 @@ pub trait Policy : fmt::Debug + Send + Sync {
     /// algorithms, don't have a sufficiently high security margin
     /// (e.g., 1024-bit RSA keys), are on a bad list, etc. from being
     /// used here.
+    ///
+    /// If you implement this function, make sure to consider the Key
+    /// Derivation Function and Key Encapsulation parameters of ECDH
+    /// keys, see [`PublicKey::ECDH`].
+    ///
+    /// [`PublicKey::ECDH`]: crate::crypto::mpi::PublicKey::ECDH
     fn key(&self, _ka: &ValidErasedKeyAmalgamation<key::PublicParts>)
         -> Result<()>
     {
@@ -1417,7 +1423,47 @@ impl<'a> Policy for StandardPolicy<'a> {
 
         let time = self.time.unwrap_or_else(Timestamp::now);
         self.asymmetric_algos.check(a, time, None)
-            .context("Policy rejected asymmetric algorithm")
+            .context("Policy rejected asymmetric algorithm")?;
+
+        // Check ECDH KDF and KEK parameters.
+        if let PublicKey::ECDH { hash, sym, .. } = ka.mpis() {
+            self.symmetric_algorithm(*sym)
+                .context("Policy rejected ECDH \
+                          key encapsulation algorithm")?;
+
+            // RFC6637 says:
+            //
+            // > Refer to Section 13 for the details regarding the
+            // > choice of the KEK algorithm, which SHOULD be one of
+            // > three AES algorithms.
+            //
+            // Furthermore, GnuPG rejects anything other than AES.
+            // I checked the SKS dump, and there are no keys out
+            // there that use a different KEK algorithm.
+            match sym {
+                SymmetricAlgorithm::AES128
+                    | SymmetricAlgorithm::AES192
+                    | SymmetricAlgorithm::AES256
+                    => (), // Good.
+                _ =>
+                    return Err(anyhow::Error::from(
+                        Error::PolicyViolation(sym.to_string(), None))
+                               .context("Policy rejected ECDH \
+                                         key encapsulation algorithm")),
+            }
+
+            // For use in a KDF the hash algorithm does not
+            // necessarily be collision resistant, but this is the
+            // weakest property that we otherwise care for, so
+            // (somewhat arbitrarily) use this.
+            self
+                .collision_resistant_hash_algos
+                .check(*hash, time, None)
+                .context("Policy rejected ECDH \
+                          key derivation hash function")?;
+        }
+
+        Ok(())
     }
 
     fn packet(&self, packet: &Packet) -> Result<()> {
