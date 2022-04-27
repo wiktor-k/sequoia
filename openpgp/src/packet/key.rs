@@ -870,17 +870,9 @@ impl<P, R> Key4<P, R>
         where PB: key::KeyParts,
               RB: key::KeyRole,
     {
-        match self.mpis.cmp(&b.mpis) {
-            Ordering::Equal => (),
-            o => return o,
-        }
-
-        match self.creation_time.cmp(&b.creation_time) {
-            Ordering::Equal => (),
-            o => return o,
-        }
-
-        self.pk_algo.cmp(&b.pk_algo)
+        self.mpis.cmp(&b.mpis)
+            .then_with(|| self.creation_time.cmp(&b.creation_time))
+            .then_with(|| self.pk_algo.cmp(&b.pk_algo))
     }
 
     /// Tests whether two keys are equal modulo their secret key
