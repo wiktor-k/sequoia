@@ -4699,7 +4699,7 @@ impl <'a> PacketParser<'a> {
                     }
                 }
             },
-            // decrypted should always be true.
+            // self.encrypted should always be false.
             Packet::CompressedData(_) => unreachable!(),
             // Packets that don't recurse.
             Packet::Unknown(_) | Packet::Signature(_) | Packet::OnePassSig(_)
