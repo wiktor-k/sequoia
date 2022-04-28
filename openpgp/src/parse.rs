@@ -2555,6 +2555,9 @@ impl CompressedData {
         let algo: CompressionAlgorithm =
             php_try!(php.parse_u8("algo")).into();
 
+        let recursion_depth = php.recursion_depth();
+        let mut pp = php.ok(Packet::CompressedData(CompressedData::new(algo)))?;
+
         #[allow(unreachable_patterns)]
         match algo {
             CompressionAlgorithm::Uncompressed => (),
@@ -2563,15 +2566,14 @@ impl CompressedData {
                 | CompressionAlgorithm::Zlib => (),
             #[cfg(feature = "compression-bzip2")]
             CompressionAlgorithm::BZip2 => (),
-            CompressionAlgorithm::Unknown(_)
-            | CompressionAlgorithm::Private(_) =>
-                return php.fail("unknown compression algorithm"),
-            _ =>
-                return php.fail("unsupported compression algorithm"),
+            _ => {
+                // We don't know or support this algorithm.  Return a
+                // CompressedData packet without pushing a filter, so
+                // that it has an opaque body.
+                t!("Algorithm {} unknown or unsupported.", algo);
+                return Ok(pp.set_encrypted(true));
+            },
         }
-
-        let recursion_depth = php.recursion_depth();
-        let mut pp = php.ok(Packet::CompressedData(CompressedData::new(algo)))?;
 
         t!("Pushing a decompressor for {}, recursion depth = {:?}.",
            algo, recursion_depth);
@@ -4699,8 +4701,6 @@ impl <'a> PacketParser<'a> {
                     }
                 }
             },
-            // self.encrypted should always be false.
-            Packet::CompressedData(_) => unreachable!(),
             // Packets that don't recurse.
             Packet::Unknown(_) | Packet::Signature(_) | Packet::OnePassSig(_)
                 | Packet::PublicKey(_) | Packet::PublicSubkey(_)
@@ -4708,7 +4708,8 @@ impl <'a> PacketParser<'a> {
                 | Packet::Marker(_) | Packet::Trust(_)
                 | Packet::UserID(_) | Packet::UserAttribute(_)
                 | Packet::Literal(_) | Packet::PKESK(_) | Packet::SKESK(_)
-                | Packet::SEIP(_) | Packet::MDC(_) | Packet::AED(_) => {
+                | Packet::SEIP(_) | Packet::MDC(_) | Packet::AED(_)
+                | Packet::CompressedData(_) => {
                 // Drop through.
                 t!("A {:?} packet is not a container, not recursing.",
                    self.packet.tag());
@@ -4805,7 +4806,7 @@ impl <'a> PacketParser<'a> {
             Packet::Literal(p) => set_or_extend(rest, p.container_mut(), false),
             Packet::Unknown(p) => set_or_extend(rest, p.container_mut(), false),
             Packet::CompressedData(p) =>
-                set_or_extend(rest, p.deref_mut(), true),
+                set_or_extend(rest, p.deref_mut(), ! self.encrypted),
             Packet::SEIP(p) =>
                 set_or_extend(rest, p.deref_mut(), ! self.encrypted),
             Packet::AED(p) =>

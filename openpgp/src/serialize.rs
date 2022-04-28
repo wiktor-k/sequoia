@@ -3130,6 +3130,12 @@ mod test {
             // 3. Get the first packet.
             let po = pile.descendants().next();
             if let Some(&Packet::CompressedData(ref cd)) = po {
+                if ! cd.algo().is_supported() {
+                    eprintln!("Skipping {} because {} is not supported.",
+                              filename, cd.algo());
+                    continue;
+                }
+
                 // 4. Serialize the container.
                 let buffer =
                     (&Packet::CompressedData(cd.clone()) as &dyn MarshalInto)
@@ -3162,21 +3168,6 @@ mod test {
                     assert_eq!(pile, pile2);
                 }
             } else {
-                // XXX: We should always parse the packet into a
-                // compressed data packet, even if we don't understand
-                // the algorithm.  See
-                // https://gitlab.com/sequoia-pgp/sequoia/-/issues/830.
-                // In the mean time, as a workaround, we check whether
-                // we support the algorithm.  Drop this once #830 is
-                // addressed.
-                if let Some(Packet::Unknown(u)) = po {
-                    // The first octet is the compression algorithm.
-                    let algo: CompressionAlgorithm = u.body()[0].into();
-                    if ! algo.is_supported() {
-                        continue;
-                    }
-                }
-
                 panic!("Expected a compressed data data packet.");
             }
         }
