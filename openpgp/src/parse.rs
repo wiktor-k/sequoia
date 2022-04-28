@@ -1288,7 +1288,6 @@ impl Unknown {
     {
         let tag = php.header.ctb().tag();
         php.ok(Packet::Unknown(Unknown::new(tag, error)))
-            .map(|pp| pp.set_encrypted(true))
     }
 }
 
