@@ -662,7 +662,11 @@ fn main() -> Result<()> {
                     config.create_or_stdout_unsafe(m.value_of("output"))?;
                 let session_key: Option<openpgp::crypto::SessionKey> =
                     if let Some(sk) = m.value_of("session-key") {
-                        Some(hex::decode_pretty(sk)?.into())
+                        let dsk = hex::decode_pretty(sk).with_context(|| format!(
+                            "Bad value passed to --session-key: {:?}",
+                            sk
+                        ))?;
+                        Some(dsk.into())
                     } else {
                         None
                     };
