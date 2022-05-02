@@ -388,8 +388,14 @@
 //!     sq key generate [FLAGS] [OPTIONS] --export <OUTFILE>
 //!
 //! FLAGS:
+//!         --can-authenticate
+//!             Adds an authentication-capable subkey (default)
+//!
 //!         --can-sign
 //!             Adds a signing-capable subkey (default)
+//!
+//!         --cannot-authenticate
+//!             Adds no authentication-capable subkey
 //!
 //!         --cannot-encrypt
 //!             Adds no encryption-capable subkey

@@ -582,6 +582,15 @@ $ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
                              .long("cannot-sign")
                              .help("Adds no signing-capable subkey"))
 
+                        .group(ArgGroup::with_name("cap-authenticate")
+                               .args(&["can-authenticate", "cannot-authenticate"]))
+                        .arg(Arg::with_name("can-authenticate")
+                             .long("can-authenticate")
+                             .help("Adds an authentication-capable subkey (default)"))
+                        .arg(Arg::with_name("cannot-authenticate")
+                             .long("cannot-authenticate")
+                             .help("Adds no authentication-capable subkey"))
+
                         .group(ArgGroup::with_name("cap-encrypt")
                                .args(&["can-encrypt", "cannot-encrypt"]))
                         .arg(Arg::with_name("can-encrypt")

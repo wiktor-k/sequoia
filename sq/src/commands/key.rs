@@ -111,6 +111,19 @@ fn generate(config: Config, m: &ArgMatches) -> Result<()> {
         }
     }
 
+    // Authentication Capability
+    match (m.is_present("can-authenticate"), m.is_present("cannot-authenticate")) {
+        (false, false) | (true, false) => {
+            builder = builder.add_authentication_subkey()
+        }
+        (false, true) => { /* no authentication subkey */ }
+        (true, true) => {
+            return Err(
+                anyhow::anyhow!("Conflicting arguments --can-authenticate and\
+                                --cannot-authenticate"));
+        }
+    }
+
     // Encryption Capability
     match (m.value_of("can-encrypt"), m.is_present("cannot-encrypt")) {
         (Some("universal"), false) | (None, false) => {
