@@ -144,6 +144,7 @@ then stdout contains "Alice"
 then stdout contains "Expiration time: 20"
 then stdout contains "Key flags: certification"
 then stdout contains "Key flags: signing"
+then stdout contains "Key flags: authentication"
 then stdout contains "Key flags: transport encryption, data-at-rest encryption"
 ~~~
 
@@ -172,19 +173,37 @@ then file key.pgp contains "Comment: <alice@example.com>"
 ~~~
 
 
-### Generate a key for encryption only
+### Generate a key for certification only
 
 _Requirement: We must be able to generate a key that can only be used
-for encryption, and can't be used for signing._
+for certification, and can't be used for signing, encryption or authentication._
 
 Note that `sq` always creates a key usable for certification.
 
 ~~~scenario
 given an installed sq
-when I run sq key generate --export key.pgp --cannot-sign
+when I run sq key generate --export key.pgp --cannot-sign --cannot-authenticate --cannot-encrypt
 when I run sq inspect key.pgp
 then stdout contains "Key flags: certification"
 then stdout doesn't contain "Key flags: signing"
+then stdout doesn't contain "Key flags: authentication"
+then stdout doesn't contain "Key flags: transport encryption, data-at-rest encryption"
+~~~
+
+### Generate a key for encryption only
+
+_Requirement: We must be able to generate a key that can only be used
+for encryption, and can't be used for signing or authentication._
+
+Note that `sq` always creates a key usable for certification.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --export key.pgp --cannot-sign --cannot-authenticate
+when I run sq inspect key.pgp
+then stdout contains "Key flags: certification"
+then stdout doesn't contain "Key flags: signing"
+then stdout doesn't contain "Key flags: authentication"
 then stdout contains "Key flags: transport encryption, data-at-rest encryption"
 ~~~
 
@@ -223,12 +242,106 @@ for signing, and can't be used for encryption._
 
 ~~~scenario
 given an installed sq
-when I run sq key generate --export key.pgp --cannot-encrypt
+when I run sq key generate --export key.pgp --cannot-encrypt --cannot-authenticate
 when I run sq inspect key.pgp
 then stdout contains "Key flags: certification"
 then stdout contains "Key flags: signing"
 then stdout doesn't contain "Key flags: transport encryption, data-at-rest encryption"
+then stdout doesn't contain "Key flags: authentication"
 ~~~
+
+
+### Generate a key for authentication only
+
+_Requirement: We must be able to generate a key that can only be used
+for authentication, and can't be used for encryption or signing._
+
+Note that `sq` always creates a key usable for certification.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --export key.pgp --can-authenticate --cannot-sign --cannot-encrypt
+when I run sq inspect key.pgp
+then stdout contains "Key flags: certification"
+then stdout contains "Key flags: authentication"
+then stdout doesn't contain "Key flags: signing"
+then stdout doesn't contain "Key flags: transport encryption, data-at-rest encryption"
+~~~
+
+
+### Generate a key for encryption and authentication
+
+_Requirement: We must be able to generate a key that can only be used
+for encryption and authentication, and can't be used for signing._
+
+Note that `sq` always creates a key usable for certification.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --export key.pgp --cannot-sign
+when I run sq inspect key.pgp
+then stdout contains "Key flags: certification"
+then stdout contains "Key flags: authentication"
+then stdout contains "Key flags: transport encryption, data-at-rest encryption"
+then stdout doesn't contain "Key flags: signing"
+~~~
+
+
+### Generate a key for encryption and signing
+
+_Requirement: We must be able to generate a key that can only be used
+for encryption and signing, and can't be used for authentication._
+
+Note that `sq` always creates a key usable for certification.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --export key.pgp --cannot-authenticate
+when I run sq inspect key.pgp
+then stdout contains "Key flags: certification"
+then stdout contains "Key flags: transport encryption, data-at-rest encryption"
+then stdout contains "Key flags: signing"
+then stdout doesn't contain "Key flags: authentication"
+~~~
+
+
+### Generate a key for signing and authentication
+
+_Requirement: We must be able to generate a key that can only be used
+for signing and authentication, and can't be used for encryption._
+
+Note that `sq` always creates a key usable for certification.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --export key.pgp --cannot-encrypt
+when I run sq inspect key.pgp
+then stdout contains "Key flags: certification"
+then stdout doesn't contain "Key flags: transport encryption, data-at-rest encryption"
+then stdout contains "Key flags: signing"
+then stdout contains "Key flags: authentication"
+~~~
+
+
+
+### Generate a key for encryption, authentication and signing
+
+_Requirement: We must be able to generate a key that can be used for
+encryption, authentication and signing._
+
+Note that `sq` always creates a key usable for certification.
+
+~~~scenario
+given an installed sq
+when I run sq key generate --export key.pgp
+when I run sq inspect key.pgp
+then stdout contains "Key flags: certification"
+then stdout contains "Key flags: authentication"
+then stdout contains "Key flags: transport encryption, data-at-rest encryption"
+then stdout contains "Key flags: signing"
+~~~
+
+
 
 ### Generate an elliptic curve key
 
