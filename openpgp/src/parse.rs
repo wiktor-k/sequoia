@@ -5229,12 +5229,26 @@ impl<'a> PacketParser<'a> {
     ///
     /// This functions returns rich errors in case the decryption
     /// fails.  In combination with certain asymmetric algorithms
-    /// (RSA), this may lead to compromise of secret key material.
-    /// See [Section 14 of RFC 4880].  Do not relay these errors in
-    /// situations where an attacker can request decryption of
-    /// messages in an automated fashion.
+    /// (RSA), this may lead to compromise of secret key material or
+    /// (partial) recovery of the message's plain text.  See [Section
+    /// 14 of RFC 4880].
     ///
     ///   [Section 14 of RFC 4880]: https://tools.ietf.org/html/rfc4880#section-14
+    ///
+    /// DO NOT relay these errors in situations where an attacker can
+    /// request decryption of messages in an automated fashion.  The
+    /// API of the streaming [`Decryptor`] prevents leaking rich
+    /// decryption errors.
+    ///
+    ///   [`Decryptor`]: stream::Decryptor
+    ///
+    /// Nevertheless, decrypting messages that do not use an
+    /// authenticated encryption mode in an automated fashion that
+    /// relays or leaks information to a third party is NEVER SAFE due
+    /// to unavoidable format oracles, see [Format Oracles on
+    /// OpenPGP].
+    ///
+    ///   [Format Oracles on OpenPGP]: https://www.ssi.gouv.fr/uploads/2015/05/format-Oracles-on-OpenPGP.pdf
     pub fn decrypt(&mut self, algo: SymmetricAlgorithm, key: &SessionKey)
         -> Result<()>
     {
