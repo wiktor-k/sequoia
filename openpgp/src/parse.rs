@@ -4166,7 +4166,7 @@ impl <'a> PacketParser<'a> {
         }
     }
 
-    /// Returns Ok if the data appears to be a legal packet.
+    /// Tests whether the data appears to be a legal cert packet.
     ///
     /// This is just a heuristic.  It can be used for recovering from
     /// garbage.
@@ -4183,7 +4183,7 @@ impl <'a> PacketParser<'a> {
     ///
     /// Currently, we only try to recover the most interesting
     /// packets.
-    fn plausible<T: BufferedReader<Cookie>>(
+    fn plausible_cert<T: BufferedReader<Cookie>>(
         bio: &mut buffered_reader::Dup<T, Cookie>, header: &Header)
                  -> Result<()> {
         let bad = Err(
@@ -4278,7 +4278,7 @@ impl <'a> PacketParser<'a> {
                         break;
                     }
 
-                    match Self::plausible(&mut bio, &header_) {
+                    match Self::plausible_cert(&mut bio, &header_) {
                         Ok(()) => {
                             header = header_;
                             break;
