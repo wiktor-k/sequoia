@@ -5272,10 +5272,7 @@ impl<'a> PacketParser<'a> {
                     if !(header[bl - 2] == header[bl]
                          && header[bl - 1] == header[bl + 1]) {
                         return Err(Error::InvalidSessionKey(
-                            format!(
-                                "Last two 16-bit quantities don't match: {}",
-                                crate::fmt::to_hex(&header[..], false)))
-                                   .into());
+                            "Decryption failed".into()).into());
                     }
                 }
 
