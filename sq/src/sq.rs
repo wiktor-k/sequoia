@@ -15,9 +15,9 @@ use openpgp::{
     Result,
 };
 use crate::openpgp::{armor, Cert};
-use crate::openpgp::crypto::Password;
+use crate::openpgp::crypto::{Password, SessionKey};
 use crate::openpgp::fmt::hex;
-use crate::openpgp::types::KeyFlags;
+use crate::openpgp::types::{KeyFlags, SymmetricAlgorithm};
 use crate::openpgp::packet::prelude::*;
 use crate::openpgp::parse::{Parse, PacketParser, PacketParserResult};
 use crate::openpgp::packet::signature::subpacket::NotationData;
@@ -660,20 +660,34 @@ fn main() -> Result<()> {
                 let mut input = open_or_stdin(m.value_of("input"))?;
                 let mut output =
                     config.create_or_stdout_unsafe(m.value_of("output"))?;
-                let session_key: Option<openpgp::crypto::SessionKey> =
+
+                fn decode_session_key(
+                    sk: &str,
+                ) -> Result<(Option<SessionKey>, Option<SymmetricAlgorithm>)> {
+                    if let Some((algo, sk)) = sk.split_once(':') {
+                        let algo = SymmetricAlgorithm::from(algo.parse::<u8>()?);
+                        let dsk = hex::decode_pretty(sk)?.into();
+                        Ok((Some(dsk), Some(algo)))
+                    } else {
+                        let dsk = hex::decode_pretty(sk)?.into();
+                        Ok((Some(dsk), None))
+                    }
+                }
+
+                let (session_key, algo_hint) =
                     if let Some(sk) = m.value_of("session-key") {
-                        let dsk = hex::decode_pretty(sk).with_context(|| format!(
+                    decode_session_key(sk)
+                        .with_context(|| format!(
                             "Bad value passed to --session-key: {:?}",
                             sk
-                        ))?;
-                        Some(dsk.into())
+                        ))?
                     } else {
-                        None
+                        (None, None)
                     };
                 let width = term_size::dimensions_stdout().map(|(w, _)| w);
                 commands::dump(&mut input, &mut output,
                                m.is_present("mpis"), m.is_present("hex"),
-                               session_key.as_ref(), width)?;
+                               session_key.as_ref(), algo_hint, width)?;
             },
 
             Some(("decrypt",  m)) => {

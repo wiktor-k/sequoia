@@ -56,6 +56,7 @@ impl Convert<chrono::DateTime<chrono::offset::Utc>> for Timestamp {
 pub fn dump<W>(input: &mut (dyn io::Read + Sync + Send),
                output: &mut dyn io::Write,
                mpis: bool, hex: bool, sk: Option<&SessionKey>,
+               algo_hint: Option<SymmetricAlgorithm>,
                width: W)
                -> Result<Kind>
     where W: Into<Option<usize>>
@@ -85,26 +86,29 @@ pub fn dump<W>(input: &mut (dyn io::Read + Sync + Send),
             Packet::SEIP(_) if sk.is_some() => {
                 message_encrypted = true;
                 let sk = sk.as_ref().unwrap();
-                let mut decrypted_with = None;
-                for algo in 1..20 {
-                    let algo = SymmetricAlgorithm::from(algo);
-                    if let Ok(size) = algo.key_size() {
-                        if size != sk.len() { continue; }
-                    } else {
-                        continue;
-                    }
+                let decrypted_with = if let Some(algo) = algo_hint {
+                    // We know which algorithm to use, so only try decrypting
+                    // with that one.
+                    pp.decrypt(algo, sk).is_ok().then(|| algo)
+                } else {
+                    // We don't know which algorithm to use,
+                    // try to find one that decrypts the message.
+                    (1u8..=19)
+                        .map(SymmetricAlgorithm::from)
+                        .find(|algo| pp.decrypt(*algo, sk).is_ok())
+                };
 
-                    if let Ok(_) = pp.decrypt(algo, sk) {
-                        decrypted_with = Some(algo);
-                        break;
-                    }
-                }
                 let mut fields = Vec::new();
                 fields.push(format!("Session key: {}", hex::encode(sk)));
                 if let Some(algo) = decrypted_with {
                     fields.push(format!("Symmetric algo: {}", algo));
                     fields.push("Decryption successful".into());
                 } else {
+                    if let Some(algo) = algo_hint {
+                        fields.push(format!(
+                            "Indicated Symmetric algo: {}", algo
+                        ));
+                    };
                     fields.push("Decryption failed".into());
                 }
                 Some(fields)
