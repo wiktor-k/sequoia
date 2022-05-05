@@ -343,13 +343,16 @@ impl<R> Key4<SecretParts, R>
         let mut private_key = Vec::from(private_key);
         private_key.reverse();
 
+        use crate::crypto::ecdh;
         Self::with_secret(
             ctime.into().unwrap_or_else(crate::now),
             PublicKeyAlgorithm::ECDH,
             mpi::PublicKey::ECDH {
                 curve: Curve::Cv25519,
-                hash: hash.into().unwrap_or(HashAlgorithm::SHA512),
-                sym: sym.into().unwrap_or(SymmetricAlgorithm::AES256),
+                hash: hash.into().unwrap_or_else(
+                    || ecdh::default_ecdh_kdf_hash(&Curve::Cv25519)),
+                sym: sym.into().unwrap_or_else(
+                    || ecdh::default_ecdh_kek_cipher(&Curve::Cv25519)),
                 q: MPI::new_compressed_point(&public_key),
             },
             mpi::SecretKeyMaterial::ECDH {
@@ -443,6 +446,8 @@ impl<R> Key4<SecretParts, R>
         use crate::PublicKeyAlgorithm::*;
 
         let mut rng = Yarrow::default();
+        let hash = crate::crypto::ecdh::default_ecdh_kdf_hash(&curve);
+        let sym = crate::crypto::ecdh::default_ecdh_kek_cipher(&curve);
 
         let (mpis, secret, pk_algo) = match (curve.clone(), for_signing) {
             (Curve::Ed25519, true) => {
@@ -476,8 +481,8 @@ impl<R> Key4<SecretParts, R>
                 let public_mpis = PublicKey::ECDH {
                     curve: Curve::Cv25519,
                     q: MPI::new_compressed_point(&public),
-                    hash: HashAlgorithm::SHA256,
-                    sym: SymmetricAlgorithm::AES256,
+                    hash,
+                    sym,
                 };
                 let private_mpis = mpi::SecretKeyMaterial::ECDH {
                     scalar: private.into(),
@@ -522,24 +527,24 @@ impl<R> Key4<SecretParts, R>
 
             (Curve::NistP256, false)  | (Curve::NistP384, false)
             | (Curve::NistP521, false) => {
-                    let (private, hash, field_sz) = match curve {
+                    let (private, field_sz) = match curve {
                         Curve::NistP256 => {
                             let pv =
                                 ecc::Scalar::new_random::<ecc::Secp256r1, _>(&mut rng);
 
-                            (pv, HashAlgorithm::SHA256, 256)
+                            (pv, 256)
                         }
                         Curve::NistP384 => {
                             let pv =
                                 ecc::Scalar::new_random::<ecc::Secp384r1, _>(&mut rng);
 
-                            (pv, HashAlgorithm::SHA384, 384)
+                            (pv, 384)
                         }
                         Curve::NistP521 => {
                             let pv =
                                 ecc::Scalar::new_random::<ecc::Secp521r1, _>(&mut rng);
 
-                            (pv, HashAlgorithm::SHA512, 521)
+                            (pv, 521)
                         }
                         _ => unreachable!(),
                     };
@@ -549,7 +554,7 @@ impl<R> Key4<SecretParts, R>
                         curve,
                         q: MPI::new_point(&pub_x, &pub_y, field_sz),
                         hash,
-                        sym: SymmetricAlgorithm::AES256,
+                        sym,
                     };
                     let private_mpis = mpi::SecretKeyMaterial::ECDH{
                         scalar: MPI::new(&private.as_bytes()).into(),

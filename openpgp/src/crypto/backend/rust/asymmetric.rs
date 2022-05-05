@@ -366,13 +366,16 @@ impl<R> Key4<SecretParts, R>
         let mut private_key = Vec::from(private_key);
         private_key.reverse();
 
+        use crate::crypto::ecdh;
         Self::with_secret(
             ctime.into().unwrap_or_else(crate::now),
             PublicKeyAlgorithm::ECDH,
             mpi::PublicKey::ECDH {
                 curve: Curve::Cv25519,
-                hash: hash.into().unwrap_or(HashAlgorithm::SHA512),
-                sym: sym.into().unwrap_or(SymmetricAlgorithm::AES256),
+                hash: hash.into().unwrap_or_else(
+                    || ecdh::default_ecdh_kdf_hash(&Curve::Cv25519)),
+                sym: sym.into().unwrap_or_else(
+                    || ecdh::default_ecdh_kek_cipher(&Curve::Cv25519)),
                 q: MPI::new_compressed_point(&*public_key.as_bytes()),
             },
             mpi::SecretKeyMaterial::ECDH {
@@ -495,6 +498,9 @@ impl<R> Key4<SecretParts, R>
     /// `curve == Cv25519` will produce an error. Likewise
     /// `for_signing == false` and `curve == Ed25519` will produce an error.
     pub fn generate_ecc(for_signing: bool, curve: Curve) -> Result<Self> {
+        let hash = crate::crypto::ecdh::default_ecdh_kdf_hash(&curve);
+        let sym = crate::crypto::ecdh::default_ecdh_kek_cipher(&curve);
+
         let (algo, public, private) = match (&curve, for_signing) {
             (Curve::Ed25519, true) => {
                 use ed25519_dalek::Keypair;
@@ -528,8 +534,8 @@ impl<R> Key4<SecretParts, R>
                 let public_mpis = mpi::PublicKey::ECDH {
                     curve: Curve::Cv25519,
                     q: MPI::new_compressed_point(&*public_key.as_bytes()),
-                    hash: HashAlgorithm::SHA256,
-                    sym: SymmetricAlgorithm::AES256,
+                    hash,
+                    sym,
                 };
                 let private_mpis = mpi::SecretKeyMaterial::ECDH {
                     scalar: private_key.into(),
@@ -566,8 +572,8 @@ impl<R> Key4<SecretParts, R>
                 let public_mpis = mpi::PublicKey::ECDH {
                     curve,
                     q: MPI::new(public.as_bytes()),
-                    hash: HashAlgorithm::SHA256,
-                    sym: SymmetricAlgorithm::AES256,
+                    hash,
+                    sym,
                 };
                 let private_mpis = mpi::SecretKeyMaterial::ECDH {
                     scalar: Vec::from(secret.to_bytes().as_slice()).into(),

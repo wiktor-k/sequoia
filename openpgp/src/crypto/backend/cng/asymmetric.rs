@@ -722,13 +722,16 @@ where
         let mut private = blob.d().to_vec();
         private.reverse();
 
+        use crate::crypto::ecdh;
         Self::with_secret(
             ctime.into().unwrap_or_else(crate::now),
             PublicKeyAlgorithm::ECDH,
             mpi::PublicKey::ECDH {
                 curve: Curve::Cv25519,
-                hash: hash.into().unwrap_or(HashAlgorithm::SHA512),
-                sym: sym.into().unwrap_or(SymmetricAlgorithm::AES256),
+                hash: hash.into().unwrap_or_else(
+                    || ecdh::default_ecdh_kdf_hash(&Curve::Cv25519)),
+                sym: sym.into().unwrap_or_else(
+                    || ecdh::default_ecdh_kek_cipher(&Curve::Cv25519)),
                 q: mpi::MPI::new(&public),
             },
             mpi::SecretKeyMaterial::ECDH { scalar: private.into() }.into()
@@ -866,12 +869,15 @@ where
         use cng::asymmetric::{ecc, Export};
         use cng::asymmetric::{AsymmetricKey, AsymmetricAlgorithmId, Ecdh};
 
+        let hash = crate::crypto::ecdh::default_ecdh_kdf_hash(&curve);
+        let sym = crate::crypto::ecdh::default_ecdh_kek_cipher(&curve);
+
         let (algo, public, private) = match (curve.clone(), for_signing) {
             (Curve::NistP256, ..) | (Curve::NistP384, ..) | (Curve::NistP521, ..) => {
-                let (cng_curve, hash) = match curve {
-                    Curve::NistP256 => (ecc::NamedCurve::NistP256, HashAlgorithm::SHA256),
-                    Curve::NistP384 => (ecc::NamedCurve::NistP384, HashAlgorithm::SHA384),
-                    Curve::NistP521 => (ecc::NamedCurve::NistP521, HashAlgorithm::SHA512),
+                let cng_curve = match curve {
+                    Curve::NistP256 => ecc::NamedCurve::NistP256,
+                    Curve::NistP384 => ecc::NamedCurve::NistP384,
+                    Curve::NistP521 => ecc::NamedCurve::NistP521,
                     _ => unreachable!()
                 };
 
@@ -900,7 +906,6 @@ where
                         mpi::SecretKeyMaterial::ECDSA { scalar: scalar.into() },
                     )
                 } else {
-                    let sym = SymmetricAlgorithm::AES256;
                     (
                         ECDH,
                         mpi::PublicKey::ECDH { curve, q, hash, sym },
@@ -927,8 +932,8 @@ where
                     mpi::PublicKey::ECDH {
                         curve,
                         q: mpi::MPI::new(&public),
-                        hash: HashAlgorithm::SHA256,
-                        sym: SymmetricAlgorithm::AES256,
+                        hash,
+                        sym,
                     },
                     mpi::SecretKeyMaterial::ECDH { scalar: private.into() }
                 )

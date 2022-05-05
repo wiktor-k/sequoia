@@ -22,6 +22,40 @@ use crate::utils::{read_be_u64, write_be_u64};
 
 pub(crate) use crate::crypto::backend::ecdh::{encrypt, decrypt};
 
+/// Returns the default ECDH KDF hash function.
+pub(crate) fn default_ecdh_kdf_hash(curve: &Curve) -> HashAlgorithm {
+    match curve {
+        Curve::Cv25519 => HashAlgorithm::SHA256,
+        // From RFC6637:
+        Curve::NistP256 => HashAlgorithm::SHA256,
+        Curve::NistP384 => HashAlgorithm::SHA384,
+        Curve::NistP521 => HashAlgorithm::SHA512,
+        // Extrapolated from RFC6637:
+        Curve::BrainpoolP256 => HashAlgorithm::SHA256,
+        Curve::BrainpoolP512 => HashAlgorithm::SHA512,
+        // Conservative default.
+        Curve::Ed25519 // Odd: Not an encryption algo.
+            | Curve::Unknown(_) => HashAlgorithm::SHA512,
+    }
+}
+
+/// Returns the default ECDH KEK cipher.
+pub(crate) fn default_ecdh_kek_cipher(curve: &Curve) -> SymmetricAlgorithm {
+    match curve {
+        Curve::Cv25519 => SymmetricAlgorithm::AES128,
+        // From RFC6637:
+        Curve::NistP256 => SymmetricAlgorithm::AES128,
+        Curve::NistP384 => SymmetricAlgorithm::AES192,
+        Curve::NistP521 => SymmetricAlgorithm::AES256,
+        // Extrapolated from RFC6637:
+        Curve::BrainpoolP256 => SymmetricAlgorithm::AES128,
+        Curve::BrainpoolP512 => SymmetricAlgorithm::AES256,
+        // Conservative default.
+        Curve::Ed25519 // Odd: Not an encryption algo.
+            | Curve::Unknown(_) => SymmetricAlgorithm::AES256,
+    }
+}
+
 /// Wraps a session key.
 ///
 /// After using Elliptic-curve Diffie-Hellman to compute the shared

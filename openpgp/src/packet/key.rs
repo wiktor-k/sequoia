@@ -972,13 +972,16 @@ impl<R> Key4<key::PublicParts, R>
         let mut point = Vec::from(public_key);
         point.insert(0, 0x40);
 
+        use crate::crypto::ecdh;
         Self::new(
             ctime.into().unwrap_or_else(crate::now),
             PublicKeyAlgorithm::ECDH,
             mpi::PublicKey::ECDH {
                 curve: Curve::Cv25519,
-                hash: hash.into().unwrap_or(HashAlgorithm::SHA512),
-                sym: sym.into().unwrap_or(SymmetricAlgorithm::AES256),
+                hash: hash.into().unwrap_or_else(
+                    || ecdh::default_ecdh_kdf_hash(&Curve::Cv25519)),
+                sym: sym.into().unwrap_or_else(
+                    || ecdh::default_ecdh_kek_cipher(&Curve::Cv25519)),
                 q: mpi::MPI::new(&point),
             })
     }
