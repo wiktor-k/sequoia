@@ -399,7 +399,7 @@ impl Message {
     /// let data = "yxJiAAAAAABIZWxsbyB3b3JsZCE="; // base64 over literal data packet
     ///
     /// let mut cursor = io::Cursor::new(&data);
-    /// let mut reader = Reader::new(&mut cursor, ReaderMode::VeryTolerant);
+    /// let mut reader = Reader::from_reader(&mut cursor, ReaderMode::VeryTolerant);
     ///
     /// let mut buf = Vec::new();
     /// reader.read_to_end(&mut buf)?;

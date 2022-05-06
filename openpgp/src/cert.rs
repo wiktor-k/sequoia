@@ -4255,7 +4255,7 @@ mod test {
         let cert = Cert::from_bytes(crate::tests::key("already-revoked.pgp")).unwrap();
 
         let rev = crate::tests::key("already-revoked.rev");
-        let rev = PacketPile::from_reader(armor::Reader::new(rev, None))
+        let rev = PacketPile::from_reader(armor::Reader::from_reader(rev, None))
             .unwrap();
 
         let rev : Vec<Packet> = rev.into_children().collect();

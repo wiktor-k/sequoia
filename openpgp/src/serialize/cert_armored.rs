@@ -270,7 +270,7 @@ mod tests {
 
         // Parse the armor.
         let mut cursor = io::Cursor::new(&buffer);
-        let mut reader = Reader::new(
+        let mut reader = Reader::from_reader(
             &mut cursor, ReaderMode::Tolerant(Some(Kind::PublicKey)));
 
         // Extract the headers.
@@ -345,7 +345,7 @@ mod tests {
 
         // Parse the armor.
         let mut cursor = io::Cursor::new(&buffer);
-        let mut reader = Reader::new(
+        let mut reader = Reader::from_reader(
             &mut cursor, ReaderMode::Tolerant(Some(Kind::PublicKey)));
 
         // Extract the headers.

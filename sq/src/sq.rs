@@ -578,7 +578,7 @@ fn main() -> Result<()> {
             let mut dup = Limitor::new(Dup::new(input), ARMOR_DETECTION_LIMIT);
             let (already_armored, have_kind) = {
                 let mut reader =
-                    armor::Reader::new(&mut dup,
+                    armor::Reader::from_reader(&mut dup,
                                        armor::ReaderMode::Tolerant(None));
                 (reader.data(8).is_ok(), reader.kind())
             };
@@ -611,7 +611,7 @@ fn main() -> Result<()> {
             if already_armored {
                 // Dearmor and copy to change the type.
                 let mut reader =
-                    armor::Reader::new(input,
+                    armor::Reader::from_reader(input,
                                        armor::ReaderMode::Tolerant(None));
                 io::copy(&mut reader, &mut output)?;
             } else {
@@ -623,7 +623,7 @@ fn main() -> Result<()> {
             let mut input = open_or_stdin(m.value_of("input"))?;
             let mut output =
                 config.create_or_stdout_safe(m.value_of("output"))?;
-            let mut filter = armor::Reader::new(&mut input, None);
+            let mut filter = armor::Reader::from_reader(&mut input, None);
             io::copy(&mut filter, &mut output)?;
         },
         #[cfg(feature = "autocrypt")]

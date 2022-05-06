@@ -555,7 +555,7 @@ impl AutocryptSetupMessage {
         -> Result<AutocryptSetupMessageParser<'a>> {
         // The outer message uses ASCII-armor.  It includes a password
         // hint.  Hence, we need to parse it aggressively.
-        let mut r = armor::Reader::new(
+        let mut r = armor::Reader::from_reader(
             r, armor::ReaderMode::Tolerant(Some(armor::Kind::Message)));
 
         // Note, it is essential that we call r.headers here so that
@@ -735,7 +735,7 @@ impl<'a> AutocryptSetupMessageParser<'a> {
             // The inner message consists of an ASCII-armored encoded
             // Cert.
             let (prefer_encrypt, cert) = {
-                let mut r = armor::Reader::new(
+                let mut r = armor::Reader::from_reader(
                     &mut pp,
                     armor::ReaderMode::Tolerant(
                         Some(armor::Kind::SecretKey)));

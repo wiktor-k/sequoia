@@ -540,7 +540,7 @@ impl Default for HashAlgoSecurity {
 /// "#;
 ///
 /// let mut cursor = Cursor::new(&data);
-/// let mut reader = Reader::new(&mut cursor, ReaderMode::Tolerant(Some(Kind::PublicKey)));
+/// let mut reader = Reader::from_reader(&mut cursor, ReaderMode::Tolerant(Some(Kind::PublicKey)));
 ///
 /// let mut buf = Vec::new();
 /// reader.read_to_end(&mut buf)?;

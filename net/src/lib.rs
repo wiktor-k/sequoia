@@ -249,7 +249,7 @@ impl KeyServer {
         match res.status() {
             StatusCode::OK => {
                 let body = hyper::body::to_bytes(res.into_body()).await?;
-                let r = armor::Reader::new(
+                let r = armor::Reader::from_reader(
                     Cursor::new(body),
                     armor::ReaderMode::Tolerant(Some(armor::Kind::PublicKey)),
                 );

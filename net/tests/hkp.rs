@@ -76,7 +76,7 @@ async fn service(req: Request<Body>)
                 match key.clone().into_owned().as_ref() {
                     "keytext" => {
 			let key = Cert::from_reader(
-                            Reader::new(Cursor::new(value.into_owned()),
+                            Reader::from_reader(Cursor::new(value.into_owned()),
                                         None)).unwrap();
                         assert_eq!(
                             key.fingerprint(),
@@ -141,7 +141,7 @@ async fn send() -> anyhow::Result<()> {
     eprintln!("{}", format!("hkp://{}", addr));
     let mut keyserver =
         KeyServer::new(P, &format!("hkp://{}", addr))?;
-    let key = Cert::from_reader(Reader::new(Cursor::new(RESPONSE), None))?;
+    let key = Cert::from_reader(Reader::from_reader(Cursor::new(RESPONSE), None))?;
     keyserver.send(&key).await?;
 
     Ok(())
