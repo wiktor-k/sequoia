@@ -219,7 +219,7 @@ mod tests {
     use super::*;
     use crate::Cert;
     use crate::PacketPile;
-    use crate::Packet;
+    use crate::packet::*;
     use crate::parse::Parse;
     use crate::serialize::MarshalInto;
     use crate::types::Curve;
@@ -247,19 +247,16 @@ mod tests {
             cert.subkeys().next().unwrap()
             .key().clone().parts_into_secret().unwrap().into_keypair().unwrap();
 
-        let pkg = pile.descendants().next();
+        let pkesk: &PKESK =
+            pile.descendants().next().unwrap().downcast_ref().unwrap();
 
-        if let Some(Packet::PKESK(ref pkesk)) = pkg {
-            let plain = pkesk.decrypt(&mut keypair, None).unwrap();
-            let plain_ =
-                pkesk.decrypt(&mut keypair, Some(SymmetricAlgorithm::AES256))
-                .unwrap();
-            assert_eq!(plain, plain_);
+        let plain = pkesk.decrypt(&mut keypair, None).unwrap();
+        let plain_ =
+            pkesk.decrypt(&mut keypair, Some(SymmetricAlgorithm::AES256))
+            .unwrap();
+        assert_eq!(plain, plain_);
 
-            eprintln!("plain: {:?}", plain);
-        } else {
-            panic!("message is not a PKESK packet");
-        }
+        eprintln!("plain: {:?}", plain);
     }
 
     #[test]
@@ -280,19 +277,16 @@ mod tests {
             cert.subkeys().next().unwrap()
             .key().clone().parts_into_secret().unwrap().into_keypair().unwrap();
 
-        let pkg = pile.descendants().next();
+        let pkesk: &PKESK =
+            pile.descendants().next().unwrap().downcast_ref().unwrap();
 
-        if let Some(Packet::PKESK(ref pkesk)) = pkg {
-            let plain = pkesk.decrypt(&mut keypair, None).unwrap();
-            let plain_ =
-                pkesk.decrypt(&mut keypair, Some(SymmetricAlgorithm::AES256))
-                .unwrap();
-            assert_eq!(plain, plain_);
+        let plain = pkesk.decrypt(&mut keypair, None).unwrap();
+        let plain_ =
+            pkesk.decrypt(&mut keypair, Some(SymmetricAlgorithm::AES256))
+            .unwrap();
+        assert_eq!(plain, plain_);
 
-            eprintln!("plain: {:?}", plain);
-        } else {
-            panic!("message is not a PKESK packet");
-        }
+        eprintln!("plain: {:?}", plain);
     }
 
     #[test]
@@ -312,19 +306,16 @@ mod tests {
             cert.subkeys().next().unwrap()
             .key().clone().parts_into_secret().unwrap().into_keypair().unwrap();
 
-        let pkg = pile.descendants().next();
+        let pkesk: &PKESK =
+            pile.descendants().next().unwrap().downcast_ref().unwrap();
 
-        if let Some(Packet::PKESK(ref pkesk)) = pkg {
-            let plain = pkesk.decrypt(&mut keypair, None).unwrap();
-            let plain_ =
-                pkesk.decrypt(&mut keypair, Some(SymmetricAlgorithm::AES256))
-                .unwrap();
-            assert_eq!(plain, plain_);
+        let plain = pkesk.decrypt(&mut keypair, None).unwrap();
+        let plain_ =
+            pkesk.decrypt(&mut keypair, Some(SymmetricAlgorithm::AES256))
+            .unwrap();
+        assert_eq!(plain, plain_);
 
-            eprintln!("plain: {:?}", plain);
-        } else {
-            panic!("message is not a PKESK packet");
-        }
+        eprintln!("plain: {:?}", plain);
     }
 
     #[test]
@@ -344,19 +335,16 @@ mod tests {
             cert.subkeys().next().unwrap()
             .key().clone().parts_into_secret().unwrap().into_keypair().unwrap();
 
-        let pkg = pile.descendants().next();
+        let pkesk: &PKESK =
+            pile.descendants().next().unwrap().downcast_ref().unwrap();
 
-        if let Some(Packet::PKESK(ref pkesk)) = pkg {
-            let plain = pkesk.decrypt(&mut keypair, None).unwrap();
-            let plain_ =
-                pkesk.decrypt(&mut keypair, Some(SymmetricAlgorithm::AES256))
-                .unwrap();
-            assert_eq!(plain, plain_);
+        let plain = pkesk.decrypt(&mut keypair, None).unwrap();
+        let plain_ =
+            pkesk.decrypt(&mut keypair, Some(SymmetricAlgorithm::AES256))
+            .unwrap();
+        assert_eq!(plain, plain_);
 
-            eprintln!("plain: {:?}", plain);
-        } else {
-            panic!("message is not a PKESK packet");
-        }
+        eprintln!("plain: {:?}", plain);
     }
 
     #[test]
@@ -376,19 +364,16 @@ mod tests {
             cert.subkeys().next().unwrap()
             .key().clone().parts_into_secret().unwrap().into_keypair().unwrap();
 
-        let pkg = pile.descendants().next();
+        let pkesk: &PKESK =
+            pile.descendants().next().unwrap().downcast_ref().unwrap();
 
-        if let Some(Packet::PKESK(ref pkesk)) = pkg {
-            let plain = pkesk.decrypt(&mut keypair, None).unwrap();
-            let plain_ =
-                pkesk.decrypt(&mut keypair, Some(SymmetricAlgorithm::AES256))
-                .unwrap();
-            assert_eq!(plain, plain_);
+        let plain = pkesk.decrypt(&mut keypair, None).unwrap();
+        let plain_ =
+            pkesk.decrypt(&mut keypair, Some(SymmetricAlgorithm::AES256))
+            .unwrap();
+        assert_eq!(plain, plain_);
 
-            eprintln!("plain: {:?}", plain);
-        } else {
-            panic!("message is not a PKESK packet");
-        }
+        eprintln!("plain: {:?}", plain);
     }
 
 
@@ -466,13 +451,10 @@ joc0YUVyhUBVFf4B0zVZRUfqZyJtJ07Sl5xppI12U1HQCTjn7Fp8BHMPKuBotYzv
 =VtwB
 -----END PGP ARMORED FILE-----
 ")?;
-        let pkg = pile.descendants().next();
-        if let Some(Packet::PKESK(ref pkesk)) = pkg {
-            // Boom goes the assertion.
-            let _ = pkesk.decrypt(&mut keypair, None);
-        } else {
-            panic!("message is not a PKESK packet");
-        }
+        let pkesk: &PKESK =
+            pile.descendants().next().unwrap().downcast_ref().unwrap();
+        // Boom goes the assertion.
+        let _ = pkesk.decrypt(&mut keypair, None);
 
         Ok(())
     }
@@ -499,13 +481,10 @@ wQwDAAAAAAAAAAABAAA=
 =H/1T
 -----END PGP ARMORED FILE-----
 ")?;
-        let pkg = pile.descendants().next();
-        if let Some(Packet::PKESK(ref pkesk)) = pkg {
-            // Boom goes the memory safety.
-            let _ = pkesk.decrypt(&mut keypair, None);
-        } else {
-            panic!("message is not a PKESK packet");
-        }
+        let pkesk: &PKESK =
+            pile.descendants().next().unwrap().downcast_ref().unwrap();
+        // Boom goes the memory safety.
+        let _ = pkesk.decrypt(&mut keypair, None);
 
         Ok(())
     }
