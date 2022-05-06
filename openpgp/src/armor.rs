@@ -607,8 +607,9 @@ impl Default for CSFTransformer {
 impl<'a> Reader<'a> {
     /// Constructs a new filter for the given type of data.
     ///
-    /// This function is deprecated. Please use
-    /// [`Reader::from_reader`][].
+    /// This function is deprecated and will be removed in version
+    /// 2.0. Please use [`Reader::from_reader`][].
+    #[deprecated = "Use Reader::from_reader. `new` will be removed in version 2.0"]
     pub fn new<R, M>(inner: R, mode: M) -> Self
         where R: 'a + Read + Send + Sync,
               M: Into<Option<ReaderMode>>
