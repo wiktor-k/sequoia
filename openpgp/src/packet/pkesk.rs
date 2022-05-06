@@ -247,7 +247,7 @@ mod tests {
             cert.subkeys().next().unwrap()
             .key().clone().parts_into_secret().unwrap().into_keypair().unwrap();
 
-        let pkg = pile.descendants().skip(0).next();
+        let pkg = pile.descendants().next();
 
         if let Some(Packet::PKESK(ref pkesk)) = pkg {
             let plain = pkesk.decrypt(&mut keypair, None).unwrap();
@@ -280,7 +280,7 @@ mod tests {
             cert.subkeys().next().unwrap()
             .key().clone().parts_into_secret().unwrap().into_keypair().unwrap();
 
-        let pkg = pile.descendants().skip(0).next();
+        let pkg = pile.descendants().next();
 
         if let Some(Packet::PKESK(ref pkesk)) = pkg {
             let plain = pkesk.decrypt(&mut keypair, None).unwrap();
@@ -312,7 +312,7 @@ mod tests {
             cert.subkeys().next().unwrap()
             .key().clone().parts_into_secret().unwrap().into_keypair().unwrap();
 
-        let pkg = pile.descendants().skip(0).next();
+        let pkg = pile.descendants().next();
 
         if let Some(Packet::PKESK(ref pkesk)) = pkg {
             let plain = pkesk.decrypt(&mut keypair, None).unwrap();
@@ -344,7 +344,7 @@ mod tests {
             cert.subkeys().next().unwrap()
             .key().clone().parts_into_secret().unwrap().into_keypair().unwrap();
 
-        let pkg = pile.descendants().skip(0).next();
+        let pkg = pile.descendants().next();
 
         if let Some(Packet::PKESK(ref pkesk)) = pkg {
             let plain = pkesk.decrypt(&mut keypair, None).unwrap();
@@ -376,7 +376,7 @@ mod tests {
             cert.subkeys().next().unwrap()
             .key().clone().parts_into_secret().unwrap().into_keypair().unwrap();
 
-        let pkg = pile.descendants().skip(0).next();
+        let pkg = pile.descendants().next();
 
         if let Some(Packet::PKESK(ref pkesk)) = pkg {
             let plain = pkesk.decrypt(&mut keypair, None).unwrap();
