@@ -630,8 +630,9 @@ fn main() -> Result<()> {
         ("autocrypt", Some(m)) => commands::autocrypt::dispatch(config, m)?,
 
         ("inspect",  Some(m)) => {
-            let mut output =
-                config.create_or_stdout_unsafe(m.value_of("output"))?;
+            // sq inspect does not have --output, but commands::inspect does.
+            // Work around this mismatch by always creating a stdout output.
+            let mut output = config.create_or_stdout_unsafe(None)?;
             commands::inspect(m, policy, &mut output)?;
         },
 
