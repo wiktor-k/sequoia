@@ -607,6 +607,20 @@ impl Default for CSFTransformer {
 impl<'a> Reader<'a> {
     /// Constructs a new filter for the given type of data.
     ///
+    /// This function is deprecated. Please use
+    /// [`Reader::from_reader`][].
+    pub fn new<R, M>(inner: R, mode: M) -> Self
+        where R: 'a + Read + Send + Sync,
+              M: Into<Option<ReaderMode>>
+    {
+        Self::from_buffered_reader(
+            Box::new(buffered_reader::Generic::with_cookie(inner, None,
+                                                           Default::default())),
+            mode, Default::default())
+    }
+
+    /// Constructs a new `Reader` from the given `io::Read`er.
+    ///
     /// [ASCII Armor], designed to protect OpenPGP data in transit,
     /// has been a source of problems if the armor structure is
     /// damaged.  For example, copying data manually from one program
@@ -673,17 +687,6 @@ impl<'a> Reader<'a> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn new<R, M>(inner: R, mode: M) -> Self
-        where R: 'a + Read + Send + Sync,
-              M: Into<Option<ReaderMode>>
-    {
-        Self::from_buffered_reader(
-            Box::new(buffered_reader::Generic::with_cookie(inner, None,
-                                                           Default::default())),
-            mode, Default::default())
-    }
-
-    /// Creates a `Reader` from an `io::Read`er.
     pub fn from_reader<R, M>(reader: R, mode: M) -> Self
         where R: 'a + Read + Send + Sync,
               M: Into<Option<ReaderMode>>
