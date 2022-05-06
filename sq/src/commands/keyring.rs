@@ -33,7 +33,7 @@ use crate::{
 
 pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
     match m.subcommand() {
-        ("filter",  Some(m)) => {
+        Some(("filter",  m)) => {
             let any_uid_predicates =
                 m.is_present("userid")
                 || m.is_present("name")
@@ -151,7 +151,7 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
                    to_certificate)?;
             output.finalize()
         },
-        ("join",  Some(m)) => {
+        Some(("join",  m)) => {
             // XXX: Armor type selection is a bit problematic.  If any
             // of the certificates contain a secret key, it would be
             // better to use Kind::SecretKey here.  However, this
@@ -164,7 +164,7 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
             filter(m.values_of("input"), &mut output, Some, false)?;
             output.finalize()
         },
-        ("merge",  Some(m)) => {
+        Some(("merge",  m)) => {
             let mut output =
                 config.create_or_stdout_pgp(m.value_of("output"),
                                             m.is_present("binary"),
@@ -172,11 +172,11 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
             merge(m.values_of("input"), &mut output)?;
             output.finalize()
         },
-        ("list",  Some(m)) => {
+        Some(("list",  m)) => {
             let mut input = open_or_stdin(m.value_of("input"))?;
             list(config, &mut input, m.is_present("all-userids"))
         },
-        ("split",  Some(m)) => {
+        Some(("split",  m)) => {
             let mut input = open_or_stdin(m.value_of("input"))?;
             let prefix =
             // The prefix is either specified explicitly...

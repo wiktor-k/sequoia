@@ -47,8 +47,8 @@ impl Subcommand {
 
 pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
     let (subcommand, m) = match m.subcommand() {
-        ("certificate", Some(m)) => (Subcommand::Certificate, m),
-        ("subkey", Some(m)) => {
+        Some(("certificate", m)) => (Subcommand::Certificate, m),
+        Some(("subkey", m)) => {
             let subkey = m.value_of("subkey").expect("required");
             let kh: KeyHandle = subkey
                 .parse()
@@ -58,7 +58,7 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
 
             (Subcommand::Subkey(kh), m)
         }
-        ("userid", Some(m)) => {
+        Some(("userid", m)) => {
             let userid = m.value_of("userid").expect("required");
 
             (Subcommand::UserID(userid.into()), m)

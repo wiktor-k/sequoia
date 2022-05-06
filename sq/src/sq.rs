@@ -409,7 +409,7 @@ fn main() -> Result<()> {
     };
 
     match matches.subcommand() {
-        ("decrypt",  Some(m)) => {
+        Some(("decrypt",  m)) => {
             let mut input = open_or_stdin(m.value_of("input"))?;
             let mut output =
                 config.create_or_stdout_safe(m.value_of("output"))?;
@@ -441,7 +441,7 @@ fn main() -> Result<()> {
                               m.is_present("dump-session-key"),
                               m.is_present("dump"), m.is_present("hex"))?;
         },
-        ("encrypt",  Some(m)) => {
+        Some(("encrypt",  m)) => {
             let recipients = m.values_of("recipients-cert-file")
                 .map(load_certs)
                 .unwrap_or_else(|| Ok(vec![]))?;
@@ -485,7 +485,7 @@ fn main() -> Result<()> {
                 use_expired_subkey: m.is_present("use-expired-subkey"),
             })?;
         },
-        ("sign",  Some(m)) => {
+        Some(("sign",  m)) => {
             let mut input = open_or_stdin(m.value_of("input"))?;
             let output = m.value_of("output");
             let detached = m.is_present("detached");
@@ -550,7 +550,7 @@ fn main() -> Result<()> {
                 })?;
             }
         },
-        ("verify",  Some(m)) => {
+        Some(("verify",  m)) => {
             let mut input = open_or_stdin(m.value_of("input"))?;
             let mut output =
                 config.create_or_stdout_safe(m.value_of("output"))?;
@@ -569,7 +569,7 @@ fn main() -> Result<()> {
                              &mut output, signatures, certs)?;
         },
 
-        ("armor",  Some(m)) => {
+        Some(("armor", m)) => {
             let input = open_or_stdin(m.value_of("input"))?;
             let mut want_kind = parse_armor_kind(m.value_of("kind"));
 
@@ -619,7 +619,7 @@ fn main() -> Result<()> {
             }
             output.finalize()?;
         },
-        ("dearmor",  Some(m)) => {
+        Some(("dearmor",  m)) => {
             let mut input = open_or_stdin(m.value_of("input"))?;
             let mut output =
                 config.create_or_stdout_safe(m.value_of("output"))?;
@@ -627,19 +627,19 @@ fn main() -> Result<()> {
             io::copy(&mut filter, &mut output)?;
         },
         #[cfg(feature = "autocrypt")]
-        ("autocrypt", Some(m)) => commands::autocrypt::dispatch(config, m)?,
+        Some(("autocrypt", m)) => commands::autocrypt::dispatch(config, m)?,
 
-        ("inspect",  Some(m)) => {
+        Some(("inspect",  m)) => {
             // sq inspect does not have --output, but commands::inspect does.
             // Work around this mismatch by always creating a stdout output.
             let mut output = config.create_or_stdout_unsafe(None)?;
             commands::inspect(m, policy, &mut output)?;
         },
 
-        ("keyring", Some(m)) => commands::keyring::dispatch(config, m)?,
+        Some(("keyring", m)) => commands::keyring::dispatch(config, m)?,
 
-        ("packet", Some(m)) => match m.subcommand() {
-            ("dump",  Some(m)) => {
+        Some(("packet", m)) => match m.subcommand() {
+            Some(("dump",  m)) => {
                 let mut input = open_or_stdin(m.value_of("input"))?;
                 let mut output =
                     config.create_or_stdout_unsafe(m.value_of("output"))?;
@@ -655,7 +655,7 @@ fn main() -> Result<()> {
                                session_key.as_ref(), width)?;
             },
 
-            ("decrypt",  Some(m)) => {
+            Some(("decrypt",  m)) => {
                 let mut input = open_or_stdin(m.value_of("input"))?;
                 let mut output =
                     config.create_or_stdout_pgp(m.value_of("output"),
@@ -671,7 +671,7 @@ fn main() -> Result<()> {
                 output.finalize()?;
             },
 
-            ("split",  Some(m)) => {
+            Some(("split", m)) => {
                 let mut input = open_or_stdin(m.value_of("input"))?;
                 let prefix =
                 // The prefix is either specified explicitly...
@@ -689,20 +689,20 @@ fn main() -> Result<()> {
                             + "-");
                 commands::split(&mut input, &prefix)?;
             },
-            ("join",  Some(m)) => commands::join(config, m)?,
+            Some(("join",  m)) => commands::join(config, m)?,
             _ => unreachable!(),
         },
 
-        ("keyserver",  Some(m)) =>
+        Some(("keyserver",  m)) =>
             commands::net::dispatch_keyserver(config, m)?,
 
-        ("key", Some(m)) => commands::key::dispatch(config, m)?,
+        Some(("key", m)) => commands::key::dispatch(config, m)?,
 
-        ("revoke",  Some(m)) => commands::revoke::dispatch(config, m)?,
+        Some(("revoke",  m)) => commands::revoke::dispatch(config, m)?,
 
-        ("wkd",  Some(m)) => commands::net::dispatch_wkd(config, m)?,
+        Some(("wkd",  m)) => commands::net::dispatch_wkd(config, m)?,
 
-        ("certify",  Some(m)) => {
+        Some(("certify",  m)) => {
             commands::certify::certify(config, m)?;
         },
 

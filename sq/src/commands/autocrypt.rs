@@ -15,7 +15,7 @@ use crate::{
 
 pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
     match m.subcommand() {
-        ("decode",  Some(m)) => {
+        Some(("decode",  m)) => {
             let input = open_or_stdin(m.value_of("input"))?;
             let mut output =
                 config.create_or_stdout_pgp(m.value_of("output"),
@@ -29,7 +29,7 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
             }
             output.finalize()?;
         },
-        ("encode-sender",  Some(m)) => {
+        Some(("encode-sender",  m)) => {
             let input = open_or_stdin(m.value_of("input"))?;
             let mut output =
                 config.create_or_stdout_safe(m.value_of("output"))?;

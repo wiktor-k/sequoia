@@ -1,9 +1,9 @@
 /// Command-line parser for sq.
 
-use clap::{App, Arg, ArgGroup, SubCommand, AppSettings};
+use clap::{Command, Arg, ArgGroup};
 
-pub fn build() -> App<'static, 'static> {
-    configure(App::new("sq"),
+pub fn build() -> Command<'static> {
+    configure(Command::new("sq"),
               cfg!(feature = "autocrypt"),
     )
 }
@@ -19,9 +19,9 @@ pub fn build() -> App<'static, 'static> {
 ///   - Armor                               (5xx)
 ///   - Inspection & packet manipulation    (6xx)
 pub fn configure(
-    app: App<'static, 'static>,
+    app: Command<'static>,
     feature_autocrypt: bool,
-) -> App<'static, 'static> {
+) -> Command<'static> {
     let version = Box::leak(
         format!("{} (sequoia-openpgp {}, using {})",
                 env!("CARGO_PKG_VERSION"),
@@ -48,23 +48,22 @@ We use the term \"certificate\", or cert for short, to refer to OpenPGP
 keys that do not contain secrets.  Conversely, we use the term \"key\"
 to refer to OpenPGP keys that do contain secrets.
 ")
-        .settings(&[
-            AppSettings::SubcommandRequiredElseHelp,
-            AppSettings::VersionlessSubcommands,
-        ])
-        .arg(Arg::with_name("force")
-             .short("f").long("force")
+        .subcommand_required(true)
+        .arg_required_else_help(true)
+        .disable_colored_help(true)
+        .arg(Arg::new("force")
+             .short('f').long("force")
              .help("Overwrites existing files"))
-        .arg(Arg::with_name("known-notation")
+        .arg(Arg::new("known-notation")
              .long("known-notation").value_name("NOTATION")
-             .multiple(true).number_of_values(1)
+             .multiple_occurrences(true)
              .help("Adds NOTATION to the list of known notations")
              .long_help("Adds NOTATION to the list of known notations. \
                This is used when validating signatures. \
                Signatures that have unknown notations with the \
                critical bit set are considered invalid."))
 
-        .subcommand(SubCommand::with_name("decrypt")
+        .subcommand(Command::new("decrypt")
                     .display_order(110)
                     .about("Decrypts a message")
                     .long_about(
@@ -100,14 +99,14 @@ $ sq decrypt --recipient-key juliet.pgp --signer-cert romeo.pgp ciphertext.pgp
 # Decrypt a file using a password
 $ sq decrypt ciphertext.pgp
 ")
-                    .arg(Arg::with_name("input")
+                    .arg(Arg::new("input")
                          .value_name("FILE")
                          .help("Reads from FILE or stdin if omitted"))
-                    .arg(Arg::with_name("output")
-                         .short("o").long("output").value_name("FILE")
+                    .arg(Arg::new("output")
+                         .short('o').long("output").value_name("FILE")
                          .help("Writes to FILE or stdout if omitted"))
-                    .arg(Arg::with_name("signatures")
-                         .short("n").long("signatures").value_name("N")
+                    .arg(Arg::new("signatures")
+                         .short('n').long("signatures").value_name("N")
                          .help("Sets the threshold of valid signatures to N")
                          .long_help(
                              "Sets the threshold of valid signatures to N. \
@@ -115,29 +114,29 @@ $ sq decrypt ciphertext.pgp
                               verified if this threshold is reached. \
                               [default: 1 if at least one signer cert file \
                               is given, 0 otherwise]"))
-                    .arg(Arg::with_name("sender-cert-file")
+                    .arg(Arg::new("sender-cert-file")
                          .long("signer-cert").value_name("CERT")
-                         .multiple(true).number_of_values(1)
+                         .multiple_occurrences(true)
                          .help("Verifies signatures with CERT"))
-                    .arg(Arg::with_name("secret-key-file")
+                    .arg(Arg::new("secret-key-file")
                          .long("recipient-key").value_name("KEY")
-                         .multiple(true).number_of_values(1)
+                         .multiple_occurrences(true)
                          .help("Decrypts with KEY"))
-                    .arg(Arg::with_name("private-key-store")
+                    .arg(Arg::new("private-key-store")
                          .long("private-key-store").value_name("KEY_STORE")
                          .help("Provides parameters for private key store"))
-                    .arg(Arg::with_name("dump-session-key")
+                    .arg(Arg::new("dump-session-key")
                          .long("dump-session-key")
                          .help("Prints the session key to stderr"))
-                    .arg(Arg::with_name("dump")
+                    .arg(Arg::new("dump")
                          .long("dump")
                          .help("Prints a packet dump to stderr"))
-                    .arg(Arg::with_name("hex")
-                         .short("x").long("hex")
+                    .arg(Arg::new("hex")
+                         .short('x').long("hex")
                          .help("Prints a hexdump (implies --dump)"))
         )
 
-        .subcommand(SubCommand::with_name("encrypt")
+        .subcommand(Command::new("encrypt")
                     .display_order(100)
                     .about("Encrypts a message")
                     .long_about(
@@ -160,35 +159,35 @@ $ sq encrypt --recipient-cert romeo.pgp --signer-key juliet.pgp message.txt
 # Encrypt a file using a password
 $ sq encrypt --symmetric message.txt
 ")
-                    .arg(Arg::with_name("input")
+                    .arg(Arg::new("input")
                          .value_name("FILE")
                          .help("Reads from FILE or stdin if omitted"))
-                    .arg(Arg::with_name("output")
-                         .short("o").long("output").value_name("FILE")
+                    .arg(Arg::new("output")
+                         .short('o').long("output").value_name("FILE")
                          .help("Writes to FILE or stdout if omitted"))
-                    .arg(Arg::with_name("binary")
-                         .short("B").long("binary")
+                    .arg(Arg::new("binary")
+                         .short('B').long("binary")
                          .help("Emits binary data"))
-                    .arg(Arg::with_name("recipients-cert-file")
+                    .arg(Arg::new("recipients-cert-file")
                          .long("recipient-cert").value_name("CERT-RING")
-                         .multiple(true).number_of_values(1)
+                         .multiple_occurrences(true)
                          .help("Encrypts for all recipients in CERT-RING"))
-                    .arg(Arg::with_name("signer-key-file")
+                    .arg(Arg::new("signer-key-file")
                          .long("signer-key").value_name("KEY")
-                         .multiple(true).number_of_values(1)
+                         .multiple_occurrences(true)
                          .help("Signs the message with KEY"))
-                    .arg(Arg::with_name("private-key-store")
+                    .arg(Arg::new("private-key-store")
                          .long("private-key-store").value_name("KEY_STORE")
                          .help("Provides parameters for private key store"))
-                    .arg(Arg::with_name("symmetric")
-                         .short("s").long("symmetric")
-                         .multiple(true)
+                    .arg(Arg::new("symmetric")
+                         .short('s').long("symmetric")
+                         .multiple_occurrences(true)
                          .help("Adds a password to encrypt with")
                          .long_help("Adds a password to encrypt with.  \
                                      The message can be decrypted with \
                                      either one of the recipient's keys, \
                                      or any password."))
-                    .arg(Arg::with_name("mode")
+                    .arg(Arg::new("mode")
                          .long("mode").value_name("MODE")
                          .possible_values(&["transport", "rest", "all"])
                          .default_value("all")
@@ -201,17 +200,17 @@ $ sq encrypt --symmetric message.txt
                                 selects those for encrypting data at rest, \
                                 and all selects all encryption-capable \
                                 subkeys."))
-                    .arg(Arg::with_name("compression")
+                    .arg(Arg::new("compression")
                          .long("compression").value_name("KIND")
                          .possible_values(&["none", "pad", "zip", "zlib",
                                             "bzip2"])
                          .default_value("pad")
                          .help("Selects compression scheme to use"))
-                    .arg(Arg::with_name("time")
-                         .short("t").long("time").value_name("TIME")
+                    .arg(Arg::new("time")
+                         .short('t').long("time").value_name("TIME")
                          .help("Chooses keys valid at the specified time and \
                                 sets the signature's creation time"))
-                    .arg(Arg::with_name("use-expired-subkey")
+                    .arg(Arg::new("use-expired-subkey")
                          .long("use-expired-subkey")
                          .help("Falls back to expired encryption subkeys")
                          .long_help(
@@ -220,7 +219,7 @@ $ sq encrypt --symmetric message.txt
                               to using the one that expired last"))
         )
 
-        .subcommand(SubCommand::with_name("sign")
+        .subcommand(Command::new("sign")
                     .display_order(200)
                     .about("Signs messages or data files")
                     .long_about(
@@ -240,22 +239,22 @@ $ sq sign --signer-key juliet.pgp message.txt
 # Create a detached signature
 $ sq sign --detached --signer-key juliet.pgp message.txt
 ")
-                    .arg(Arg::with_name("input")
+                    .arg(Arg::new("input")
                          .value_name("FILE")
                          .help("Reads from FILE or stdin if omitted"))
-                    .arg(Arg::with_name("output")
-                         .short("o").long("output").value_name("FILE")
+                    .arg(Arg::new("output")
+                         .short('o').long("output").value_name("FILE")
                          .help("Writes to FILE or stdout if omitted"))
-                    .arg(Arg::with_name("binary")
-                         .short("B").long("binary")
+                    .arg(Arg::new("binary")
+                         .short('B').long("binary")
                          .help("Emits binary data"))
-                    .arg(Arg::with_name("private-key-store")
+                    .arg(Arg::new("private-key-store")
                          .long("private-key-store").value_name("KEY_STORE")
                          .help("Provides parameters for private key store"))
-                    .arg(Arg::with_name("detached")
+                    .arg(Arg::new("detached")
                          .long("detached")
                          .help("Creates a detached signature"))
-                    .arg(Arg::with_name("clearsign")
+                    .arg(Arg::new("clearsign")
                          .long("cleartext-signature")
                          .conflicts_with_all(&[
                              "detached",
@@ -264,15 +263,15 @@ $ sq sign --detached --signer-key juliet.pgp message.txt
                              "binary",
                          ])
                          .help("Creates a cleartext signature"))
-                    .arg(Arg::with_name("append")
-                         .short("a").long("append")
+                    .arg(Arg::new("append")
+                         .short('a').long("append")
                          .conflicts_with("notarize")
                          .help("Appends a signature to existing signature"))
-                    .arg(Arg::with_name("notarize")
-                         .short("n").long("notarize")
+                    .arg(Arg::new("notarize")
+                         .short('n').long("notarize")
                          .conflicts_with("append")
                          .help("Signs a message and all existing signatures"))
-                    .arg(Arg::with_name("merge")
+                    .arg(Arg::new("merge")
                          .long("merge").value_name("SIGNED-MESSAGE")
                          .conflicts_with_all(&[
                              "append",
@@ -284,18 +283,18 @@ $ sq sign --detached --signer-key juliet.pgp message.txt
                          ])
                          .help("Merges signatures from the input and \
                                 SIGNED-MESSAGE"))
-                    .arg(Arg::with_name("secret-key-file")
+                    .arg(Arg::new("secret-key-file")
                          .long("signer-key").value_name("KEY")
-                         .multiple(true).number_of_values(1)
+                         .multiple_occurrences(true)
                          .help("Signs using KEY"))
-                    .arg(Arg::with_name("time")
-                         .short("t").long("time").value_name("TIME")
+                    .arg(Arg::new("time")
+                         .short('t').long("time").value_name("TIME")
                          .help("Chooses keys valid at the specified time and \
                                 sets the signature's creation time"))
-                    .arg(Arg::with_name("notation")
+                    .arg(Arg::new("notation")
                          .value_names(&["NAME", "VALUE"])
                          .long("notation")
-                         .multiple(true).number_of_values(2)
+                         .multiple_occurrences(true).number_of_values(2)
                          .help("Adds a notation to the certification.")
                          .long_help(
                              "Adds a notation to the certification.  \
@@ -310,7 +309,7 @@ $ sq sign --detached --signer-key juliet.pgp message.txt
                          .conflicts_with("merge"))
         )
 
-        .subcommand(SubCommand::with_name("verify")
+        .subcommand(Command::new("verify")
                     .display_order(210)
                     .about("Verifies signed messages or detached signatures")
                     .long_about(
@@ -346,30 +345,30 @@ SEE ALSO:
 If you are looking for a standalone program to verify detached
 signatures, consider using sequoia-sqv.
 ")
-                    .arg(Arg::with_name("input")
+                    .arg(Arg::new("input")
                          .value_name("FILE")
                          .help("Reads from FILE or stdin if omitted"))
-                    .arg(Arg::with_name("output")
-                         .short("o").long("output").value_name("FILE")
+                    .arg(Arg::new("output")
+                         .short('o').long("output").value_name("FILE")
                          .help("Writes to FILE or stdout if omitted"))
-                    .arg(Arg::with_name("detached")
+                    .arg(Arg::new("detached")
                          .long("detached").value_name("SIG")
                          .help("Verifies a detached signature"))
-                    .arg(Arg::with_name("signatures")
-                         .short("n").long("signatures").value_name("N")
+                    .arg(Arg::new("signatures")
+                         .short('n').long("signatures").value_name("N")
                          .default_value("1")
                          .help("Sets the threshold of valid signatures to N")
                          .long_help(
                              "Sets the threshold of valid signatures to N. \
                               If this threshold is not reached, the message \
                               will not be considered verified."))
-                    .arg(Arg::with_name("sender-cert-file")
+                    .arg(Arg::new("sender-cert-file")
                          .long("signer-cert").value_name("CERT")
-                         .multiple(true).number_of_values(1)
+                         .multiple_occurrences(true)
                          .help("Verifies signatures with CERT"))
         )
 
-        .subcommand(SubCommand::with_name("armor")
+        .subcommand(Command::new("armor")
                     .display_order(500)
                     .about("Converts binary to ASCII")
                     .long_about(
@@ -391,13 +390,13 @@ $ sq armor binary-juliet.pgp
 # Convert a binary message to ASCII
 $ sq armor binary-message.pgp
 ")
-                    .arg(Arg::with_name("input")
+                    .arg(Arg::new("input")
                          .value_name("FILE")
                          .help("Reads from FILE or stdin if omitted"))
-                    .arg(Arg::with_name("output")
-                         .short("o").long("output").value_name("FILE")
+                    .arg(Arg::new("output")
+                         .short('o').long("output").value_name("FILE")
                          .help("Writes to FILE or stdout if omitted"))
-                    .arg(Arg::with_name("kind")
+                    .arg(Arg::new("kind")
                          .long("label").value_name("LABEL")
                          .possible_values(&["auto", "message",
                                             "cert", "key", "sig",
@@ -406,7 +405,7 @@ $ sq armor binary-message.pgp
                          .help("Selects the kind of armor header"))
         )
 
-        .subcommand(SubCommand::with_name("dearmor")
+        .subcommand(Command::new("dearmor")
                     .display_order(510)
                     .about("Converts ASCII to binary")
                     .long_about(
@@ -429,16 +428,16 @@ $ sq dearmor ascii-juliet.pgp
 # Convert a ASCII message to binary
 $ sq dearmor ascii-message.pgp
 ")
-                    .arg(Arg::with_name("input")
+                    .arg(Arg::new("input")
                          .value_name("FILE")
                          .help("Reads from FILE or stdin if omitted"))
-                    .arg(Arg::with_name("output")
-                         .short("o").long("output").value_name("FILE")
+                    .arg(Arg::new("output")
+                         .short('o').long("output").value_name("FILE")
                          .help("Writes to FILE or stdout if omitted"))
         )
 
 
-        .subcommand(SubCommand::with_name("inspect")
+        .subcommand(Command::new("inspect")
                     .display_order(600)
                     .about("Inspects data, like file(1)")
                     .long_about(
@@ -464,16 +463,16 @@ $ sq inspect message.pgp
 # Inspects a detached signature
 $ sq inspect message.sig
 ")
-                    .arg(Arg::with_name("input")
+                    .arg(Arg::new("input")
                          .value_name("FILE")
                          .help("Reads from FILE or stdin if omitted"))
-                    .arg(Arg::with_name("certifications")
+                    .arg(Arg::new("certifications")
                          .long("certifications")
                          .help("Prints third-party certifications"))
         )
 
         .subcommand(
-            SubCommand::with_name("key")
+            Command::new("key")
                 .display_order(300)
                 .about("Manages keys")
                     .long_about(
@@ -487,9 +486,10 @@ Conversely, we use the term \"certificate\", or cert for short, to refer
 to OpenPGP keys that do not contain secrets.  See \"sq keyring\" for
 operations on certificates.
 ")
-                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand_required(true)
+                .arg_required_else_help(true)
                 .subcommand(
-                    SubCommand::with_name("generate")
+                    Command::new("generate")
                         .display_order(100)
                         .about("Generates a new key")
                         .long_about(
@@ -523,21 +523,21 @@ $ sq key generate --userid \"<juliet@example.org>\" --with-password
 # Generates a key with multiple userids
 $ sq key generate --userid \"<juliet@example.org>\" --userid \"Juliet Capulet\"
 ")
-                        .arg(Arg::with_name("userid")
-                             .short("u").long("userid").value_name("EMAIL")
-                             .multiple(true).number_of_values(1)
+                        .arg(Arg::new("userid")
+                             .short('u').long("userid").value_name("EMAIL")
+                             .multiple_occurrences(true)
                              .help("Adds a userid to the key"))
-                        .arg(Arg::with_name("cipher-suite")
-                             .short("c").long("cipher-suite").value_name("CIPHER-SUITE")
+                        .arg(Arg::new("cipher-suite")
+                             .short('c').long("cipher-suite").value_name("CIPHER-SUITE")
                              .possible_values(&["rsa3k", "rsa4k", "cv25519"])
                              .default_value("cv25519")
                              .help("Selects the cryptographic algorithms for \
                                     the key"))
-                        .arg(Arg::with_name("with-password")
+                        .arg(Arg::new("with-password")
                              .long("with-password")
                              .help("Protects the key with a password"))
 
-                        .arg(Arg::with_name("creation-time")
+                        .arg(Arg::new("creation-time")
                              .long("creation-time").value_name("CREATION_TIME")
                              .help("Sets the key's creation time to TIME (as ISO 8601)")
                              .long_help("\
@@ -553,17 +553,17 @@ default timezone is UTC):
 $ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
 "))
 
-                        .group(ArgGroup::with_name("expiration-group")
+                        .group(ArgGroup::new("expiration-group")
                                .args(&["expires", "expires-in"]))
 
-                        .arg(Arg::with_name("expires")
+                        .arg(Arg::new("expires")
                              .long("expires").value_name("TIME")
                              .help("Makes the key expire at TIME (as ISO 8601)")
                              .long_help(
                                  "Makes the key expire at TIME (as ISO 8601). \
                                   Use \"never\" to create keys that do not \
                                   expire."))
-                        .arg(Arg::with_name("expires-in")
+                        .arg(Arg::new("expires-in")
                              .long("expires-in").value_name("DURATION")
                              // Catch negative numbers.
                              .allow_hyphen_values(true)
@@ -574,27 +574,27 @@ $ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
                                   Either \"N[ymwds]\", for N years, months, \
                                   weeks, days, seconds, or \"never\"."))
 
-                        .group(ArgGroup::with_name("cap-sign")
+                        .group(ArgGroup::new("cap-sign")
                                .args(&["can-sign", "cannot-sign"]))
-                        .arg(Arg::with_name("can-sign")
+                        .arg(Arg::new("can-sign")
                              .long("can-sign")
                              .help("Adds a signing-capable subkey (default)"))
-                        .arg(Arg::with_name("cannot-sign")
+                        .arg(Arg::new("cannot-sign")
                              .long("cannot-sign")
                              .help("Adds no signing-capable subkey"))
 
-                        .group(ArgGroup::with_name("cap-authenticate")
+                        .group(ArgGroup::new("cap-authenticate")
                                .args(&["can-authenticate", "cannot-authenticate"]))
-                        .arg(Arg::with_name("can-authenticate")
+                        .arg(Arg::new("can-authenticate")
                              .long("can-authenticate")
                              .help("Adds an authentication-capable subkey (default)"))
-                        .arg(Arg::with_name("cannot-authenticate")
+                        .arg(Arg::new("cannot-authenticate")
                              .long("cannot-authenticate")
                              .help("Adds no authentication-capable subkey"))
 
-                        .group(ArgGroup::with_name("cap-encrypt")
+                        .group(ArgGroup::new("cap-encrypt")
                                .args(&["can-encrypt", "cannot-encrypt"]))
-                        .arg(Arg::with_name("can-encrypt")
+                        .arg(Arg::new("can-encrypt")
                              .long("can-encrypt").value_name("PURPOSE")
                              .possible_values(&["transport", "storage",
                                                 "universal"])
@@ -606,17 +606,17 @@ $ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
                                   suitable for transport encryption, storage \
                                   encryption, or both. \
                                   [default: universal]"))
-                        .arg(Arg::with_name("cannot-encrypt")
+                        .arg(Arg::new("cannot-encrypt")
                              .long("cannot-encrypt")
                              .help("Adds no encryption-capable subkey"))
 
-                        .arg(Arg::with_name("export")
-                             .short("e").long("export").value_name("OUTFILE")
+                        .arg(Arg::new("export")
+                             .short('e').long("export").value_name("OUTFILE")
                              .help("Writes the key to OUTFILE")
                              .required(true))
-                        .arg(Arg::with_name("rev-cert")
+                        .arg(Arg::new("rev-cert")
                              .long("rev-cert").value_name("FILE or -")
-                             .required_if("export", "-")
+                             .required_if_eq("export", "-")
                              .help("Writes the revocation certificate to FILE")
                              .long_help(
                                  "Writes the revocation certificate to FILE. \
@@ -624,7 +624,7 @@ $ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
                                   [default: <OUTFILE>.rev]"))
                 )
                 .subcommand(
-                    SubCommand::with_name("password")
+                    Command::new("password")
                         .display_order(105)
                         .about("Changes password protecting secrets")
                         .long_about(
@@ -648,20 +648,20 @@ $ sq key password < juliet.key.pgp > juliet.encrypted_key.pgp
 # And remove the password again.
 $ sq key password --clear < juliet.encrypted_key.pgp > juliet.decrypted_key.pgp
 ")
-                        .arg(Arg::with_name("clear")
+                        .arg(Arg::new("clear")
                              .long("clear")
                              .help("Emit a key with unencrypted secrets"))
-                        .arg(Arg::with_name("output")
-                             .short("o").long("output").value_name("FILE")
+                        .arg(Arg::new("output")
+                             .short('o').long("output").value_name("FILE")
                              .help("Writes to FILE or stdout if omitted"))
-                        .arg(Arg::with_name("binary")
-                             .short("B").long("binary")
+                        .arg(Arg::new("binary")
+                             .short('B').long("binary")
                              .help("Emits binary data"))
-                        .arg(Arg::with_name("key")
+                        .arg(Arg::new("key")
                              .value_name("FILE")
                              .help("Reads from FILE or stdin if omitted"))
                 )
-                .subcommand(SubCommand::with_name("extract-cert")
+                .subcommand(Command::new("extract-cert")
                             .display_order(110)
                             .about("Converts a key to a cert")
                             .long_about(
@@ -681,18 +681,18 @@ $ sq key generate --userid \"<juliet@example.org>\" --export juliet.key.pgp
 # Then, this extracts the certificate for distribution
 $ sq key extract-cert --output juliet.cert.pgp juliet.key.pgp
 ")
-                            .arg(Arg::with_name("input")
+                            .arg(Arg::new("input")
                                  .value_name("FILE")
                                  .help("Reads from FILE or stdin if omitted"))
-                            .arg(Arg::with_name("output")
-                                 .short("o").long("output").value_name("FILE")
+                            .arg(Arg::new("output")
+                                 .short('o').long("output").value_name("FILE")
                                  .help("Writes to FILE or stdout if omitted"))
-                            .arg(Arg::with_name("binary")
-                                 .short("B").long("binary")
+                            .arg(Arg::new("binary")
+                                 .short('B').long("binary")
                                  .help("Emits binary data"))
                 )
                 .subcommand(
-                    SubCommand::with_name("adopt")
+                    Command::new("adopt")
                         .display_order(800)
                         .about("Binds keys from one certificate to another")
                         .long_about(
@@ -712,32 +712,32 @@ feasible.
 # Adopt an subkey into the new cert
 $ sq key adopt --keyring juliet-old.pgp --key 0123456789ABCDEF -- juliet-new.pgp
 ")
-                        .arg(Arg::with_name("keyring")
-                             .short("r").long("keyring").value_name("KEY-RING")
-                             .multiple(true).number_of_values(1)
+                        .arg(Arg::new("keyring")
+                             .short('r').long("keyring").value_name("KEY-RING")
+                             .multiple_occurrences(true)
                              .help("Supplies keys for use in --key."))
-                        .arg(Arg::with_name("key")
-                             .short("k").long("key").value_name("KEY")
-                             .multiple(true).number_of_values(1)
+                        .arg(Arg::new("key")
+                             .short('k').long("key").value_name("KEY")
+                             .multiple_occurrences(true)
                              .required(true)
                              .help("Adds the key or subkey KEY to the \
                                     TARGET-KEY"))
-                        .arg(Arg::with_name("allow-broken-crypto")
+                        .arg(Arg::new("allow-broken-crypto")
                              .long("allow-broken-crypto")
                              .help("Allows adopting keys from certificates \
                                     using broken cryptography"))
-                        .arg(Arg::with_name("certificate")
+                        .arg(Arg::new("certificate")
                              .value_name("TARGET-KEY")
                              .help("Adds keys to TARGET-KEY"))
-                        .arg(Arg::with_name("output")
-                             .short("o").long("output").value_name("FILE")
+                        .arg(Arg::new("output")
+                             .short('o').long("output").value_name("FILE")
                              .help("Writes to FILE or stdout if omitted"))
-                        .arg(Arg::with_name("binary")
-                             .short("B").long("binary")
+                        .arg(Arg::new("binary")
+                             .short('B').long("binary")
                              .help("Emits binary data"))
                 )
                 .subcommand(
-                    SubCommand::with_name("attest-certifications")
+                    Command::new("attest-certifications")
                         .display_order(200)
                         .about("Attests to third-party certifications")
                         .long_about(
@@ -763,28 +763,28 @@ $ sq key attest-certifications juliet.pgp
 # Retract prior attestations on the key
 $ sq key attest-certifications --none juliet.pgp
 ")
-                        .arg(Arg::with_name("none")
+                        .arg(Arg::new("none")
                              .long("none")
                              .conflicts_with("all")
                              .help("Removes all prior attestations"))
-                        .arg(Arg::with_name("all")
+                        .arg(Arg::new("all")
                              .long("all")
                              .conflicts_with("none")
                              .help("Attests to all certifications [default]"))
-                        .arg(Arg::with_name("key")
+                        .arg(Arg::new("key")
                              .value_name("KEY")
                              .help("Changes attestations on KEY"))
-                        .arg(Arg::with_name("output")
-                             .short("o").long("output").value_name("FILE")
+                        .arg(Arg::new("output")
+                             .short('o').long("output").value_name("FILE")
                              .help("Writes to FILE or stdout if omitted"))
-                        .arg(Arg::with_name("binary")
-                             .short("B").long("binary")
+                        .arg(Arg::new("binary")
+                             .short('B').long("binary")
                              .help("Emits binary data"))
                 )
         )
 
         .subcommand(
-            SubCommand::with_name("keyring")
+            Command::new("keyring")
                 .display_order(310)
                 .about("Manages collections of keys or certs")
                 .long_about(
@@ -798,9 +798,10 @@ tools to list, split, join, merge, and filter keyrings.
 Note: In the documentation of this subcommand, we sometimes use the
 terms keys and certs interchangeably.
 ")
-                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand_required(true)
+                .arg_required_else_help(true)
                 .subcommand(
-                    SubCommand::with_name("filter")
+                    Command::new("filter")
                         .display_order(600)
                         .about("Joins keys into a keyring applying a filter")
                         .long_about(
@@ -840,62 +841,62 @@ $ sq keyring filter --domain example.org keys.pgp | \\
 # Gets the keys with a user id on example.org, pruning other userids
 $ sq keyring filter --domain example.org --prune-certs certs.pgp
 ")
-                        .arg(Arg::with_name("input")
+                        .arg(Arg::new("input")
                              .value_name("FILE")
-                             .multiple(true)
+                             .multiple_occurrences(true)
                              .help("Reads from FILE or stdin if omitted"))
-                        .arg(Arg::with_name("output")
-                             .short("o").long("output").value_name("FILE")
+                        .arg(Arg::new("output")
+                             .short('o').long("output").value_name("FILE")
                              .help("Writes to FILE or stdout if omitted"))
-                        .arg(Arg::with_name("userid")
+                        .arg(Arg::new("userid")
                              .long("userid").value_name("USERID")
-                             .multiple(true).number_of_values(1)
+                             .multiple_occurrences(true)
                              .help("Matches on USERID")
                              .long_help(
                                  "Case-sensitively matches on the \
                                   user id, requiring an exact match."))
-                        .arg(Arg::with_name("name")
+                        .arg(Arg::new("name")
                              .long("name").value_name("NAME")
-                             .multiple(true).number_of_values(1)
+                             .multiple_occurrences(true)
                              .help("Matches on NAME")
                              .long_help(
                                  "Parses user ids into name and email \
                                   and case-sensitively matches on the \
                                   name, requiring an exact match."))
-                        .arg(Arg::with_name("email")
+                        .arg(Arg::new("email")
                              .long("email").value_name("ADDRESS")
-                             .multiple(true).number_of_values(1)
+                             .multiple_occurrences(true)
                              .help("Matches on email ADDRESS")
                              .long_help(
                                  "Parses user ids into name and email \
                                   address and case-sensitively matches \
                                   on the email address, requiring an \
                                   exact match."))
-                        .arg(Arg::with_name("domain")
+                        .arg(Arg::new("domain")
                              .long("domain").value_name("FQDN")
-                             .multiple(true).number_of_values(1)
+                             .multiple_occurrences(true)
                              .help("Matches on email domain FQDN")
                              .long_help(
                                  "Parses user ids into name and email \
                                   address and case-sensitively matches \
                                   on the domain of the email address, \
                                   requiring an exact match."))
-                        .arg(Arg::with_name("handle")
+                        .arg(Arg::new("handle")
                              .long("handle").value_name("FINGERPRINT|KEYID")
-                             .multiple(true).number_of_values(1)
+                             .multiple_occurrences(true)
                              .help("Matches on (sub)key fingerprints and key ids")
                              .long_help(
                                  "Matches on both primary keys and subkeys, \
                                   including those certificates that match the \
                                   given fingerprint or key id."))
-                        .arg(Arg::with_name("prune-certs")
-                             .short("P").long("prune-certs")
+                        .arg(Arg::new("prune-certs")
+                             .short('P').long("prune-certs")
                              .help("Removes certificate components not \
                                     matching the filter"))
-                        .arg(Arg::with_name("binary")
-                             .short("B").long("binary")
+                        .arg(Arg::new("binary")
+                             .short('B').long("binary")
                              .help("Emits binary data"))
-                        .arg(Arg::with_name("to-certificate")
+                        .arg(Arg::new("to-certificate")
                              .long("to-cert")
                              .help("Converts any keys in the input to \
                                     certificates.  Converting a key to a \
@@ -904,7 +905,7 @@ $ sq keyring filter --domain example.org --prune-certs certs.pgp
                                     a certificate."))
                 )
                 .subcommand(
-                    SubCommand::with_name("join")
+                    Command::new("join")
                         .display_order(300)
                         .about("Joins keys or keyrings into a single keyring")
                         .long_about(
@@ -921,19 +922,19 @@ The converse operation is \"sq keyring split\".
 # Collect certs for an email conversation
 $ sq keyring join juliet.pgp romeo.pgp alice.pgp
 ")
-                        .arg(Arg::with_name("input")
+                        .arg(Arg::new("input")
                              .value_name("FILE")
-                             .multiple(true)
+                             .multiple_occurrences(true)
                              .help("Sets the input files to use"))
-                        .arg(Arg::with_name("output")
-                             .short("o").long("output").value_name("FILE")
+                        .arg(Arg::new("output")
+                             .short('o').long("output").value_name("FILE")
                              .help("Sets the output file to use"))
-                        .arg(Arg::with_name("binary")
-                             .short("B").long("binary")
+                        .arg(Arg::new("binary")
+                             .short('B').long("binary")
                              .help("Don't ASCII-armor the keyring"))
                 )
                 .subcommand(
-                    SubCommand::with_name("merge")
+                    Command::new("merge")
                         .display_order(350)
                         .about("Merges keys or keyrings into a single keyring")
                         .long_about(
@@ -950,19 +951,19 @@ is preferred.
 # Merge certificate updates
 $ sq keyring merge certs.pgp romeo-updates.pgp
 ")
-                        .arg(Arg::with_name("input")
+                        .arg(Arg::new("input")
                              .value_name("FILE")
-                             .multiple(true)
+                             .multiple_occurrences(true)
                              .help("Reads from FILE"))
-                        .arg(Arg::with_name("output")
-                             .short("o").long("output").value_name("FILE")
+                        .arg(Arg::new("output")
+                             .short('o').long("output").value_name("FILE")
                              .help("Writes to FILE or stdout if omitted"))
-                        .arg(Arg::with_name("binary")
-                             .short("B").long("binary")
+                        .arg(Arg::new("binary")
+                             .short('B').long("binary")
                              .help("Emits binary data"))
                 )
                 .subcommand(
-                    SubCommand::with_name("list")
+                    Command::new("list")
                         .about("Lists keys in a keyring")
                         .display_order(100)
                         .long_about(
@@ -980,10 +981,10 @@ $ sq keyring list certs.pgp
 # List all certs with a userid on example.org
 $ sq keyring filter --domain example.org certs.pgp | sq keyring list
 ")
-                        .arg(Arg::with_name("input")
+                        .arg(Arg::new("input")
                              .value_name("FILE")
                              .help("Reads from FILE or stdin if omitted"))
-                        .arg(Arg::with_name("all-userids")
+                        .arg(Arg::new("all-userids")
                              .long("--all-userids")
                              .help("Lists all user ids")
                              .long_help(
@@ -992,7 +993,7 @@ $ sq keyring filter --domain example.org certs.pgp | sq keyring list
                                   standard policy."))
                 )
                 .subcommand(
-                    SubCommand::with_name("split")
+                    Command::new("split")
                         .display_order(200)
                         .about("Splits a keyring into individual keys")
                         .long_about(
@@ -1012,22 +1013,22 @@ $ sq keyring split certs.pgp
 # Split all certs, merging them first to avoid duplicates
 $ sq keyring merge certs.pgp | sq keyring split
 ")
-                        .arg(Arg::with_name("input")
+                        .arg(Arg::new("input")
                              .value_name("FILE")
                              .help("Reads from FILE or stdin if omitted"))
-                        .arg(Arg::with_name("prefix")
-                             .short("p").long("prefix").value_name("FILE")
+                        .arg(Arg::new("prefix")
+                             .short('p').long("prefix").value_name("FILE")
                              .help("Writes to files with prefix FILE \
                                     [defaults to the input filename with a \
                                     dash, or \"output\" if keyring is read \
                                     from stdin]"))
-                        .arg(Arg::with_name("binary")
-                             .short("B").long("binary")
+                        .arg(Arg::new("binary")
+                             .short('B').long("binary")
                              .help("Emits binary data"))
                 )
         )
 
-        .subcommand(SubCommand::with_name("certify")
+        .subcommand(Command::new("certify")
                     .display_order(320)
                     .about("Certifies a User ID for a Certificate")
                         .long_about(
@@ -1051,13 +1052,13 @@ attest-certification\".
 # Juliet certifies that Romeo controls romeo.pgp and romeo@example.org
 $ sq certify juliet.pgp romeo.pgp \"<romeo@example.org>\"
 ")
-                    .arg(Arg::with_name("output")
-                         .short("o").long("output").value_name("FILE")
+                    .arg(Arg::new("output")
+                         .short('o').long("output").value_name("FILE")
                          .help("Writes to FILE or stdout if omitted"))
-                    .arg(Arg::with_name("binary")
-                         .short("B").long("binary")
+                    .arg(Arg::new("binary")
+                         .short('B').long("binary")
                          .help("Emits binary data"))
-                    .arg(Arg::with_name("time")
+                    .arg(Arg::new("time")
                          .long("time").value_name("TIME")
                          .help("Sets the certification time to TIME (as ISO 8601)")
                          .long_help("\
@@ -1072,8 +1073,8 @@ default timezone is UTC):
 
 $ sq certify --time 20130721T0550+0200 neal.pgp ada.pgp ada
 "))
-                    .arg(Arg::with_name("depth")
-                         .short("d").long("depth").value_name("TRUST_DEPTH")
+                    .arg(Arg::new("depth")
+                         .short('d').long("depth").value_name("TRUST_DEPTH")
                          .help("Sets the trust depth")
                          .long_help(
                              "Sets the trust depth (sometimes referred to as \
@@ -1083,8 +1084,8 @@ $ sq certify --time 20130721T0550+0200 neal.pgp ada.pgp ada
                                 introducer, 2 means CERTIFICATE is a \
                                 meta-trusted introducer, etc.  The \
                                 default is 0."))
-                    .arg(Arg::with_name("amount")
-                         .short("a").long("amount").value_name("TRUST_AMOUNT")
+                    .arg(Arg::new("amount")
+                         .short('a').long("amount").value_name("TRUST_AMOUNT")
                          .help("Sets the amount of trust")
                          .long_help(
                              "Sets the amount of trust.  \
@@ -1093,9 +1094,9 @@ $ sq certify --time 20130721T0550+0200 neal.pgp ada.pgp ada
                                 Values less than 120 indicate the degree \
                                 of trust.  60 is usually used for partially \
                                 trusted.  The default is 120."))
-                    .arg(Arg::with_name("regex")
-                         .short("r").long("regex").value_name("REGEX")
-                         .multiple(true).number_of_values(1)
+                    .arg(Arg::new("regex")
+                         .short('r').long("regex").value_name("REGEX")
+                         .multiple_occurrences(true)
                          .help("Adds a regular expression to constrain \
                                 what a trusted introducer can certify")
                          .long_help(
@@ -1107,15 +1108,15 @@ $ sq certify --time 20130721T0550+0200 neal.pgp ada.pgp ada
                                 Multiple regular expressions may be \
                                 specified.  In that case, at least \
                                 one must match."))
-                    .arg(Arg::with_name("local")
-                         .short("l").long("local")
+                    .arg(Arg::new("local")
+                         .short('l').long("local")
                          .help("Makes the certification a local \
                                 certification")
                          .long_help(
                              "Makes the certification a local \
                                 certification.  Normally, local \
                                 certifications are not exported."))
-                    .arg(Arg::with_name("non-revocable")
+                    .arg(Arg::new("non-revocable")
                          .long("non-revocable")
                          .help("Marks the certification as being non-revocable")
                          .long_help(
@@ -1123,10 +1124,10 @@ $ sq certify --time 20130721T0550+0200 neal.pgp ada.pgp ada
                                 That is, you cannot later revoke this \
                                 certification.  This should normally only \
                                 be used with an expiration."))
-                    .arg(Arg::with_name("notation")
+                    .arg(Arg::new("notation")
                          .value_names(&["NAME", "VALUE"])
                          .long("notation")
-                         .multiple(true).number_of_values(2)
+                         .multiple_occurrences(true).number_of_values(2)
                          .help("Adds a notation to the certification.")
                          .long_help(
                              "Adds a notation to the certification.  \
@@ -1139,16 +1140,16 @@ $ sq certify --time 20130721T0550+0200 neal.pgp ada.pgp ada
                               then it will ignore the signature.  The \
                               notation is marked as being human readable."))
 
-                    .group(ArgGroup::with_name("expiration-group")
+                    .group(ArgGroup::new("expiration-group")
                            .args(&["expires", "expires-in"]))
-                    .arg(Arg::with_name("expires")
+                    .arg(Arg::new("expires")
                          .long("expires").value_name("TIME")
                          .help("Makes the certification expire at TIME (as ISO 8601)")
                          .long_help(
                              "Makes the certification expire at TIME (as ISO 8601). \
                               Use \"never\" to create certifications that do not \
                               expire."))
-                    .arg(Arg::with_name("expires-in")
+                    .arg(Arg::new("expires-in")
                          .long("expires-in").value_name("DURATION")
                          // Catch negative numbers.
                          .allow_hyphen_values(true)
@@ -1159,28 +1160,28 @@ $ sq certify --time 20130721T0550+0200 neal.pgp ada.pgp ada
                               Either \"N[ymwds]\", for N years, months, \
                               weeks, days, seconds, or \"never\".  [default: 5y]"))
 
-                    .arg(Arg::with_name("certifier")
+                    .arg(Arg::new("certifier")
                          .value_name("CERTIFIER-KEY")
                          .required(true)
                          .index(1)
                          .help("Creates the certification using CERTIFIER-KEY."))
-                    .arg(Arg::with_name("private-key-store")
+                    .arg(Arg::new("private-key-store")
                          .long("private-key-store").value_name("KEY_STORE")
                          .help("Provides parameters for private key store"))
 
-                    .arg(Arg::with_name("certificate")
+                    .arg(Arg::new("certificate")
                          .value_name("CERTIFICATE")
                          .required(true)
                          .index(2)
                          .help("Certifies CERTIFICATE."))
-                    .arg(Arg::with_name("userid")
+                    .arg(Arg::new("userid")
                          .value_name("USERID")
                          .required(true)
                          .index(3)
                          .help("Certifies USERID for CERTIFICATE."))
         )
 
-        .subcommand(SubCommand::with_name("packet")
+        .subcommand(Command::new("packet")
                     .display_order(610)
                     .about("Low-level packet manipulation")
                     .long_about(
@@ -1193,8 +1194,9 @@ with packet streams.  They are mostly of interest to developers, but
 valuable information in bug reports to OpenPGP-related software, and
 as a learning tool.
 ")
-                    .setting(AppSettings::SubcommandRequiredElseHelp)
-                    .subcommand(SubCommand::with_name("dump")
+                    .subcommand_required(true)
+                    .arg_required_else_help(true)
+                    .subcommand(Command::new("dump")
                                 .display_order(100)
                                 .about("Lists packets")
                                 .long_about(
@@ -1224,24 +1226,24 @@ $ sq packet dump --hex juliet.pgp
 # Prints the packets of an encrypted message
 $ sq packet dump --session-key AAAABBBBCCCC... ciphertext.pgp
 ")
-                                .arg(Arg::with_name("input")
+                                .arg(Arg::new("input")
                                      .value_name("FILE")
                                      .help("Reads from FILE or stdin if omitted"))
-                                .arg(Arg::with_name("output")
-                                     .short("o").long("output").value_name("FILE")
+                                .arg(Arg::new("output")
+                                     .short('o').long("output").value_name("FILE")
                                      .help("Writes to FILE or stdout if omitted"))
-                                .arg(Arg::with_name("session-key")
+                                .arg(Arg::new("session-key")
                                      .long("session-key").value_name("SESSION-KEY")
                                      .help("Decrypts an encrypted message using \
                                             SESSION-KEY"))
-                                .arg(Arg::with_name("mpis")
+                                .arg(Arg::new("mpis")
                                      .long("mpis")
                                      .help("Prints cryptographic artifacts"))
-                                .arg(Arg::with_name("hex")
-                                     .short("x").long("hex")
+                                .arg(Arg::new("hex")
+                                     .short('x').long("hex")
                                      .help("Prints a hexdump"))
                     )
-                    .subcommand(SubCommand::with_name("decrypt")
+                    .subcommand(Command::new("decrypt")
                                 .display_order(200)
                                 .about("Unwraps an encryption container")
                                 .long_about(
@@ -1258,27 +1260,27 @@ that can, among other things, be inspected using \"sq packet dump\".
 # Unwraps the encryption revealing the signed message
 $ sq packet decrypt --recipient-key juliet.pgp ciphertext.pgp
 ")
-                                .arg(Arg::with_name("input")
+                                .arg(Arg::new("input")
                                      .value_name("FILE")
                                      .help("Reads from FILE or stdin if omitted"))
-                                .arg(Arg::with_name("output")
-                                     .short("o").long("output").value_name("FILE")
+                                .arg(Arg::new("output")
+                                     .short('o').long("output").value_name("FILE")
                                      .help("Writes to FILE or stdout if omitted"))
-                                .arg(Arg::with_name("binary")
-                                     .short("B").long("binary")
+                                .arg(Arg::new("binary")
+                                     .short('B').long("binary")
                                      .help("Emits binary data"))
-                                .arg(Arg::with_name("secret-key-file")
+                                .arg(Arg::new("secret-key-file")
                                      .long("recipient-key").value_name("KEY")
-                                     .multiple(true).number_of_values(1)
+                                     .multiple_occurrences(true)
                                      .help("Decrypts the message with KEY"))
-                                .arg(Arg::with_name("private-key-store")
+                                .arg(Arg::new("private-key-store")
                                      .long("private-key-store").value_name("KEY_STORE")
                                      .help("Provides parameters for private key store"))
-                                .arg(Arg::with_name("dump-session-key")
+                                .arg(Arg::new("dump-session-key")
                                      .long("dump-session-key")
                                      .help("Prints the session key to stderr"))
                     )
-                    .subcommand(SubCommand::with_name("split")
+                    .subcommand(Command::new("split")
                                 .display_order(300)
                                 .about("Splits a message into packets")
                                 .long_about(
@@ -1297,16 +1299,16 @@ The converse operation is \"sq packet join\".
 # Split a certificate into individual packets
 $ sq packet split juliet.pgp
 ")
-                                .arg(Arg::with_name("input")
+                                .arg(Arg::new("input")
                                      .value_name("FILE")
                                      .help("Reads from FILE or stdin if omitted"))
-                                .arg(Arg::with_name("prefix")
-                                     .short("p").long("prefix").value_name("PREFIX")
+                                .arg(Arg::new("prefix")
+                                     .short('p').long("prefix").value_name("PREFIX")
                                      .help("Writes to files with PREFIX \
                                             [defaults: FILE a dash, \
                                             or \"output\" if read from stdin)"))
                     )
-                    .subcommand(SubCommand::with_name("join")
+                    .subcommand(Command::new("join")
                                 .display_order(310)
                                 .about("Joins packets split across \
                                         files")
@@ -1329,14 +1331,14 @@ $ sq packet split juliet.pgp
 # Then join only a subset of these packets
 $ sq packet join juliet.pgp-[0-3]*
 ")
-                                .arg(Arg::with_name("input")
+                                .arg(Arg::new("input")
                                      .value_name("FILE")
-                                     .multiple(true)
+                                     .multiple_occurrences(true)
                                      .help("Reads from FILE or stdin if omitted"))
-                                .arg(Arg::with_name("output")
-                                     .short("o").long("output").value_name("FILE")
+                                .arg(Arg::new("output")
+                                     .short('o').long("output").value_name("FILE")
                                      .help("Writes to FILE or stdout if omitted"))
-                                .arg(Arg::with_name("kind")
+                                .arg(Arg::new("kind")
                                      .long("label").value_name("LABEL")
                                      .possible_values(&["auto", "message",
                                                         "cert", "key", "sig",
@@ -1344,11 +1346,11 @@ $ sq packet join juliet.pgp-[0-3]*
                                      .default_value("auto")
                                      .conflicts_with("binary")
                                      .help("Selects the kind of armor header"))
-                                .arg(Arg::with_name("binary")
-                                     .short("B").long("binary")
+                                .arg(Arg::new("binary")
+                                     .short('B').long("binary")
                                      .help("Emits binary data")))
         )
-        .subcommand(SubCommand::with_name("revoke")
+        .subcommand(Command::new("revoke")
                     .display_order(700)
                     .about("Generates revocation certificates")
                     .long_about(
@@ -1386,8 +1388,9 @@ $ sq revoke certificate --time 20220101 --certificate juliet.pgp \\
 $ sq revoke userid --time 20220101 --certificate juliet.pgp \\
   \"Juliet <juliet@capuleti.it>\" retired \"I've left the family.\"
 ")
-                    .setting(AppSettings::SubcommandRequiredElseHelp)
-                    .subcommand(SubCommand::with_name("certificate")
+                    .subcommand_required(true)
+                    .arg_required_else_help(true)
+                    .subcommand(Command::new("certificate")
                                 .display_order(100)
                                 .about("Revoke a certificate")
                                 .long_about("
@@ -1404,7 +1407,7 @@ designated revoker.
 If \"--revocation-key\" is not provided, then the certificate must
 include a certification-capable key.")
 
-                        .arg(Arg::with_name("input")
+                        .arg(Arg::new("input")
                              .value_name("FILE")
                              .long("certificate")
                              .alias("cert")
@@ -1413,7 +1416,7 @@ include a certification-capable key.")
 Reads the certificate to revoke from FILE or stdin, if omitted.  It is
 an error for the file to contain more than one certificate.")
                         )
-                        .arg(Arg::with_name("secret-key-file")
+                        .arg(Arg::new("secret-key-file")
                              .long("revocation-key").value_name("FILE")
                              .help("Signs the revocation certificate using KEY")
                              .long_help("
@@ -1422,11 +1425,11 @@ from the certificate, this creates a third-party revocation.  If this
 option is not provided, and the certificate includes secret key material,
 then that key is used to sign the revocation certificate.")
                         )
-                        .arg(Arg::with_name("private-key-store")
+                        .arg(Arg::new("private-key-store")
                              .long("private-key-store").value_name("KEY_STORE")
                              .help("Provides parameters for private key store")
                         )
-                        .arg(Arg::with_name("reason")
+                        .arg(Arg::new("reason")
                              .value_name("REASON")
                              .required(true)
                              .possible_values(&["compromised",
@@ -1464,7 +1467,7 @@ If the reason happened in the past, you should specify that using the
 accurately reason about objects whose validity depends on the validity
 of the certificate.")
                         )
-                        .arg(Arg::with_name("message")
+                        .arg(Arg::new("message")
                              .value_name("MESSAGE")
                              .required(true)
                              .help("A short, explanatory text")
@@ -1476,15 +1479,15 @@ instance, if Alice has created a new key, she would generate a
 the message \"I've created a new certificate, FINGERPRINT, please use
 that in the future.\"")
                         )
-                        .arg(Arg::with_name("time")
-                             .short("t").long("time").value_name("TIME")
+                        .arg(Arg::new("time")
+                             .short('t').long("time").value_name("TIME")
                              .help("
 Chooses keys valid at the specified time and sets the revocation
 certificate's creation time"))
-                        .arg(Arg::with_name("notation")
+                        .arg(Arg::new("notation")
                              .value_names(&["NAME", "VALUE"])
                              .long("notation")
-                             .multiple(true).number_of_values(2)
+                             .multiple_occurrences(true).number_of_values(2)
                              .help("Adds a notation to the certification.")
                              .long_help("
 Adds a notation to the certification.  A user-defined notation's name
@@ -1493,11 +1496,11 @@ notation's name starts with a !, then the notation is marked as being
 critical.  If a consumer of a signature doesn't understand a critical
 notation, then it will ignore the signature.  The notation is marked
 as being human readable."))
-                        .arg(Arg::with_name("binary")
-                             .short("B").long("binary")
+                        .arg(Arg::new("binary")
+                             .short('B').long("binary")
                              .help("Emits binary data"))
                     )
-                    .subcommand(SubCommand::with_name("subkey")
+                    .subcommand(Command::new("subkey")
                                 .display_order(105)
                                 .about("Revoke a subkey")
                                 .long_about("
@@ -1514,7 +1517,7 @@ designated revoker.
 If \"--revocation-key\" is not provided, then the certificate must
 include a certification-capable key.")
 
-                        .arg(Arg::with_name("input")
+                        .arg(Arg::new("input")
                              .value_name("FILE")
                              .long("certificate")
                              .alias("cert")
@@ -1525,7 +1528,7 @@ Reads the certificate containing the subkey to revoke from FILE or stdin,
 if omitted.  It is an error for the file to contain more than one
 certificate.")
                         )
-                        .arg(Arg::with_name("secret-key-file")
+                        .arg(Arg::new("secret-key-file")
                              .long("revocation-key").value_name("FILE")
                              .help("Signs the revocation certificate using KEY")
                              .long_help("
@@ -1534,11 +1537,11 @@ from the certificate, this creates a third-party revocation.  If this
 option is not provided, and the certificate includes secret key material,
 then that key is used to sign the revocation certificate.")
                         )
-                        .arg(Arg::with_name("private-key-store")
+                        .arg(Arg::new("private-key-store")
                              .long("private-key-store").value_name("KEY_STORE")
                              .help("Provides parameters for private key store")
                         )
-                        .arg(Arg::with_name("subkey")
+                        .arg(Arg::new("subkey")
                              .value_name("SUBKEY")
                              .required(true)
                              .help("The subkey to revoke")
@@ -1546,7 +1549,7 @@ then that key is used to sign the revocation certificate.")
 The subkey to revoke.  This must either be the subkey's Key ID or its
 fingerprint.")
                         )
-                        .arg(Arg::with_name("reason")
+                        .arg(Arg::new("reason")
                              .value_name("REASON")
                              .required(true)
                              .possible_values(&["compromised",
@@ -1584,7 +1587,7 @@ If the reason happened in the past, you should specify that using the
 accurately reason about objects whose validity depends on the validity
 of the certificate.")
                         )
-                        .arg(Arg::with_name("message")
+                        .arg(Arg::new("message")
                              .value_name("MESSAGE")
                              .required(true)
                              .help("A short, explanatory text")
@@ -1595,15 +1598,15 @@ instance, if Alice has created a new key, she would generate a
 'superceded' revocation certificate for her old key, and might include
 the message \"I've created a new subkey, please refresh the certificate.\"")
                         )
-                        .arg(Arg::with_name("time")
-                             .short("t").long("time").value_name("TIME")
+                        .arg(Arg::new("time")
+                             .short('t').long("time").value_name("TIME")
                              .help("
 Chooses keys valid at the specified time and sets the revocation
 certificate's creation time"))
-                        .arg(Arg::with_name("notation")
+                        .arg(Arg::new("notation")
                              .value_names(&["NAME", "VALUE"])
                              .long("notation")
-                             .multiple(true).number_of_values(2)
+                             .multiple_occurrences(true).number_of_values(2)
                              .help("Adds a notation to the certification.")
                              .long_help("
 Adds a notation to the certification.  A user-defined notation's name
@@ -1612,11 +1615,11 @@ notation's name starts with a !, then the notation is marked as being
 critical.  If a consumer of a signature doesn't understand a critical
 notation, then it will ignore the signature.  The notation is marked
 as being human readable."))
-                        .arg(Arg::with_name("binary")
-                             .short("B").long("binary")
+                        .arg(Arg::new("binary")
+                             .short('B').long("binary")
                              .help("Emits binary data"))
                     )
-                    .subcommand(SubCommand::with_name("userid")
+                    .subcommand(Command::new("userid")
                                 .display_order(110)
                                 .about("Revoke a User ID")
                                 .long_about("
@@ -1633,7 +1636,7 @@ designated revoker.
 If \"--revocation-key\" is not provided, then the certificate must
 include a certification-capable key.")
 
-                        .arg(Arg::with_name("input")
+                        .arg(Arg::new("input")
                              .value_name("FILE")
                              .long("certificate")
                              .alias("cert")
@@ -1643,7 +1646,7 @@ The certificate contain the User ID to revoke")
 Reads the certificate to revoke from FILE or stdin, if omitted.  It is
 an error for the file to contain more than one certificate.")
                         )
-                        .arg(Arg::with_name("secret-key-file")
+                        .arg(Arg::new("secret-key-file")
                              .long("revocation-key").value_name("FILE")
                              .help("Signs the revocation certificate using KEY")
                              .long_help("
@@ -1652,11 +1655,11 @@ from the certificate, this creates a third-party revocation.  If this
 option is not provided, and the certificate includes secret key material,
 then that key is used to sign the revocation certificate.")
                         )
-                        .arg(Arg::with_name("private-key-store")
+                        .arg(Arg::new("private-key-store")
                              .long("private-key-store").value_name("KEY_STORE")
                              .help("Provides parameters for private key store")
                         )
-                        .arg(Arg::with_name("userid")
+                        .arg(Arg::new("userid")
                              .value_name("USERID")
                              .required(true)
                              .help("The User ID to revoke")
@@ -1666,7 +1669,7 @@ The User ID to revoke.  By default, this must exactly match a
 self-signed User ID.  Use --force to generate a revocation certificate
 for a User ID, which is not self signed.")
                         )
-                        .arg(Arg::with_name("reason")
+                        .arg(Arg::new("reason")
                              .value_name("REASON")
                              .required(true)
                              .possible_values(&["retired",
@@ -1690,7 +1693,7 @@ If the reason happened in the past, you should specify that using the
 accurately reason about objects whose validity depends on the validity
 of a User ID.")
                         )
-                        .arg(Arg::with_name("message")
+                        .arg(Arg::new("message")
                              .value_name("MESSAGE")
                              .required(true)
                              .help("A short, explanatory text")
@@ -1702,15 +1705,15 @@ instance, if Alice has created a new key, she would generate a
 the message \"I've created a new certificate, FINGERPRINT, please use
 that in the future.\"")
                         )
-                        .arg(Arg::with_name("time")
-                             .short("t").long("time").value_name("TIME")
+                        .arg(Arg::new("time")
+                             .short('t').long("time").value_name("TIME")
                              .help("
 Chooses keys valid at the specified time and sets the revocation
 certificate's creation time"))
-                        .arg(Arg::with_name("notation")
+                        .arg(Arg::new("notation")
                              .value_names(&["NAME", "VALUE"])
                              .long("notation")
-                             .multiple(true).number_of_values(2)
+                             .multiple_occurrences(true).number_of_values(2)
                              .help("Adds a notation to the certification.")
                              .long_help("
 Adds a notation to the certification.  A user-defined notation's name
@@ -1719,33 +1722,34 @@ notation's name starts with a !, then the notation is marked as being
 critical.  If a consumer of a signature doesn't understand a critical
 notation, then it will ignore the signature.  The notation is marked
 as being human readable."))
-                        .arg(Arg::with_name("binary")
-                             .short("B").long("binary")
+                        .arg(Arg::new("binary")
+                             .short('B').long("binary")
                              .help("Emits binary data"))
                 )
         )
-        .subcommand(SubCommand::with_name("keyserver")
+        .subcommand(Command::new("keyserver")
                     .display_order(410)
                     .about("Interacts with keyservers")
-                    .setting(AppSettings::SubcommandRequiredElseHelp)
-                    .arg(Arg::with_name("policy")
-                         .short("p").long("policy").value_name("NETWORK-POLICY")
+                    .subcommand_required(true)
+                    .arg_required_else_help(true)
+                    .arg(Arg::new("policy")
+                         .short('p').long("policy").value_name("NETWORK-POLICY")
                          .possible_values(&["offline", "anonymized",
                                             "encrypted", "insecure"])
                          .default_value("encrypted")
                          .help("Sets the network policy to use"))
-                    .arg(Arg::with_name("server")
-                         .short("s").long("server").value_name("URI")
+                    .arg(Arg::new("server")
+                         .short('s').long("server").value_name("URI")
                          .help("Sets the keyserver to use"))
-                    .subcommand(SubCommand::with_name("get")
+                    .subcommand(Command::new("get")
                                 .about("Retrieves a key")
-                                .arg(Arg::with_name("output")
-                                     .short("o").long("output").value_name("FILE")
+                                .arg(Arg::new("output")
+                                     .short('o').long("output").value_name("FILE")
                                      .help("Writes to FILE or stdout if omitted"))
-                                .arg(Arg::with_name("binary")
-                                     .short("B").long("binary")
+                                .arg(Arg::new("binary")
+                                     .short('B').long("binary")
                                      .help("Emits binary data"))
-                                .arg(Arg::with_name("query")
+                                .arg(Arg::new("query")
                                      .value_name("QUERY")
                                      .required(true)
                                      .help(
@@ -1753,51 +1757,52 @@ as being human readable."))
                                           This may be a fingerprint, a KeyID, \
                                           or an email address."))
                     )
-                    .subcommand(SubCommand::with_name("send")
+                    .subcommand(Command::new("send")
                                 .about("Sends a key")
-                                .arg(Arg::with_name("input")
+                                .arg(Arg::new("input")
                                      .value_name("FILE")
                                      .help("Reads from FILE or stdin if omitted"))
                     )
         )
 
-        .subcommand(SubCommand::with_name("wkd")
+        .subcommand(Command::new("wkd")
                     .display_order(420)
                     .about("Interacts with Web Key Directories")
-                    .setting(AppSettings::SubcommandRequiredElseHelp)
-                    .arg(Arg::with_name("policy")
-                         .short("p").long("policy").value_name("NETWORK-POLICY")
+                    .subcommand_required(true)
+                    .arg_required_else_help(true)
+                    .arg(Arg::new("policy")
+                         .short('p').long("policy").value_name("NETWORK-POLICY")
                          .possible_values(&["offline", "anonymized",
                                             "encrypted", "insecure"])
                          .default_value("encrypted")
                          .help("Sets the network policy to use"))
-                    .subcommand(SubCommand::with_name("url")
+                    .subcommand(Command::new("url")
                                 .about("Prints the Web Key Directory URL of \
                                         an email address.")
-                                .arg(Arg::with_name("input")
+                                .arg(Arg::new("input")
                                     .value_name("ADDRESS")
                                     .required(true)
                                     .help("Queries for ADDRESS"))
                     )
-                    .subcommand(SubCommand::with_name("get")
+                    .subcommand(Command::new("get")
                                 .about("Queries for certs using \
                                         Web Key Directory")
-                                .arg(Arg::with_name("input")
+                                .arg(Arg::new("input")
                                     .value_name("ADDRESS")
                                     .required(true)
                                     .help("Queries a cert for ADDRESS"))
-                                .arg(Arg::with_name("binary")
-                                     .short("B").long("binary")
+                                .arg(Arg::new("binary")
+                                     .short('B').long("binary")
                                      .help("Emits binary data"))
                     )
-                    .subcommand(SubCommand::with_name("generate")
+                    .subcommand(Command::new("generate")
                                 .about("Generates a Web Key Directory \
                                         for the given domain and keys.  \
                                         If the WKD exists, the new \
                                         keys will be inserted and it \
                                         is updated and existing ones \
                                         will be updated.")
-                                .arg(Arg::with_name("base_directory")
+                                .arg(Arg::new("base_directory")
                                      .value_name("WEB-ROOT")
                                      .required(true)
                                      .help("Writes the WKD to WEB-ROOT")
@@ -1805,21 +1810,21 @@ as being human readable."))
                                          "Writes the WKD to WEB-ROOT. \
                                           Transfer this directory to \
                                           the webserver."))
-                                .arg(Arg::with_name("domain")
+                                .arg(Arg::new("domain")
                                     .value_name("FQDN")
                                     .help("Generates a WKD for \
                                            a fully qualified domain name")
                                     .required(true))
-                                .arg(Arg::with_name("input")
+                                .arg(Arg::new("input")
                                     .value_name("CERT-RING")
                                     .help("Adds certificates from CERT-RING to \
                                            the WKD"))
-                                .arg(Arg::with_name("direct_method")
-                                     .short("d").long("direct-method")
+                                .arg(Arg::new("direct_method")
+                                     .short('d').long("direct-method")
                                      .help("Uses the direct method \
                                             [default: advanced method]"))
-                                .arg(Arg::with_name("skip")
-                                     .short("s").long("skip")
+                                .arg(Arg::new("skip")
+                                     .short('s').long("skip")
                                      .help("Skips certificates that do not have \
                                             User IDs for given domain."))
                     )
@@ -1831,7 +1836,7 @@ as being human readable."))
     } else {
         // With Autocrypt support.
         app.subcommand(
-            SubCommand::with_name("autocrypt")
+            Command::new("autocrypt")
                 .display_order(400)
                 .about("Communicates certificates using Autocrypt")
                 .long_about(
@@ -1844,9 +1849,10 @@ communicate certificates between clients.
 
 See https://autocrypt.org/
 ")
-                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand_required(true)
+                .arg_required_else_help(true)
                 .subcommand(
-                    SubCommand::with_name("decode")
+                    Command::new("decode")
                         .about("Reads Autocrypt-encoded certificates")
                         .long_about(
 "Reads Autocrypt-encoded certificates
@@ -1862,18 +1868,18 @@ The converse operation is \"sq autocrypt encode-sender\".
 # Extract all certificates from a mail
 $ sq autocrypt decode autocrypt.eml
 ")
-                        .arg(Arg::with_name("input")
+                        .arg(Arg::new("input")
                              .value_name("FILE")
                              .help("Reads from FILE or stdin if omitted"))
-                        .arg(Arg::with_name("output")
-                             .short("o").long("output").value_name("FILE")
+                        .arg(Arg::new("output")
+                             .short('o').long("output").value_name("FILE")
                              .help("Writes to FILE or stdout if omitted"))
-                        .arg(Arg::with_name("binary")
-                             .short("B").long("binary")
+                        .arg(Arg::new("binary")
+                             .short('B').long("binary")
                              .help("Emits binary data"))
                 )
                 .subcommand(
-                    SubCommand::with_name("encode-sender")
+                    Command::new("encode-sender")
                         .about("Encodes a certificate into \
                                 an Autocrypt header")
                         .long_about(
@@ -1899,17 +1905,17 @@ $ sq autocrypt encode-sender --email juliet@example.org juliet.pgp
 # Encodes a certificate while indicating the willingness to encrypt
 $ sq autocrypt encode-sender --prefer-encrypt mutual juliet.pgp
 ")
-                        .arg(Arg::with_name("input")
+                        .arg(Arg::new("input")
                              .value_name("FILE")
                              .help("Reads from FILE or stdin if omitted"))
-                        .arg(Arg::with_name("output")
-                             .short("o").long("output").value_name("FILE")
+                        .arg(Arg::new("output")
+                             .short('o').long("output").value_name("FILE")
                              .help("Writes to FILE or stdout if omitted"))
-                        .arg(Arg::with_name("address")
+                        .arg(Arg::new("address")
                              .long("email").value_name("ADDRESS")
                              .help("Sets the address \
                                     [default: primary userid]"))
-                             .arg(Arg::with_name("prefer-encrypt")
+                             .arg(Arg::new("prefer-encrypt")
                                   .long("prefer-encrypt")
                                   .possible_values(&["nopreference",
                                                      "mutual"])

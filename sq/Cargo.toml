@@ -32,7 +32,7 @@ sequoia-autocrypt = { path = "../autocrypt", version = "0.24", default-features 
 sequoia-net = { path = "../net", version = "0.24", default-features = false }
 anyhow = "1.0.18"
 chrono = "0.4.10"
-clap = { version = "2.33", features = ["wrap_help"] }
+clap = { version = "3", features = ["derive", "wrap_help"] }
 itertools = "0.10"
 tempfile = "3.1"
 term_size = "0.3"
@@ -40,7 +40,8 @@ tokio = { version = "1.13.1" }
 rpassword = "5.0"
 
 [build-dependencies]
-clap = "2.33"
+clap = "3"
+clap_complete = "3"
 sequoia-openpgp = { path = "../openpgp", version = "1.0.0", default-features = false }
 subplot-build = "0.4.0"
 

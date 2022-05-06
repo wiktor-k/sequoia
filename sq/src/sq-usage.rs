@@ -18,42 +18,56 @@
 //! to refer to OpenPGP keys that do contain secrets.
 //!
 //! USAGE:
-//!     sq [FLAGS] [OPTIONS] <SUBCOMMAND>
+//!     sq [OPTIONS] <SUBCOMMAND>
 //!
-//! FLAGS:
+//! OPTIONS:
 //!     -f, --force
 //!             Overwrites existing files
 //!
 //!     -h, --help
-//!             Prints help information
+//!             Print help information
 //!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
-//!         --known-notation <NOTATION>...
+//!         --known-notation <NOTATION>
 //!             Adds NOTATION to the list of known notations. This is used when
 //!             validating signatures. Signatures that have unknown notations with
 //!             the critical bit set are considered invalid.
 //!
+//!     -V, --version
+//!             Print version information
+//!
 //! SUBCOMMANDS:
-//!     encrypt      Encrypts a message
-//!     decrypt      Decrypts a message
-//!     sign         Signs messages or data files
-//!     verify       Verifies signed messages or detached signatures
-//!     key          Manages keys
-//!     keyring      Manages collections of keys or certs
-//!     certify      Certifies a User ID for a Certificate
-//!     autocrypt    Communicates certificates using Autocrypt
-//!     keyserver    Interacts with keyservers
-//!     wkd          Interacts with Web Key Directories
-//!     armor        Converts binary to ASCII
-//!     dearmor      Converts ASCII to binary
-//!     inspect      Inspects data, like file(1)
-//!     packet       Low-level packet manipulation
-//!     revoke       Generates revocation certificates
-//!     help         Prints this message or the help of the given subcommand(s)
+//!     encrypt
+//!             Encrypts a message
+//!     decrypt
+//!             Decrypts a message
+//!     sign
+//!             Signs messages or data files
+//!     verify
+//!             Verifies signed messages or detached signatures
+//!     key
+//!             Manages keys
+//!     keyring
+//!             Manages collections of keys or certs
+//!     certify
+//!             Certifies a User ID for a Certificate
+//!     autocrypt
+//!             Communicates certificates using Autocrypt
+//!     keyserver
+//!             Interacts with keyservers
+//!     wkd
+//!             Interacts with Web Key Directories
+//!     armor
+//!             Converts binary to ASCII
+//!     dearmor
+//!             Converts ASCII to binary
+//!     inspect
+//!             Inspects data, like file(1)
+//!     packet
+//!             Low-level packet manipulation
+//!     revoke
+//!             Generates revocation certificates
+//!     help
+//!             Print this message or the help of the given subcommand(s)
 //! ```
 //!
 //! ## Subcommand encrypt
@@ -67,52 +81,57 @@
 //! The converse operation is "sq decrypt".
 //!
 //! USAGE:
-//!     sq encrypt [FLAGS] [OPTIONS] [--] [FILE]
+//!     sq encrypt [OPTIONS] [FILE]
 //!
-//! FLAGS:
+//! ARGS:
+//!     <FILE>
+//!             Reads from FILE or stdin if omitted
+//!
+//! OPTIONS:
 //!     -B, --binary
 //!             Emits binary data
 //!
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -s, --symmetric
-//!             Adds a password to encrypt with.  The message can be decrypted with
-//!             either one of the recipient's keys, or any password.
-//!         --use-expired-subkey
-//!             If a certificate has only expired encryption-capable subkeys, falls
-//!             back to using the one that expired last
-//!
-//! OPTIONS:
 //!         --compression <KIND>
-//!             Selects compression scheme to use [default: pad]  [possible values:
-//!             none, pad, zip, zlib, bzip2]
+//!             Selects compression scheme to use
+//! 
+//!             [default: pad]
+//!             [possible values: none, pad, zip, zlib, bzip2]
+//!
+//!     -h, --help
+//!             Print help information
+//!
 //!         --mode <MODE>
 //!             Selects what kind of keys are considered for encryption.  Transport
 //!             select subkeys marked as suitable for transport encryption, rest
 //!             selects those for encrypting data at rest, and all selects all
-//!             encryption-capable subkeys. [default: all]  [possible values:
-//!             transport, rest, all]
+//!             encryption-capable subkeys.
+//! 
+//!             [default: all]
+//!             [possible values: transport, rest, all]
+//!
 //!     -o, --output <FILE>
 //!             Writes to FILE or stdout if omitted
 //!
 //!         --private-key-store <KEY_STORE>
 //!             Provides parameters for private key store
 //!
-//!         --recipient-cert <CERT-RING>...
+//!         --recipient-cert <CERT-RING>
 //!             Encrypts for all recipients in CERT-RING
 //!
-//!         --signer-key <KEY>...
+//!     -s, --symmetric
+//!             Adds a password to encrypt with.  The message can be decrypted with
+//!             either one of the recipient's keys, or any password.
+//!
+//!         --signer-key <KEY>
 //!             Signs the message with KEY
 //!
 //!     -t, --time <TIME>
 //!             Chooses keys valid at the specified time and sets the signature's
 //!             creation time
 //!
-//! ARGS:
-//!     <FILE>
-//!             Reads from FILE or stdin if omitted
-//!
+//!         --use-expired-subkey
+//!             If a certificate has only expired encryption-capable subkeys, falls
+//!             back to using the one that expired last
 //!
 //! EXAMPLES:
 //!
@@ -150,9 +169,13 @@
 //! The converse operation is "sq encrypt".
 //!
 //! USAGE:
-//!     sq decrypt [FLAGS] [OPTIONS] [--] [FILE]
+//!     sq decrypt [OPTIONS] [FILE]
 //!
-//! FLAGS:
+//! ARGS:
+//!     <FILE>
+//!             Reads from FILE or stdin if omitted
+//!
+//! OPTIONS:
 //!         --dump
 //!             Prints a packet dump to stderr
 //!
@@ -160,34 +183,27 @@
 //!             Prints the session key to stderr
 //!
 //!     -h, --help
-//!             Prints help information
-//!
-//!     -x, --hex
-//!             Prints a hexdump (implies --dump)
-//!
-//!
-//! OPTIONS:
-//!     -o, --output <FILE>
-//!             Writes to FILE or stdout if omitted
-//!
-//!         --private-key-store <KEY_STORE>
-//!             Provides parameters for private key store
-//!
-//!         --recipient-key <KEY>...
-//!             Decrypts with KEY
-//!
-//!         --signer-cert <CERT>...
-//!             Verifies signatures with CERT
+//!             Print help information
 //!
 //!     -n, --signatures <N>
 //!             Sets the threshold of valid signatures to N. The message will only
 //!             be considered verified if this threshold is reached. [default: 1 if
 //!             at least one signer cert file is given, 0 otherwise]
 //!
-//! ARGS:
-//!     <FILE>
-//!             Reads from FILE or stdin if omitted
+//!     -o, --output <FILE>
+//!             Writes to FILE or stdout if omitted
 //!
+//!         --private-key-store <KEY_STORE>
+//!             Provides parameters for private key store
+//!
+//!         --recipient-key <KEY>
+//!             Decrypts with KEY
+//!
+//!         --signer-cert <CERT>
+//!             Verifies signatures with CERT
+//!
+//!     -x, --hex
+//!             Prints a hexdump (implies --dump)
 //!
 //! EXAMPLES:
 //!
@@ -212,9 +228,13 @@
 //! The converse operation is "sq verify".
 //!
 //! USAGE:
-//!     sq sign [FLAGS] [OPTIONS] [--] [FILE]
+//!     sq sign [OPTIONS] [--] [FILE]
 //!
-//! FLAGS:
+//! ARGS:
+//!     <FILE>
+//!             Reads from FILE or stdin if omitted
+//!
+//! OPTIONS:
 //!     -a, --append
 //!             Appends a signature to existing signature
 //!
@@ -228,15 +248,13 @@
 //!             Creates a detached signature
 //!
 //!     -h, --help
-//!             Prints help information
+//!             Print help information
+//!
+//!         --merge <SIGNED-MESSAGE>
+//!             Merges signatures from the input and SIGNED-MESSAGE
 //!
 //!     -n, --notarize
 //!             Signs a message and all existing signatures
-//!
-//!
-//! OPTIONS:
-//!         --merge <SIGNED-MESSAGE>
-//!             Merges signatures from the input and SIGNED-MESSAGE
 //!
 //!         --notation <NAME> <VALUE>
 //!             Adds a notation to the certification.  A user-defined notation's
@@ -245,23 +263,19 @@
 //!             being critical.  If a consumer of a signature doesn't understand a
 //!             critical notation, then it will ignore the signature.  The notation
 //!             is marked as being human readable.
+//!
 //!     -o, --output <FILE>
 //!             Writes to FILE or stdout if omitted
 //!
 //!         --private-key-store <KEY_STORE>
 //!             Provides parameters for private key store
 //!
-//!         --signer-key <KEY>...
+//!         --signer-key <KEY>
 //!             Signs using KEY
 //!
 //!     -t, --time <TIME>
 //!             Chooses keys valid at the specified time and sets the signature's
 //!             creation time
-//!
-//! ARGS:
-//!     <FILE>
-//!             Reads from FILE or stdin if omitted
-//!
 //!
 //! EXAMPLES:
 //!
@@ -294,32 +308,30 @@
 //! The converse operation is "sq sign".
 //!
 //! USAGE:
-//!     sq verify [OPTIONS] [--] [FILE]
-//!
-//! FLAGS:
-//!     -h, --help
-//!             Prints help information
-//!
-//!
-//! OPTIONS:
-//!         --detached <SIG>
-//!             Verifies a detached signature
-//!
-//!     -o, --output <FILE>
-//!             Writes to FILE or stdout if omitted
-//!
-//!         --signer-cert <CERT>...
-//!             Verifies signatures with CERT
-//!
-//!     -n, --signatures <N>
-//!             Sets the threshold of valid signatures to N. If this threshold is
-//!             not reached, the message will not be considered verified. [default:
-//!             1]
+//!     sq verify [OPTIONS] [FILE]
 //!
 //! ARGS:
 //!     <FILE>
 //!             Reads from FILE or stdin if omitted
 //!
+//! OPTIONS:
+//!         --detached <SIG>
+//!             Verifies a detached signature
+//!
+//!     -h, --help
+//!             Print help information
+//!
+//!     -n, --signatures <N>
+//!             Sets the threshold of valid signatures to N. If this threshold is
+//!             not reached, the message will not be considered verified.
+//! 
+//!             [default: 1]
+//!
+//!     -o, --output <FILE>
+//!             Writes to FILE or stdout if omitted
+//!
+//!         --signer-cert <CERT>
+//!             Verifies signatures with CERT
 //!
 //! EXAMPLES:
 //!
@@ -351,19 +363,23 @@
 //! USAGE:
 //!     sq key <SUBCOMMAND>
 //!
-//! FLAGS:
+//! OPTIONS:
 //!     -h, --help
-//!             Prints help information
-//!
+//!             Print help information
 //!
 //! SUBCOMMANDS:
-//!     generate                 Generates a new key
-//!     password                 Changes password protecting secrets
-//!     extract-cert             Converts a key to a cert
-//!     attest-certifications    Attests to third-party certifications
-//!     adopt                    Binds keys from one certificate to another
+//!     generate
+//!             Generates a new key
+//!     password
+//!             Changes password protecting secrets
+//!     extract-cert
+//!             Converts a key to a cert
+//!     attest-certifications
+//!             Attests to third-party certifications
+//!     adopt
+//!             Binds keys from one certificate to another
 //!     help
-//!             Prints this message or the help of the given subcommand(s)
+//!             Print this message or the help of the given subcommand(s)
 //! ```
 //!
 //! ### Subcommand key generate
@@ -385,11 +401,24 @@
 //! uploading it to a keyserver.
 //!
 //! USAGE:
-//!     sq key generate [FLAGS] [OPTIONS] --export <OUTFILE>
+//!     sq key generate [OPTIONS] --export <OUTFILE>
 //!
-//! FLAGS:
+//! OPTIONS:
+//!     -c, --cipher-suite <CIPHER-SUITE>
+//!             Selects the cryptographic algorithms for the key
+//! 
+//!             [default: cv25519]
+//!             [possible values: rsa3k, rsa4k, cv25519]
+//!
 //!         --can-authenticate
 //!             Adds an authentication-capable subkey (default)
+//!
+//!         --can-encrypt <PURPOSE>
+//!             Adds an encryption-capable subkey. Encryption-capable subkeys can be
+//!             marked as suitable for transport encryption, storage encryption, or
+//!             both. [default: universal]
+//! 
+//!             [possible values: transport, storage, universal]
 //!
 //!         --can-sign
 //!             Adds a signing-capable subkey (default)
@@ -403,25 +432,6 @@
 //!         --cannot-sign
 //!             Adds no signing-capable subkey
 //!
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -V, --version
-//!             Prints version information
-//!
-//!         --with-password
-//!             Protects the key with a password
-//!
-//!
-//! OPTIONS:
-//!         --can-encrypt <PURPOSE>
-//!             Adds an encryption-capable subkey. Encryption-capable subkeys can be
-//!             marked as suitable for transport encryption, storage encryption, or
-//!             both. [default: universal] [possible values: transport, storage,
-//!             universal]
-//!     -c, --cipher-suite <CIPHER-SUITE>
-//!             Selects the cryptographic algorithms for the key [default: cv25519]
-//!             [possible values: rsa3k, rsa4k, cv25519]
 //!         --creation-time <CREATION_TIME>
 //!             Sets the key's creation time to TIME.  TIME is interpreted as an ISO
 //!             8601
@@ -437,21 +447,30 @@
 //! 
 //!             $ sq key generate --creation-time 20110609T1938+0200 --export
 //!             noam.pgp
+//!
+//!     -e, --export <OUTFILE>
+//!             Writes the key to OUTFILE
+//!
 //!         --expires <TIME>
 //!             Makes the key expire at TIME (as ISO 8601). Use "never" to create
 //!             keys that do not expire.
+//!
 //!         --expires-in <DURATION>
 //!             Makes the key expire after DURATION. Either "N[ymwds]", for N years,
 //!             months, weeks, days, seconds, or "never".
-//!     -e, --export <OUTFILE>
-//!             Writes the key to OUTFILE
+//!
+//!     -h, --help
+//!             Print help information
 //!
 //!         --rev-cert <FILE or ->
 //!             Writes the revocation certificate to FILE. mandatory if OUTFILE is
 //!             "-". [default: <OUTFILE>.rev]
-//!     -u, --userid <EMAIL>...
+//!
+//!     -u, --userid <EMAIL>
 //!             Adds a userid to the key
 //!
+//!         --with-password
+//!             Protects the key with a password
 //!
 //! EXAMPLES:
 //!
@@ -480,9 +499,13 @@
 //! supply a zero-length password when prompted for the new password.
 //!
 //! USAGE:
-//!     sq key password [FLAGS] [OPTIONS] [FILE]
+//!     sq key password [OPTIONS] [FILE]
 //!
-//! FLAGS:
+//! ARGS:
+//!     <FILE>
+//!             Reads from FILE or stdin if omitted
+//!
+//! OPTIONS:
 //!     -B, --binary
 //!             Emits binary data
 //!
@@ -490,21 +513,10 @@
 //!             Emit a key with unencrypted secrets
 //!
 //!     -h, --help
-//!             Prints help information
+//!             Print help information
 //!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
 //!     -o, --output <FILE>
 //!             Writes to FILE or stdout if omitted
-//!
-//!
-//! ARGS:
-//!     <FILE>
-//!             Reads from FILE or stdin if omitted
-//!
 //!
 //! EXAMPLES:
 //!
@@ -529,28 +541,21 @@
 //! it to a keyserver.
 //!
 //! USAGE:
-//!     sq key extract-cert [FLAGS] [OPTIONS] [FILE]
-//!
-//! FLAGS:
-//!     -B, --binary
-//!             Emits binary data
-//!
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
-//!     -o, --output <FILE>
-//!             Writes to FILE or stdout if omitted
-//!
+//!     sq key extract-cert [OPTIONS] [FILE]
 //!
 //! ARGS:
 //!     <FILE>
 //!             Reads from FILE or stdin if omitted
 //!
+//! OPTIONS:
+//!     -B, --binary
+//!             Emits binary data
+//!
+//!     -h, --help
+//!             Print help information
+//!
+//!     -o, --output <FILE>
+//!             Writes to FILE or stdout if omitted
 //!
 //! EXAMPLES:
 //!
@@ -578,9 +583,13 @@
 //! distributed, e.g. by uploading it to a keyserver.
 //!
 //! USAGE:
-//!     sq key attest-certifications [FLAGS] [OPTIONS] [KEY]
+//!     sq key attest-certifications [OPTIONS] [KEY]
 //!
-//! FLAGS:
+//! ARGS:
+//!     <KEY>
+//!             Changes attestations on KEY
+//!
+//! OPTIONS:
 //!         --all
 //!             Attests to all certifications [default]
 //!
@@ -588,24 +597,13 @@
 //!             Emits binary data
 //!
 //!     -h, --help
-//!             Prints help information
+//!             Print help information
 //!
 //!         --none
 //!             Removes all prior attestations
 //!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
 //!     -o, --output <FILE>
 //!             Writes to FILE or stdout if omitted
-//!
-//!
-//! ARGS:
-//!     <KEY>
-//!             Changes attestations on KEY
-//!
 //!
 //! EXAMPLES:
 //!
@@ -630,9 +628,13 @@
 //! feasible.
 //!
 //! USAGE:
-//!     sq key adopt [FLAGS] [OPTIONS] --key <KEY>... [--] [TARGET-KEY]
+//!     sq key adopt [OPTIONS] --key <KEY> [TARGET-KEY]
 //!
-//! FLAGS:
+//! ARGS:
+//!     <TARGET-KEY>
+//!             Adds keys to TARGET-KEY
+//!
+//! OPTIONS:
 //!         --allow-broken-crypto
 //!             Allows adopting keys from certificates using broken cryptography
 //!
@@ -640,27 +642,16 @@
 //!             Emits binary data
 //!
 //!     -h, --help
-//!             Prints help information
+//!             Print help information
 //!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
-//!     -k, --key <KEY>...
+//!     -k, --key <KEY>
 //!             Adds the key or subkey KEY to the TARGET-KEY
-//!
-//!     -r, --keyring <KEY-RING>...
-//!             Supplies keys for use in --key.
 //!
 //!     -o, --output <FILE>
 //!             Writes to FILE or stdout if omitted
 //!
-//!
-//! ARGS:
-//!     <TARGET-KEY>
-//!             Adds keys to TARGET-KEY
-//!
+//!     -r, --keyring <KEY-RING>
+//!             Supplies keys for use in --key.
 //!
 //! EXAMPLES:
 //!
@@ -684,18 +675,23 @@
 //! USAGE:
 //!     sq keyring <SUBCOMMAND>
 //!
-//! FLAGS:
+//! OPTIONS:
 //!     -h, --help
-//!             Prints help information
-//!
+//!             Print help information
 //!
 //! SUBCOMMANDS:
-//!     list      Lists keys in a keyring
-//!     split     Splits a keyring into individual keys
-//!     join      Joins keys or keyrings into a single keyring
-//!     merge     Merges keys or keyrings into a single keyring
-//!     filter    Joins keys into a keyring applying a filter
-//!     help      Prints this message or the help of the given subcommand(s)
+//!     list
+//!             Lists keys in a keyring
+//!     split
+//!             Splits a keyring into individual keys
+//!     join
+//!             Joins keys or keyrings into a single keyring
+//!     merge
+//!             Merges keys or keyrings into a single keyring
+//!     filter
+//!             Joins keys into a keyring applying a filter
+//!     help
+//!             Print this message or the help of the given subcommand(s)
 //! ```
 //!
 //! ### Subcommand keyring list
@@ -707,23 +703,19 @@
 //! certificate encountered in the keyring.
 //!
 //! USAGE:
-//!     sq keyring list [FLAGS] [FILE]
-//!
-//! FLAGS:
-//!         --all-userids
-//!             Lists all user ids, even those that are expired, revoked, or not
-//!             valid under the standard policy.
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -V, --version
-//!             Prints version information
-//!
+//!     sq keyring list [OPTIONS] [FILE]
 //!
 //! ARGS:
 //!     <FILE>
 //!             Reads from FILE or stdin if omitted
 //!
+//! OPTIONS:
+//!         --all-userids
+//!             Lists all user ids, even those that are expired, revoked, or not
+//!             valid under the standard policy.
+//!
+//!     -h, --help
+//!             Print help information
 //!
 //! EXAMPLES:
 //!
@@ -745,28 +737,22 @@
 //! The converse operation is "sq keyring join".
 //!
 //! USAGE:
-//!     sq keyring split [FLAGS] [OPTIONS] [FILE]
-//!
-//! FLAGS:
-//!     -B, --binary
-//!             Emits binary data
-//!
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
-//!     -p, --prefix <FILE>
-//!             Writes to files with prefix FILE [defaults to the input filename
-//!             with a dash, or "output" if keyring is read from stdin]
+//!     sq keyring split [OPTIONS] [FILE]
 //!
 //! ARGS:
 //!     <FILE>
 //!             Reads from FILE or stdin if omitted
 //!
+//! OPTIONS:
+//!     -B, --binary
+//!             Emits binary data
+//!
+//!     -h, --help
+//!             Print help information
+//!
+//!     -p, --prefix <FILE>
+//!             Writes to files with prefix FILE [defaults to the input filename
+//!             with a dash, or "output" if keyring is read from stdin]
 //!
 //! EXAMPLES:
 //!
@@ -788,28 +774,21 @@
 //! The converse operation is "sq keyring split".
 //!
 //! USAGE:
-//!     sq keyring join [FLAGS] [OPTIONS] [FILE]...
-//!
-//! FLAGS:
-//!     -B, --binary
-//!             Don't ASCII-armor the keyring
-//!
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
-//!     -o, --output <FILE>
-//!             Sets the output file to use
-//!
+//!     sq keyring join [OPTIONS] [FILE]...
 //!
 //! ARGS:
 //!     <FILE>...
 //!             Sets the input files to use
 //!
+//! OPTIONS:
+//!     -B, --binary
+//!             Don't ASCII-armor the keyring
+//!
+//!     -h, --help
+//!             Print help information
+//!
+//!     -o, --output <FILE>
+//!             Sets the output file to use
 //!
 //! EXAMPLES:
 //!
@@ -828,28 +807,21 @@
 //! is preferred.
 //!
 //! USAGE:
-//!     sq keyring merge [FLAGS] [OPTIONS] [FILE]...
-//!
-//! FLAGS:
-//!     -B, --binary
-//!             Emits binary data
-//!
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
-//!     -o, --output <FILE>
-//!             Writes to FILE or stdout if omitted
-//!
+//!     sq keyring merge [OPTIONS] [FILE]...
 //!
 //! ARGS:
 //!     <FILE>...
 //!             Reads from FILE
 //!
+//! OPTIONS:
+//!     -B, --binary
+//!             Emits binary data
+//!
+//!     -h, --help
+//!             Print help information
+//!
+//!     -o, --output <FILE>
+//!             Writes to FILE or stdout if omitted
 //!
 //! EXAMPLES:
 //!
@@ -875,14 +847,38 @@
 //! inspiration.
 //!
 //! USAGE:
-//!     sq keyring filter [FLAGS] [OPTIONS] [--] [FILE]...
+//!     sq keyring filter [OPTIONS] [FILE]...
 //!
-//! FLAGS:
+//! ARGS:
+//!     <FILE>...
+//!             Reads from FILE or stdin if omitted
+//!
+//! OPTIONS:
 //!     -B, --binary
 //!             Emits binary data
 //!
+//!         --domain <FQDN>
+//!             Parses user ids into name and email address and case-sensitively
+//!             matches on the domain of the email address, requiring an exact
+//!             match.
+//!
+//!         --email <ADDRESS>
+//!             Parses user ids into name and email address and case-sensitively
+//!             matches on the email address, requiring an exact match.
+//!
 //!     -h, --help
-//!             Prints help information
+//!             Print help information
+//!
+//!         --handle <FINGERPRINT|KEYID>
+//!             Matches on both primary keys and subkeys, including those
+//!             certificates that match the given fingerprint or key id.
+//!
+//!         --name <NAME>
+//!             Parses user ids into name and email and case-sensitively matches on
+//!             the name, requiring an exact match.
+//!
+//!     -o, --output <FILE>
+//!             Writes to FILE or stdout if omitted
 //!
 //!     -P, --prune-certs
 //!             Removes certificate components not matching the filter
@@ -891,35 +887,9 @@
 //!             Converts any keys in the input to certificates.  Converting a key to
 //!             a certificate removes secret key material from the key thereby
 //!             turning it into a certificate.
-//!     -V, --version
-//!             Prints version information
 //!
-//!
-//! OPTIONS:
-//!         --domain <FQDN>...
-//!             Parses user ids into name and email address and case-sensitively
-//!             matches on the domain of the email address, requiring an exact
-//!             match.
-//!         --email <ADDRESS>...
-//!             Parses user ids into name and email address and case-sensitively
-//!             matches on the email address, requiring an exact match.
-//!         --handle <FINGERPRINT|KEYID>...
-//!             Matches on both primary keys and subkeys, including those
-//!             certificates that match the given fingerprint or key id.
-//!         --name <NAME>...
-//!             Parses user ids into name and email and case-sensitively matches on
-//!             the name, requiring an exact match.
-//!     -o, --output <FILE>
-//!             Writes to FILE or stdout if omitted
-//!
-//!         --userid <USERID>...
+//!         --userid <USERID>
 //!             Case-sensitively matches on the user id, requiring an exact match.
-//!
-//!
-//! ARGS:
-//!     <FILE>...
-//!             Reads from FILE or stdin if omitted
-//!
 //!
 //! EXAMPLES:
 //!
@@ -961,22 +931,17 @@
 //! attest-certification".
 //!
 //! USAGE:
-//!     sq certify [FLAGS] [OPTIONS] <CERTIFIER-KEY> <CERTIFICATE> <USERID>
+//!     sq certify [OPTIONS] <CERTIFIER-KEY> <CERTIFICATE> <USERID>
 //!
-//! FLAGS:
-//!     -B, --binary
-//!             Emits binary data
+//! ARGS:
+//!     <CERTIFIER-KEY>
+//!             Creates the certification using CERTIFIER-KEY.
 //!
-//!     -h, --help
-//!             Prints help information
+//!     <CERTIFICATE>
+//!             Certifies CERTIFICATE.
 //!
-//!     -l, --local
-//!             Makes the certification a local certification.  Normally, local
-//!             certifications are not exported.
-//!         --non-revocable
-//!             Marks the certification as being non-revocable. That is, you cannot
-//!             later revoke this certification.  This should normally only be used
-//!             with an expiration.
+//!     <USERID>
+//!             Certifies USERID for CERTIFICATE.
 //!
 //! OPTIONS:
 //!     -a, --amount <TRUST_AMOUNT>
@@ -984,18 +949,37 @@
 //!             120 means fully trusted.  Values less than 120 indicate the degree
 //!             of trust.  60 is usually used for partially trusted.  The default is
 //!             120.
+//!
+//!     -B, --binary
+//!             Emits binary data
+//!
 //!     -d, --depth <TRUST_DEPTH>
 //!             Sets the trust depth (sometimes referred to as the trust level).  0
 //!             means a normal certification of <CERTIFICATE, USERID>.  1 means
 //!             CERTIFICATE is also a trusted introducer, 2 means CERTIFICATE is a
 //!             meta-trusted introducer, etc.  The default is 0.
+//!
 //!         --expires <TIME>
 //!             Makes the certification expire at TIME (as ISO 8601). Use "never" to
 //!             create certifications that do not expire.
+//!
 //!         --expires-in <DURATION>
 //!             Makes the certification expire after DURATION. Either "N[ymwds]",
 //!             for N years, months, weeks, days, seconds, or "never".  [default:
 //!             5y]
+//!
+//!     -h, --help
+//!             Print help information
+//!
+//!     -l, --local
+//!             Makes the certification a local certification.  Normally, local
+//!             certifications are not exported.
+//!
+//!         --non-revocable
+//!             Marks the certification as being non-revocable. That is, you cannot
+//!             later revoke this certification.  This should normally only be used
+//!             with an expiration.
+//!
 //!         --notation <NAME> <VALUE>
 //!             Adds a notation to the certification.  A user-defined notation's
 //!             name must be of the form "name@a.domain.you.control.org". If the
@@ -1003,18 +987,20 @@
 //!             being critical.  If a consumer of a signature doesn't understand a
 //!             critical notation, then it will ignore the signature.  The notation
 //!             is marked as being human readable.
+//!
 //!     -o, --output <FILE>
 //!             Writes to FILE or stdout if omitted
 //!
 //!         --private-key-store <KEY_STORE>
 //!             Provides parameters for private key store
 //!
-//!     -r, --regex <REGEX>...
+//!     -r, --regex <REGEX>
 //!             Adds a regular expression to constrain what a trusted introducer can
 //!             certify.  The regular expression must match the certified User ID in
 //!             all intermediate introducers, and the certified certificate.
 //!             Multiple regular expressions may be specified.  In that case, at
 //!             least one must match.
+//!
 //!         --time <TIME>
 //!             Sets the certification time to TIME.  TIME is interpreted as an ISO
 //!             8601
@@ -1029,17 +1015,6 @@
 //!             default timezone is UTC):
 //! 
 //!             $ sq certify --time 20130721T0550+0200 neal.pgp ada.pgp ada
-//!
-//! ARGS:
-//!     <CERTIFIER-KEY>
-//!             Creates the certification using CERTIFIER-KEY.
-//!
-//!     <CERTIFICATE>
-//!             Certifies CERTIFICATE.
-//!
-//!     <USERID>
-//!             Certifies USERID for CERTIFICATE.
-//!
 //!
 //! EXAMPLES:
 //!
@@ -1062,16 +1037,17 @@
 //! USAGE:
 //!     sq autocrypt <SUBCOMMAND>
 //!
-//! FLAGS:
+//! OPTIONS:
 //!     -h, --help
-//!             Prints help information
-//!
+//!             Print help information
 //!
 //! SUBCOMMANDS:
-//!     decode           Reads Autocrypt-encoded certificates
-//!     encode-sender    Encodes a certificate into an Autocrypt header
-//!     help             Prints this message or the help of the given
-//!                      subcommand(s)
+//!     decode
+//!             Reads Autocrypt-encoded certificates
+//!     encode-sender
+//!             Encodes a certificate into an Autocrypt header
+//!     help
+//!             Print this message or the help of the given subcommand(s)
 //! ```
 //!
 //! ### Subcommand autocrypt decode
@@ -1085,28 +1061,21 @@
 //! The converse operation is "sq autocrypt encode-sender".
 //!
 //! USAGE:
-//!     sq autocrypt decode [FLAGS] [OPTIONS] [FILE]
-//!
-//! FLAGS:
-//!     -B, --binary
-//!             Emits binary data
-//!
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
-//!     -o, --output <FILE>
-//!             Writes to FILE or stdout if omitted
-//!
+//!     sq autocrypt decode [OPTIONS] [FILE]
 //!
 //! ARGS:
 //!     <FILE>
 //!             Reads from FILE or stdin if omitted
 //!
+//! OPTIONS:
+//!     -B, --binary
+//!             Emits binary data
+//!
+//!     -h, --help
+//!             Print help information
+//!
+//!     -o, --output <FILE>
+//!             Writes to FILE or stdout if omitted
 //!
 //! EXAMPLES:
 //!
@@ -1130,29 +1099,25 @@
 //! USAGE:
 //!     sq autocrypt encode-sender [OPTIONS] [FILE]
 //!
-//! FLAGS:
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -V, --version
-//!             Prints version information
-//!
+//! ARGS:
+//!     <FILE>
+//!             Reads from FILE or stdin if omitted
 //!
 //! OPTIONS:
 //!         --email <ADDRESS>
 //!             Sets the address [default: primary userid]
 //!
+//!     -h, --help
+//!             Print help information
+//!
 //!     -o, --output <FILE>
 //!             Writes to FILE or stdout if omitted
 //!
 //!         --prefer-encrypt <prefer-encrypt>
-//!             Sets the prefer-encrypt attribute [default: nopreference]  [possible
-//!             values: nopreference, mutual]
-//!
-//! ARGS:
-//!     <FILE>
-//!             Reads from FILE or stdin if omitted
-//!
+//!             Sets the prefer-encrypt attribute
+//! 
+//!             [default: nopreference]
+//!             [possible values: nopreference, mutual]
 //!
 //! EXAMPLES:
 //!
@@ -1174,18 +1139,20 @@
 //! USAGE:
 //!     sq keyserver [OPTIONS] <SUBCOMMAND>
 //!
-//! FLAGS:
-//!     -h, --help    Prints help information
-//!
 //! OPTIONS:
+//!     -h, --help
+//!             Print help information
+//!
 //!     -p, --policy <NETWORK-POLICY>
-//!             Sets the network policy to use [default: encrypted]  [possible
+//!             Sets the network policy to use [default: encrypted] [possible
 //!             values: offline, anonymized, encrypted, insecure]
-//!     -s, --server <URI>               Sets the keyserver to use
+//!
+//!     -s, --server <URI>
+//!             Sets the keyserver to use
 //!
 //! SUBCOMMANDS:
 //!     get     Retrieves a key
-//!     help    Prints this message or the help of the given subcommand(s)
+//!     help    Print this message or the help of the given subcommand(s)
 //!     send    Sends a key
 //! ```
 //!
@@ -1195,19 +1162,16 @@
 //! Retrieves a key
 //!
 //! USAGE:
-//!     sq keyserver get [FLAGS] [OPTIONS] <QUERY>
-//!
-//! FLAGS:
-//!     -B, --binary     Emits binary data
-//!     -h, --help       Prints help information
-//!     -V, --version    Prints version information
-//!
-//! OPTIONS:
-//!     -o, --output <FILE>    Writes to FILE or stdout if omitted
+//!     sq keyserver get [OPTIONS] <QUERY>
 //!
 //! ARGS:
 //!     <QUERY>    Retrieve certificate(s) using QUERY. This may be a
 //!                fingerprint, a KeyID, or an email address.
+//!
+//! OPTIONS:
+//!     -B, --binary           Emits binary data
+//!     -h, --help             Print help information
+//!     -o, --output <FILE>    Writes to FILE or stdout if omitted
 //! ```
 //!
 //! ### Subcommand keyserver send
@@ -1218,12 +1182,11 @@
 //! USAGE:
 //!     sq keyserver send [FILE]
 //!
-//! FLAGS:
-//!     -h, --help       Prints help information
-//!     -V, --version    Prints version information
-//!
 //! ARGS:
 //!     <FILE>    Reads from FILE or stdin if omitted
+//!
+//! OPTIONS:
+//!     -h, --help    Print help information
 //! ```
 //!
 //! ## Subcommand wkd
@@ -1234,20 +1197,20 @@
 //! USAGE:
 //!     sq wkd [OPTIONS] <SUBCOMMAND>
 //!
-//! FLAGS:
-//!     -h, --help    Prints help information
-//!
 //! OPTIONS:
+//!     -h, --help
+//!             Print help information
+//!
 //!     -p, --policy <NETWORK-POLICY>
-//!             Sets the network policy to use [default: encrypted]  [possible
+//!             Sets the network policy to use [default: encrypted] [possible
 //!             values: offline, anonymized, encrypted, insecure]
 //!
 //! SUBCOMMANDS:
 //!     generate    Generates a Web Key Directory for the given domain and keys.
-//!                 If the WKD exists, the new keys will be inserted and it is
-//!                 updated and existing ones will be updated.
+//!                     If the WKD exists, the new keys will be inserted and it is
+//!                     updated and existing ones will be updated.
 //!     get         Queries for certs using Web Key Directory
-//!     help        Prints this message or the help of the given subcommand(s)
+//!     help        Print this message or the help of the given subcommand(s)
 //!     url         Prints the Web Key Directory URL of an email address.
 //! ```
 //!
@@ -1259,31 +1222,28 @@
 //! updated.
 //!
 //! USAGE:
-//!     sq wkd generate [FLAGS] <WEB-ROOT> <FQDN> [CERT-RING]
-//!
-//! FLAGS:
-//!     -d, --direct-method
-//!             Uses the direct method [default: advanced method]
-//!
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -s, --skip
-//!             Skips certificates that do not have User IDs for given domain.
-//!
-//!     -V, --version
-//!             Prints version information
-//!
+//!     sq wkd generate [OPTIONS] <WEB-ROOT> <FQDN> [CERT-RING]
 //!
 //! ARGS:
 //!     <WEB-ROOT>
 //!             Writes the WKD to WEB-ROOT. Transfer this directory to the
 //!             webserver.
+//!
 //!     <FQDN>
 //!             Generates a WKD for a fully qualified domain name
 //!
 //!     <CERT-RING>
 //!             Adds certificates from CERT-RING to the WKD
+//!
+//! OPTIONS:
+//!     -d, --direct-method
+//!             Uses the direct method [default: advanced method]
+//!
+//!     -h, --help
+//!             Print help information
+//!
+//!     -s, --skip
+//!             Skips certificates that do not have User IDs for given domain.
 //! ```
 //!
 //! ### Subcommand wkd get
@@ -1292,15 +1252,14 @@
 //! Queries for certs using Web Key Directory
 //!
 //! USAGE:
-//!     sq wkd get [FLAGS] <ADDRESS>
-//!
-//! FLAGS:
-//!     -B, --binary     Emits binary data
-//!     -h, --help       Prints help information
-//!     -V, --version    Prints version information
+//!     sq wkd get [OPTIONS] <ADDRESS>
 //!
 //! ARGS:
 //!     <ADDRESS>    Queries a cert for ADDRESS
+//!
+//! OPTIONS:
+//!     -B, --binary    Emits binary data
+//!     -h, --help      Print help information
 //! ```
 //!
 //! ### Subcommand wkd url
@@ -1311,12 +1270,11 @@
 //! USAGE:
 //!     sq wkd url <ADDRESS>
 //!
-//! FLAGS:
-//!     -h, --help       Prints help information
-//!     -V, --version    Prints version information
-//!
 //! ARGS:
 //!     <ADDRESS>    Queries for ADDRESS
+//!
+//! OPTIONS:
+//!     -h, --help    Print help information
 //! ```
 //!
 //! ## Subcommand armor
@@ -1334,23 +1292,22 @@
 //! USAGE:
 //!     sq armor [OPTIONS] [FILE]
 //!
-//! FLAGS:
-//!     -h, --help
-//!             Prints help information
-//!
-//!
-//! OPTIONS:
-//!         --label <LABEL>
-//!             Selects the kind of armor header [default: auto]  [possible values:
-//!             auto, message, cert, key, sig, file]
-//!     -o, --output <FILE>
-//!             Writes to FILE or stdout if omitted
-//!
-//!
 //! ARGS:
 //!     <FILE>
 //!             Reads from FILE or stdin if omitted
 //!
+//! OPTIONS:
+//!     -h, --help
+//!             Print help information
+//!
+//!         --label <LABEL>
+//!             Selects the kind of armor header
+//! 
+//!             [default: auto]
+//!             [possible values: auto, message, cert, key, sig, file]
+//!
+//!     -o, --output <FILE>
+//!             Writes to FILE or stdout if omitted
 //!
 //! EXAMPLES:
 //!
@@ -1377,20 +1334,16 @@
 //! USAGE:
 //!     sq dearmor [OPTIONS] [FILE]
 //!
-//! FLAGS:
-//!     -h, --help
-//!             Prints help information
-//!
-//!
-//! OPTIONS:
-//!     -o, --output <FILE>
-//!             Writes to FILE or stdout if omitted
-//!
-//!
 //! ARGS:
 //!     <FILE>
 //!             Reads from FILE or stdin if omitted
 //!
+//! OPTIONS:
+//!     -h, --help
+//!             Print help information
+//!
+//!     -o, --output <FILE>
+//!             Writes to FILE or stdout if omitted
 //!
 //! EXAMPLES:
 //!
@@ -1412,20 +1365,18 @@
 //! of it.
 //!
 //! USAGE:
-//!     sq inspect [FLAGS] [FILE]
-//!
-//! FLAGS:
-//!         --certifications
-//!             Prints third-party certifications
-//!
-//!     -h, --help
-//!             Prints help information
-//!
+//!     sq inspect [OPTIONS] [FILE]
 //!
 //! ARGS:
 //!     <FILE>
 //!             Reads from FILE or stdin if omitted
 //!
+//! OPTIONS:
+//!         --certifications
+//!             Prints third-party certifications
+//!
+//!     -h, --help
+//!             Print help information
 //!
 //! EXAMPLES:
 //!
@@ -1457,17 +1408,21 @@
 //! USAGE:
 //!     sq packet <SUBCOMMAND>
 //!
-//! FLAGS:
+//! OPTIONS:
 //!     -h, --help
-//!             Prints help information
-//!
+//!             Print help information
 //!
 //! SUBCOMMANDS:
-//!     dump       Lists packets
-//!     decrypt    Unwraps an encryption container
-//!     split      Splits a message into packets
-//!     join       Joins packets split across files
-//!     help       Prints this message or the help of the given subcommand(s)
+//!     dump
+//!             Lists packets
+//!     decrypt
+//!             Unwraps an encryption container
+//!     split
+//!             Splits a message into packets
+//!     join
+//!             Joins packets split across files
+//!     help
+//!             Print this message or the help of the given subcommand(s)
 //! ```
 //!
 //! ### Subcommand packet dump
@@ -1485,34 +1440,27 @@
 //! "sq decrypt --dump" or "sq packet decrypt".
 //!
 //! USAGE:
-//!     sq packet dump [FLAGS] [OPTIONS] [FILE]
+//!     sq packet dump [OPTIONS] [FILE]
 //!
-//! FLAGS:
+//! ARGS:
+//!     <FILE>
+//!             Reads from FILE or stdin if omitted
+//!
+//! OPTIONS:
 //!     -h, --help
-//!             Prints help information
-//!
-//!     -x, --hex
-//!             Prints a hexdump
+//!             Print help information
 //!
 //!         --mpis
 //!             Prints cryptographic artifacts
 //!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
 //!     -o, --output <FILE>
 //!             Writes to FILE or stdout if omitted
 //!
 //!         --session-key <SESSION-KEY>
 //!             Decrypts an encrypted message using SESSION-KEY
 //!
-//!
-//! ARGS:
-//!     <FILE>
-//!             Reads from FILE or stdin if omitted
-//!
+//!     -x, --hex
+//!             Prints a hexdump
 //!
 //! EXAMPLES:
 //!
@@ -1540,9 +1488,13 @@
 //! that can, among other things, be inspected using "sq packet dump".
 //!
 //! USAGE:
-//!     sq packet decrypt [FLAGS] [OPTIONS] [--] [FILE]
+//!     sq packet decrypt [OPTIONS] [FILE]
 //!
-//! FLAGS:
+//! ARGS:
+//!     <FILE>
+//!             Reads from FILE or stdin if omitted
+//!
+//! OPTIONS:
 //!     -B, --binary
 //!             Emits binary data
 //!
@@ -1550,27 +1502,16 @@
 //!             Prints the session key to stderr
 //!
 //!     -h, --help
-//!             Prints help information
+//!             Print help information
 //!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
 //!     -o, --output <FILE>
 //!             Writes to FILE or stdout if omitted
 //!
 //!         --private-key-store <KEY_STORE>
 //!             Provides parameters for private key store
 //!
-//!         --recipient-key <KEY>...
+//!         --recipient-key <KEY>
 //!             Decrypts the message with KEY
-//!
-//!
-//! ARGS:
-//!     <FILE>
-//!             Reads from FILE or stdin if omitted
-//!
 //!
 //! EXAMPLES:
 //!
@@ -1593,23 +1534,17 @@
 //! USAGE:
 //!     sq packet split [OPTIONS] [FILE]
 //!
-//! FLAGS:
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
-//!     -p, --prefix <PREFIX>
-//!             Writes to files with PREFIX [defaults: FILE a dash, or "output" if
-//!             read from stdin)
-//!
 //! ARGS:
 //!     <FILE>
 //!             Reads from FILE or stdin if omitted
 //!
+//! OPTIONS:
+//!     -h, --help
+//!             Print help information
+//!
+//!     -p, --prefix <PREFIX>
+//!             Writes to files with PREFIX [defaults: FILE a dash, or "output" if
+//!             read from stdin)
 //!
 //! EXAMPLES:
 //!
@@ -1630,31 +1565,27 @@
 //! The converse operation is "sq packet split".
 //!
 //! USAGE:
-//!     sq packet join [FLAGS] [OPTIONS] [FILE]...
-//!
-//! FLAGS:
-//!     -B, --binary
-//!             Emits binary data
-//!
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
-//!         --label <LABEL>
-//!             Selects the kind of armor header [default: auto]  [possible values:
-//!             auto, message, cert, key, sig, file]
-//!     -o, --output <FILE>
-//!             Writes to FILE or stdout if omitted
-//!
+//!     sq packet join [OPTIONS] [FILE]...
 //!
 //! ARGS:
 //!     <FILE>...
 //!             Reads from FILE or stdin if omitted
 //!
+//! OPTIONS:
+//!     -B, --binary
+//!             Emits binary data
+//!
+//!     -h, --help
+//!             Print help information
+//!
+//!         --label <LABEL>
+//!             Selects the kind of armor header
+//! 
+//!             [default: auto]
+//!             [possible values: auto, message, cert, key, sig, file]
+//!
+//!     -o, --output <FILE>
+//!             Writes to FILE or stdout if omitted
 //!
 //! EXAMPLES:
 //!
@@ -1694,17 +1625,19 @@
 //! USAGE:
 //!     sq revoke <SUBCOMMAND>
 //!
-//! FLAGS:
+//! OPTIONS:
 //!     -h, --help
-//!             Prints help information
-//!
+//!             Print help information
 //!
 //! SUBCOMMANDS:
-//!     certificate    Revoke a certificate
-//!     subkey         Revoke a subkey
-//!     userid         Revoke a User ID
-//!     help           Prints this message or the help of the given
-//!                    subcommand(s)
+//!     certificate
+//!             Revoke a certificate
+//!     subkey
+//!             Revoke a subkey
+//!     userid
+//!             Revoke a User ID
+//!     help
+//!             Print this message or the help of the given subcommand(s)
 //!
 //! EXAMPLES:
 //!
@@ -1735,51 +1668,7 @@
 //! include a certification-capable key.
 //!
 //! USAGE:
-//!     sq revoke certificate [FLAGS] [OPTIONS] <REASON> <MESSAGE>
-//!
-//! FLAGS:
-//!     -B, --binary
-//!             Emits binary data
-//!
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
-//!         --certificate <FILE>
-//! 
-//!             Reads the certificate to revoke from FILE or stdin, if omitted.  It
-//!             is
-//!             an error for the file to contain more than one certificate.
-//!         --notation <NAME> <VALUE>
-//! 
-//!             Adds a notation to the certification.  A user-defined notation's
-//!             name
-//!             must be of the form "name@a.domain.you.control.org".  If the
-//!             notation's name starts with a !, then the notation is marked as
-//!             being
-//!             critical.  If a consumer of a signature doesn't understand a
-//!             critical
-//!             notation, then it will ignore the signature.  The notation is marked
-//!             as being human readable.
-//!         --private-key-store <KEY_STORE>
-//!             Provides parameters for private key store
-//!
-//!         --revocation-key <FILE>
-//! 
-//!             Signs the revocation certificate using KEY.  If the key is different
-//!             from the certificate, this creates a third-party revocation.  If
-//!             this
-//!             option is not provided, and the certificate includes secret key
-//!             material,
-//!             then that key is used to sign the revocation certificate.
-//!     -t, --time <TIME>
-//! 
-//!             Chooses keys valid at the specified time and sets the revocation
-//!             certificate's creation time
+//!     sq revoke certificate [OPTIONS] <REASON> <MESSAGE>
 //!
 //! ARGS:
 //!     <REASON>
@@ -1816,8 +1705,10 @@
 //!             --time argument.  This allows OpenPGP implementations to more
 //!             accurately reason about objects whose validity depends on the
 //!             validity
-//!             of the certificate. [possible values: compromised, superseded,
-//!             retired, unspecified]
+//!             of the certificate.
+//! 
+//!             [possible values: compromised, superseded, retired, unspecified]
+//!
 //!     <MESSAGE>
 //! 
 //!             A short, explanatory text that is shown to a viewer of the
@@ -1828,6 +1719,48 @@
 //!             include
 //!             the message "I've created a new certificate, FINGERPRINT, please use
 //!             that in the future."
+//!
+//! OPTIONS:
+//!     -B, --binary
+//!             Emits binary data
+//!
+//!         --certificate <FILE>
+//! 
+//!             Reads the certificate to revoke from FILE or stdin, if omitted.  It
+//!             is
+//!             an error for the file to contain more than one certificate.
+//!
+//!     -h, --help
+//!             Print help information
+//!
+//!         --notation <NAME> <VALUE>
+//! 
+//!             Adds a notation to the certification.  A user-defined notation's
+//!             name
+//!             must be of the form "name@a.domain.you.control.org".  If the
+//!             notation's name starts with a !, then the notation is marked as
+//!             being
+//!             critical.  If a consumer of a signature doesn't understand a
+//!             critical
+//!             notation, then it will ignore the signature.  The notation is marked
+//!             as being human readable.
+//!
+//!         --private-key-store <KEY_STORE>
+//!             Provides parameters for private key store
+//!
+//!         --revocation-key <FILE>
+//! 
+//!             Signs the revocation certificate using KEY.  If the key is different
+//!             from the certificate, this creates a third-party revocation.  If
+//!             this
+//!             option is not provided, and the certificate includes secret key
+//!             material,
+//!             then that key is used to sign the revocation certificate.
+//!
+//!     -t, --time <TIME>
+//! 
+//!             Chooses keys valid at the specified time and sets the revocation
+//!             certificate's creation time
 //! ```
 //!
 //! ### Subcommand revoke subkey
@@ -1848,52 +1781,7 @@
 //! include a certification-capable key.
 //!
 //! USAGE:
-//!     sq revoke subkey [FLAGS] [OPTIONS] <SUBKEY> <REASON> <MESSAGE>
-//!
-//! FLAGS:
-//!     -B, --binary
-//!             Emits binary data
-//!
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
-//!         --certificate <FILE>
-//! 
-//!             Reads the certificate containing the subkey to revoke from FILE or
-//!             stdin,
-//!             if omitted.  It is an error for the file to contain more than one
-//!             certificate.
-//!         --notation <NAME> <VALUE>
-//! 
-//!             Adds a notation to the certification.  A user-defined notation's
-//!             name
-//!             must be of the form "name@a.domain.you.control.org".  If the
-//!             notation's name starts with a !, then the notation is marked as
-//!             being
-//!             critical.  If a consumer of a signature doesn't understand a
-//!             critical
-//!             notation, then it will ignore the signature.  The notation is marked
-//!             as being human readable.
-//!         --private-key-store <KEY_STORE>
-//!             Provides parameters for private key store
-//!
-//!         --revocation-key <FILE>
-//! 
-//!             Signs the revocation certificate using KEY.  If the key is different
-//!             from the certificate, this creates a third-party revocation.  If
-//!             this
-//!             option is not provided, and the certificate includes secret key
-//!             material,
-//!             then that key is used to sign the revocation certificate.
-//!     -t, --time <TIME>
-//! 
-//!             Chooses keys valid at the specified time and sets the revocation
-//!             certificate's creation time
+//!     sq revoke subkey [OPTIONS] <SUBKEY> <REASON> <MESSAGE>
 //!
 //! ARGS:
 //!     <SUBKEY>
@@ -1901,6 +1789,7 @@
 //!             The subkey to revoke.  This must either be the subkey's Key ID or
 //!             its
 //!             fingerprint.
+//!
 //!     <REASON>
 //! 
 //!             The reason for the revocation.  This must be either: compromised,
@@ -1935,8 +1824,10 @@
 //!             --time argument.  This allows OpenPGP implementations to more
 //!             accurately reason about objects whose validity depends on the
 //!             validity
-//!             of the certificate. [possible values: compromised, superseded,
-//!             retired, unspecified]
+//!             of the certificate.
+//! 
+//!             [possible values: compromised, superseded, retired, unspecified]
+//!
 //!     <MESSAGE>
 //! 
 //!             A short, explanatory text that is shown to a viewer of the
@@ -1947,6 +1838,49 @@
 //!             include
 //!             the message "I've created a new subkey, please refresh the
 //!             certificate."
+//!
+//! OPTIONS:
+//!     -B, --binary
+//!             Emits binary data
+//!
+//!         --certificate <FILE>
+//! 
+//!             Reads the certificate containing the subkey to revoke from FILE or
+//!             stdin,
+//!             if omitted.  It is an error for the file to contain more than one
+//!             certificate.
+//!
+//!     -h, --help
+//!             Print help information
+//!
+//!         --notation <NAME> <VALUE>
+//! 
+//!             Adds a notation to the certification.  A user-defined notation's
+//!             name
+//!             must be of the form "name@a.domain.you.control.org".  If the
+//!             notation's name starts with a !, then the notation is marked as
+//!             being
+//!             critical.  If a consumer of a signature doesn't understand a
+//!             critical
+//!             notation, then it will ignore the signature.  The notation is marked
+//!             as being human readable.
+//!
+//!         --private-key-store <KEY_STORE>
+//!             Provides parameters for private key store
+//!
+//!         --revocation-key <FILE>
+//! 
+//!             Signs the revocation certificate using KEY.  If the key is different
+//!             from the certificate, this creates a third-party revocation.  If
+//!             this
+//!             option is not provided, and the certificate includes secret key
+//!             material,
+//!             then that key is used to sign the revocation certificate.
+//!
+//!     -t, --time <TIME>
+//! 
+//!             Chooses keys valid at the specified time and sets the revocation
+//!             certificate's creation time
 //! ```
 //!
 //! ### Subcommand revoke userid
@@ -1967,51 +1901,7 @@
 //! include a certification-capable key.
 //!
 //! USAGE:
-//!     sq revoke userid [FLAGS] [OPTIONS] <USERID> <REASON> <MESSAGE>
-//!
-//! FLAGS:
-//!     -B, --binary
-//!             Emits binary data
-//!
-//!     -h, --help
-//!             Prints help information
-//!
-//!     -V, --version
-//!             Prints version information
-//!
-//!
-//! OPTIONS:
-//!         --certificate <FILE>
-//! 
-//!             Reads the certificate to revoke from FILE or stdin, if omitted.  It
-//!             is
-//!             an error for the file to contain more than one certificate.
-//!         --notation <NAME> <VALUE>
-//! 
-//!             Adds a notation to the certification.  A user-defined notation's
-//!             name
-//!             must be of the form "name@a.domain.you.control.org".  If the
-//!             notation's name starts with a !, then the notation is marked as
-//!             being
-//!             critical.  If a consumer of a signature doesn't understand a
-//!             critical
-//!             notation, then it will ignore the signature.  The notation is marked
-//!             as being human readable.
-//!         --private-key-store <KEY_STORE>
-//!             Provides parameters for private key store
-//!
-//!         --revocation-key <FILE>
-//! 
-//!             Signs the revocation certificate using KEY.  If the key is different
-//!             from the certificate, this creates a third-party revocation.  If
-//!             this
-//!             option is not provided, and the certificate includes secret key
-//!             material,
-//!             then that key is used to sign the revocation certificate.
-//!     -t, --time <TIME>
-//! 
-//!             Chooses keys valid at the specified time and sets the revocation
-//!             certificate's creation time
+//!     sq revoke userid [OPTIONS] <USERID> <REASON> <MESSAGE>
 //!
 //! ARGS:
 //!     <USERID>
@@ -2021,6 +1911,7 @@
 //!             self-signed User ID.  Use --force to generate a revocation
 //!             certificate
 //!             for a User ID, which is not self signed.
+//!
 //!     <REASON>
 //! 
 //!             The reason for the revocation.  This must be either: retired, or
@@ -2040,7 +1931,10 @@
 //!             --time argument.  This allows OpenPGP implementations to more
 //!             accurately reason about objects whose validity depends on the
 //!             validity
-//!             of a User ID. [possible values: retired, unspecified]
+//!             of a User ID.
+//! 
+//!             [possible values: retired, unspecified]
+//!
 //!     <MESSAGE>
 //! 
 //!             A short, explanatory text that is shown to a viewer of the
@@ -2051,6 +1945,48 @@
 //!             include
 //!             the message "I've created a new certificate, FINGERPRINT, please use
 //!             that in the future."
+//!
+//! OPTIONS:
+//!     -B, --binary
+//!             Emits binary data
+//!
+//!         --certificate <FILE>
+//! 
+//!             Reads the certificate to revoke from FILE or stdin, if omitted.  It
+//!             is
+//!             an error for the file to contain more than one certificate.
+//!
+//!     -h, --help
+//!             Print help information
+//!
+//!         --notation <NAME> <VALUE>
+//! 
+//!             Adds a notation to the certification.  A user-defined notation's
+//!             name
+//!             must be of the form "name@a.domain.you.control.org".  If the
+//!             notation's name starts with a !, then the notation is marked as
+//!             being
+//!             critical.  If a consumer of a signature doesn't understand a
+//!             critical
+//!             notation, then it will ignore the signature.  The notation is marked
+//!             as being human readable.
+//!
+//!         --private-key-store <KEY_STORE>
+//!             Provides parameters for private key store
+//!
+//!         --revocation-key <FILE>
+//! 
+//!             Signs the revocation certificate using KEY.  If the key is different
+//!             from the certificate, this creates a third-party revocation.  If
+//!             this
+//!             option is not provided, and the certificate includes secret key
+//!             material,
+//!             then that key is used to sign the revocation certificate.
+//!
+//!     -t, --time <TIME>
+//! 
+//!             Chooses keys valid at the specified time and sets the revocation
+//!             certificate's creation time
 //! ```
 //!
 //! ### Subcommand revoke EXAMPLES:

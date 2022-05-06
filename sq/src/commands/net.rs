@@ -53,7 +53,7 @@ pub fn dispatch_keyserver(config: Config, m: &clap::ArgMatches) -> Result<()> {
         .build()?;
 
     match m.subcommand() {
-        ("get",  Some(m)) => {
+        Some(("get",  m)) => {
             let query = m.value_of("query").unwrap();
 
             let handle = query.parse::<KeyHandle>();
@@ -83,7 +83,7 @@ pub fn dispatch_keyserver(config: Config, m: &clap::ArgMatches) -> Result<()> {
                      or an email address: {:?}", query));
             }
         },
-        ("send",  Some(m)) => {
+        Some(("send",  m)) => {
             let mut input = open_or_stdin(m.value_of("input"))?;
             let cert = Cert::from_reader(&mut input).
                 context("Malformed key")?;
@@ -106,7 +106,7 @@ pub fn dispatch_wkd(config: Config, m: &clap::ArgMatches) -> Result<()> {
         .build()?;
 
     match m.subcommand() {
-        ("url",  Some(m)) => {
+        Some(("url",  m)) => {
             let email_address = m.value_of("input").unwrap();
             let wkd_url = wkd::Url::from(email_address)?;
             // XXX: Add other subcomand to specify whether it should be
@@ -114,7 +114,7 @@ pub fn dispatch_wkd(config: Config, m: &clap::ArgMatches) -> Result<()> {
             let url = wkd_url.to_url(None)?;
             println!("{}", url);
         },
-        ("get",  Some(m)) => {
+        Some(("get",  m)) => {
             // Check that the policy allows https.
             network_policy.assert(net::Policy::Encrypted)?;
 
@@ -137,7 +137,7 @@ pub fn dispatch_wkd(config: Config, m: &clap::ArgMatches) -> Result<()> {
             serialize_keyring(&mut output, &certs,
                               m.is_present("binary"))?;
         },
-        ("generate", Some(m)) => {
+        Some(("generate", m)) => {
             let domain = m.value_of("domain").unwrap();
             let skip = m.is_present("skip");
             let f = open_or_stdin(m.value_of("input"))?;

@@ -2,7 +2,7 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
-use clap::Shell;
+use clap_complete::Shell;
 
 mod sq_cli {
     include!("src/sq_cli.rs");
@@ -18,7 +18,7 @@ fn main() {
         .expect("failed to generate code with Subplot");
 
     let mut sq = sq_cli::configure(
-        clap::App::new("sq").set_term_width(80),
+        clap::Command::new("sq").term_width(80),
         cfg!(feature = "autocrypt"),
     );
     let mut main = fs::File::create("src/sq-usage.rs").unwrap();
@@ -38,14 +38,15 @@ fn main() {
     };
     fs::create_dir_all(&outdir).unwrap();
     let mut sq = sq_cli::build();
+
     for shell in &[Shell::Bash, Shell::Fish, Shell::Zsh, Shell::PowerShell,
                    Shell::Elvish] {
-        sq.gen_completions("sq", *shell, &outdir);
-    }
+        clap_complete::generate_to(*shell, &mut sq, "sq", &outdir).unwrap();
+    };
 }
 
 fn dump_help(sink: &mut dyn io::Write,
-             sq: &mut clap::App,
+             sq: &mut clap::Command,
              cmd: Vec<String>,
              heading: &str)
              -> io::Result<()>
@@ -67,7 +68,7 @@ fn dump_help(sink: &mut dyn io::Write,
         .chain(std::iter::once("--help"))
         .collect::<Vec<_>>();
 
-    let help = sq.get_matches_from_safe_borrow(&args)
+    let help = sq.try_get_matches_from_mut(&args)
         .unwrap_err().to_string();
 
     writeln!(sink, "//! ```text")?;
