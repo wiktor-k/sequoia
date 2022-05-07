@@ -1131,7 +1131,7 @@ when I run sq key generate --userid Bob --export bob.pgp
 when I run sq key extract-cert bob.pgp -o bob-cert.pgp
 
 when I run sq sign --signer-key alice.pgp hello.txt -o signed1.txt
-when I try to run sq verify --signer-cert alice-cert.pgp --signer-key bob-cert.pgp --signatures=2 signed1.txt
+when I try to run sq verify --signer-cert alice-cert.pgp --signer-cert bob-cert.pgp --signatures=2 signed1.txt
 then exit code is 1
 
 when I run sq sign --append --signer-key bob.pgp signed1.txt -o signed2.txt
