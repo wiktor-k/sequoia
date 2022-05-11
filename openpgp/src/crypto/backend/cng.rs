@@ -11,9 +11,9 @@ pub mod hash;
 pub mod symmetric;
 
 /// Fills the given buffer with random data.
-pub fn random<B: AsMut<[u8]>>(mut buf: B) {
+pub fn random(buf: &mut [u8]) {
     RandomNumberGenerator::system_preferred()
-        .gen_random(buf.as_mut())
+        .gen_random(buf)
         .expect("system-preferred RNG not to fail")
 }
 

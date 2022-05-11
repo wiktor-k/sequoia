@@ -10,16 +10,11 @@ pub mod hash;
 pub mod symmetric;
 
 /// Fills the given buffer with random data.
-///
-/// Fills the given buffer with random data produced by a
-/// cryptographically secure pseudorandom number generator (CSPRNG).
-/// The output may be used as session keys or to derive long-term
-/// cryptographic keys from.
-pub fn random<B: AsMut<[u8]>>(mut buf: B) {
+pub fn random(buf: &mut [u8]) {
     use rand07::rngs::OsRng;
     use rand07::RngCore;
 
-    OsRng.fill_bytes(buf.as_mut())
+    OsRng.fill_bytes(buf)
 }
 
 impl PublicKeyAlgorithm {

@@ -32,7 +32,6 @@ pub(crate) mod aead;
 mod asymmetric;
 pub use self::asymmetric::{Signer, Decryptor, KeyPair};
 mod backend;
-pub use backend::random;
 pub mod ecdh;
 pub mod hash;
 pub mod mem;
@@ -43,6 +42,19 @@ pub(crate) mod symmetric;
 
 #[cfg(test)]
 mod tests;
+
+/// Fills the given buffer with random data.
+///
+/// Fills the given buffer with random data produced by a
+/// cryptographically secure pseudorandom number generator (CSPRNG).
+/// The output may be used as session keys or to derive long-term
+/// cryptographic keys from.  However, to create session keys,
+/// consider using [`SessionKey::new`].
+///
+///   [`SessionKey::new`]: crate::crypto::SessionKey::new()
+pub fn random<B: AsMut<[u8]>>(mut buf: B) {
+    backend::random(buf.as_mut());
+}
 
 /// Holds a session key.
 ///
