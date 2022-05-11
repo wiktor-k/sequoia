@@ -86,7 +86,7 @@ pub Cert: Option<Cert> = {
                 })
             }
             None => {
-                // Just validating a message...
+                // Just validating a cert...
                 assert!(c.is_none() || c.unwrap().len() == 0);
                 Ok(None)
             }
@@ -101,7 +101,7 @@ Primary: Option<(Packet, Vec<Signature>)> = {
         if let Some(pk) = pk {
             Some((pk, sigs.unwrap()))
         } else {
-            // Just validating a message...
+            // Just validating a cert...
             assert!(sigs.is_none() || sigs.unwrap().len() == 0);
             None
         }
@@ -129,7 +129,7 @@ OptionalSignatures: Option<Vec<Signature>> = {
                 assert!(sigs.is_some());
                 sigs
             }
-            // Just validating a message...
+            // Just validating a cert...
             Token::Signature(None) => return None,
             tok => unreachable!("Expected signature token, got {:?}", tok),
         }
@@ -148,7 +148,7 @@ OptionalComponents: Option<Vec<Component>> = {
             cs.push(c);
             Some(cs)
         } else {
-            // Just validating a message...
+            // Just validating a cert...
             None
         }
     },
@@ -171,7 +171,7 @@ Component: Option<Component> = {
                     other_revocations: vec![],
                 }))
             },
-            // Just validating a message...
+            // Just validating a cert...
             None => None,
         }
     },
@@ -191,7 +191,7 @@ Component: Option<Component> = {
                     other_revocations: vec![],
                 }))
             },
-            // Just validating a message...
+            // Just validating a cert...
             None => None,
         }
     },
@@ -211,7 +211,7 @@ Component: Option<Component> = {
                     other_revocations: vec![],
                 }))
             },
-            // Just validating a message...
+            // Just validating a cert...
             None => None,
         }
     },
@@ -231,7 +231,7 @@ Component: Option<Component> = {
                     other_revocations: vec![],
                 }))
             },
-            // Just validating a message...
+            // Just validating a cert...
             None => None,
         }
     },
@@ -241,7 +241,7 @@ Subkey: Option<Key<key::PublicParts, key::SubordinateRole>> = {
     <t:PUBLIC_SUBKEY> => {
         match t.into() {
             Some(Packet::PublicSubkey(key)) => Some(key),
-            // Just validating a message...
+            // Just validating a cert...
             None => None,
             Some(pkt) =>
               unreachable!("Expected public subkey packet, got {:?}", pkt),
@@ -250,7 +250,7 @@ Subkey: Option<Key<key::PublicParts, key::SubordinateRole>> = {
     <t:SECRET_SUBKEY> => {
         match t.into() {
             Some(Packet::SecretSubkey(key)) => Some(key.parts_into_public()),
-            // Just validating a message...
+            // Just validating a cert...
             None => None,
             Some(pkt) =>
               unreachable!("Expected secret subkey packet, got {:?}", pkt),
@@ -262,7 +262,7 @@ UserID: Option<UserID> = {
     <t:USERID> => {
         match t.into() {
             Some(Packet::UserID(u)) => Some(u),
-            // Just validating a message...
+            // Just validating a cert...
             None => None,
             Some(pkt) =>
               unreachable!("Expected user id packet, got {:?}", pkt),
@@ -274,7 +274,7 @@ UserAttribute: Option<UserAttribute> = {
     <t:USER_ATTRIBUTE> => {
         match t.into() {
             Some(Packet::UserAttribute(u)) => Some(u),
-            // Just validating a message...
+            // Just validating a cert...
             None => None,
             Some(pkt) =>
               unreachable!("Expected user attribute packet, got {:?}", pkt),
@@ -286,7 +286,7 @@ Unknown: Option<Unknown> = {
     <t:UNKNOWN> => {
         match t.into() {
             Some(Packet::Unknown(u)) => Some(u),
-            // Just validating a message...
+            // Just validating a cert...
             None => None,
             Some(pkt) =>
               unreachable!("Expected unknown packet, got {:?}", pkt),
