@@ -23,7 +23,7 @@ pub(crate) use self::grammar::CertParser;
 //
 // Justification: a Token is a tuple containing a Tag and a Packet.
 // This function essentially drops the Packet.  Dropping the packet is
-// necessary, because packets are not async, but Fail, which we want
+// necessary, because packets are not Sync, but Fail, which we want
 // to convert ParseErrors to, is.  Since we don't need the packet in
 // general anyways, changing the Token to a Tag is a simple and
 // sufficient fix.  Unfortunately, this conversion is a bit ugly and
