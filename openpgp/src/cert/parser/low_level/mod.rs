@@ -13,6 +13,8 @@ lalrpop_util::lalrpop_mod!(
     "/cert/parser/low_level/grammar.rs"
 );
 
+pub(crate) mod grammar_util;
+
 pub(crate) use self::lexer::Token;
 pub(crate) use self::lexer::Lexer;
 

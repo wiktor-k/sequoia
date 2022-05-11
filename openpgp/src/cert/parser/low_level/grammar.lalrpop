@@ -1,16 +1,21 @@
 // -*- mode: Rust; -*-
 
+use std::convert::TryInto;
+
 use crate::Error;
+use crate::packet::Any;
 use crate::packet::Signature;
 use crate::packet::UserID;
 use crate::packet::UserAttribute;
 use crate::packet::{key, Key};
 use crate::packet::Unknown;
 use crate::Packet;
+use crate::policy::HashAlgoSecurity::SecondPreImageResistance;
 use crate::cert::prelude::*;
 
 use crate::cert::parser::low_level::lexer;
 use crate::cert::parser::low_level::lexer::{Token, Component};
+use crate::cert::parser::low_level::grammar_util::*;
 use crate::cert::ComponentBundles;
 use crate::cert::bundle::{
     PrimaryKeyBundle,
@@ -157,7 +162,7 @@ OptionalComponents: Option<Vec<Component>> = {
 Component: Option<Component> = {
     <key:Subkey> <sigs:OptionalSignatures> => {
         match key {
-            Some(key) => {
+            Some(Ok(key)) => {
                 let sigs = sigs.unwrap();
                 let sec = key.hash_algo_security();
 
@@ -171,13 +176,22 @@ Component: Option<Component> = {
                     other_revocations: vec![],
                 }))
             },
+            Some(Err(u)) => Some(Component::UnknownBundle(UnknownBundle {
+                component: u,
+                hash_algo_security: SecondPreImageResistance,
+                self_signatures: vec![],
+                certifications: sigs.unwrap_or_default(),
+                attestations: vec![],
+                self_revocations: vec![],
+                other_revocations: vec![],
+            })),
             // Just validating a cert...
             None => None,
         }
     },
     <u:UserID> <sigs:OptionalSignatures> => {
         match u {
-            Some(u) => {
+            Some(Ok(u)) => {
                 let sigs = sigs.unwrap();
                 let sec = u.hash_algo_security();
 
@@ -191,13 +205,22 @@ Component: Option<Component> = {
                     other_revocations: vec![],
                 }))
             },
+            Some(Err(u)) => Some(Component::UnknownBundle(UnknownBundle {
+                component: u,
+                hash_algo_security: SecondPreImageResistance,
+                self_signatures: vec![],
+                certifications: sigs.unwrap_or_default(),
+                attestations: vec![],
+                self_revocations: vec![],
+                other_revocations: vec![],
+            })),
             // Just validating a cert...
             None => None,
         }
     },
     <u:UserAttribute> <sigs:OptionalSignatures> => {
         match u {
-            Some(u) => {
+            Some(Ok(u)) => {
                 let sigs = sigs.unwrap();
                 let sec = u.hash_algo_security();
 
@@ -211,6 +234,15 @@ Component: Option<Component> = {
                     other_revocations: vec![],
                 }))
             },
+            Some(Err(u)) => Some(Component::UnknownBundle(UnknownBundle {
+                component: u,
+                hash_algo_security: SecondPreImageResistance,
+                self_signatures: vec![],
+                certifications: sigs.unwrap_or_default(),
+                attestations: vec![],
+                self_revocations: vec![],
+                other_revocations: vec![],
+            })),
             // Just validating a cert...
             None => None,
         }
@@ -237,59 +269,55 @@ Component: Option<Component> = {
     },
 }
 
-Subkey: Option<Key<key::PublicParts, key::SubordinateRole>> = {
+Subkey: Option<PacketOrUnknown<Key<key::PublicParts, key::SubordinateRole>>> = {
     <t:PUBLIC_SUBKEY> => {
-        match t.into() {
-            Some(Packet::PublicSubkey(key)) => Some(key),
+        match Option::<Packet>::from(t) {
+            Some(p) => Some(p.downcast().map_err(
+                |p| p.try_into().expect("infallible for unknown and this packet"))),
             // Just validating a cert...
             None => None,
-            Some(pkt) =>
-              unreachable!("Expected public subkey packet, got {:?}", pkt),
         }
     },
     <t:SECRET_SUBKEY> => {
-        match t.into() {
-            Some(Packet::SecretSubkey(key)) => Some(key.parts_into_public()),
+        match Option::<Packet>::from(t) {
+            Some(p) => Some(Any::<key::SecretSubkey>::downcast(p)
+                .map_err(
+                    |p| p.try_into().expect("infallible for unknown and this packet"))
+                .map(|sk| sk.parts_into_public())),
             // Just validating a cert...
             None => None,
-            Some(pkt) =>
-              unreachable!("Expected secret subkey packet, got {:?}", pkt),
         }
     },
 }
 
-UserID: Option<UserID> = {
+UserID: Option<PacketOrUnknown<UserID>> = {
     <t:USERID> => {
-        match t.into() {
-            Some(Packet::UserID(u)) => Some(u),
+        match Option::<Packet>::from(t) {
+            Some(p) => Some(p.downcast().map_err(
+                |p| p.try_into().expect("infallible for unknown and this packet"))),
             // Just validating a cert...
             None => None,
-            Some(pkt) =>
-              unreachable!("Expected user id packet, got {:?}", pkt),
         }
     },
 }
 
-UserAttribute: Option<UserAttribute> = {
+UserAttribute: Option<PacketOrUnknown<UserAttribute>> = {
     <t:USER_ATTRIBUTE> => {
-        match t.into() {
-            Some(Packet::UserAttribute(u)) => Some(u),
+        match Option::<Packet>::from(t) {
+            Some(p) => Some(p.downcast().map_err(
+                |p| p.try_into().expect("infallible for unknown and this packet"))),
             // Just validating a cert...
             None => None,
-            Some(pkt) =>
-              unreachable!("Expected user attribute packet, got {:?}", pkt),
         }
     },
 }
 
 Unknown: Option<Unknown> = {
     <t:UNKNOWN> => {
-        match t.into() {
-            Some(Packet::Unknown(u)) => Some(u),
+        match Option::<Packet>::from(t) {
+            Some(p) => p.try_into().ok(),
             // Just validating a cert...
             None => None,
-            Some(pkt) =>
-              unreachable!("Expected unknown packet, got {:?}", pkt),
         }
     },
 }

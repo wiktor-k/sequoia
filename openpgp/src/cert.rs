@@ -4117,20 +4117,28 @@ mod test {
 
     }
 
-    // lutz's key is a v3 key.
-    //
-    // dkg's includes some v3 signatures.
+    /// Tests how we deal with v3 keys, certs, and certifications.
     #[test]
     fn v3_packets() {
-        let dkg = crate::tests::key("dkg.gpg");
-        let lutz = crate::tests::key("lutz.gpg");
-
         // v3 primary keys are not supported.
-        let cert = Cert::from_bytes(lutz);
-        assert_match!(Error::MalformedCert(_)
+
+        let cert = Cert::from_bytes(crate::tests::key("john-v3.pgp"));
+        assert_match!(Error::UnsupportedCert(_)
                       = cert.err().unwrap().downcast::<Error>().unwrap());
 
-        let cert = Cert::from_bytes(dkg);
+        let cert = Cert::from_bytes(crate::tests::key("john-v3-secret.pgp"));
+        assert_match!(Error::UnsupportedCert(_)
+                      = cert.err().unwrap().downcast::<Error>().unwrap());
+
+        // Lutz's key is a v3 key.
+        let cert = Cert::from_bytes(crate::tests::key("lutz.gpg"));
+        assert_match!(Error::UnsupportedCert(_)
+                      = cert.err().unwrap().downcast::<Error>().unwrap());
+
+        // v3 certifications are not supported
+
+        // dkg's includes some v3 signatures.
+        let cert = Cert::from_bytes(crate::tests::key("dkg.gpg"));
         assert!(cert.is_ok(), "dkg.gpg: {:?}", cert);
     }
 
