@@ -43,6 +43,15 @@ pub(crate) mod symmetric;
 #[cfg(test)]
 mod tests;
 
+/// Returns a short, human-readable description of the backend.
+///
+/// This starts with the name of the backend, possibly a version, and
+/// any optional features that are available.  This is meant for
+/// inclusion in version strings to improve bug reports.
+pub fn backend() -> String {
+    backend::backend()
+}
+
 /// Fills the given buffer with random data.
 ///
 /// Fills the given buffer with random data produced by a

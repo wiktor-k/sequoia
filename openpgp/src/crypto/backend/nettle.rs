@@ -10,6 +10,13 @@ pub mod ecdh;
 pub mod hash;
 pub mod symmetric;
 
+/// Returns a short, human-readable description of the backend.
+pub fn backend() -> String {
+    // XXX: Once we depend on nettle-rs 7.1, add cv448 feature
+    // XXX: Once we depend on nettle-rs 7.2, add nettle::version
+    "Nettle".to_string()
+}
+
 /// Fills the given buffer with random data.
 pub fn random(buf: &mut [u8]) {
     Yarrow::default().random(buf);

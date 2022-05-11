@@ -10,6 +10,12 @@ pub mod ecdh;
 pub mod hash;
 pub mod symmetric;
 
+/// Returns a short, human-readable description of the backend.
+pub fn backend() -> String {
+    // XXX: can we include features and the version?
+    "Windows CNG".to_string()
+}
+
 /// Fills the given buffer with random data.
 pub fn random(buf: &mut [u8]) {
     RandomNumberGenerator::system_preferred()
