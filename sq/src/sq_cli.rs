@@ -23,9 +23,10 @@ pub fn configure(
     feature_autocrypt: bool,
 ) -> App<'static, 'static> {
     let version = Box::leak(
-        format!("{} (sequoia-openpgp {})",
+        format!("{} (sequoia-openpgp {}, using {})",
                 env!("CARGO_PKG_VERSION"),
-                sequoia_openpgp::VERSION)
+                sequoia_openpgp::VERSION,
+                sequoia_openpgp::crypto::backend())
             .into_boxed_str()) as &str;
 
     let app = app
