@@ -241,7 +241,13 @@ fn list(config: Config,
         -> Result<()>
 {
     for (i, cert) in CertParser::from_reader(input)?.enumerate() {
-        let cert = cert.context("Malformed certificate in keyring")?;
+        let cert = match cert {
+            Ok(cert) => cert,
+            Err(e) => {
+                println!("{}. {}", i, e);
+                continue;
+            },
+        };
         let line = format!("{}. {:X}", i, cert.fingerprint());
         let indent = line.chars().map(|_| ' ').collect::<String>();
         print!("{}", line);
