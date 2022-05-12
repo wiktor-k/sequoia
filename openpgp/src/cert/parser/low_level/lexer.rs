@@ -54,6 +54,7 @@ assert_send_and_sync!(Token);
 /// public.  But, since this module is not public, it will not
 /// actually be exported to users of the library.
 #[allow(clippy::enum_variant_names)]
+#[derive(Debug)]
 pub enum Component {
     SubkeyBundle(SubkeyBundle<key::PublicParts>),
     UserIDBundle(UserIDBundle),

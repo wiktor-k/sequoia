@@ -798,6 +798,7 @@ impl<'a> CertParser<'a> {
             .into_iter()
             .filter_map(|p| p.into())
             .collect::<Vec<Token>>();
+        t!("{} tokens: {:?}", tokens.len(), tokens);
         if tokens.len() != packets {
             // There was at least one packet that doesn't belong in a
             // Cert.  Fail now.
