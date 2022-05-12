@@ -13,6 +13,7 @@
 ** Deprecated functionality
    - armor::Reader::new, use armor::Reader::from_reader instead
    - message::Token is not covered by SemVer guarantees, DO NOT match on it
+   - AEADAlgorithm::iv_size, use AEADAlgorithm::nonce_size
 * Changes in 1.8.0
 ** New functionality
    - crypto::Signer::acceptable_hashes

@@ -111,6 +111,7 @@ impl AEADAlgorithm {
     ///
     /// This function is deprecated. Please use
     /// [`AEADAlgorithm::nonce_size`].
+    #[deprecated = "Use nonce_size"]
     pub fn iv_size(&self) -> Result<usize> {
         self.nonce_size()
     }
