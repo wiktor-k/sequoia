@@ -93,8 +93,8 @@ impl AEADAlgorithm {
         }
     }
 
-    /// Returns the initialization vector size of the AEAD algorithm.
-    pub fn iv_size(&self) -> Result<usize> {
+    /// Returns the nonce size of the AEAD algorithm.
+    pub fn nonce_size(&self) -> Result<usize> {
         use self::AEADAlgorithm::*;
         match self {
             // According to RFC4880bis, Section 5.16.1.
@@ -105,6 +105,14 @@ impl AEADAlgorithm {
             OCB => Ok(15),
             _ => Err(Error::UnsupportedAEADAlgorithm(*self).into()),
         }
+    }
+
+    /// Returns the initialization vector size of the AEAD algorithm.
+    ///
+    /// This function is deprecated. Please use
+    /// [`AEADAlgorithm::nonce_size`].
+    pub fn iv_size(&self) -> Result<usize> {
+        self.nonce_size()
     }
 }
 
@@ -862,7 +870,7 @@ mod tests {
                 let mut key = vec![0; sym_algo.key_size().unwrap()];
                 crate::crypto::random(&mut key);
                 let key: SessionKey = key.into();
-                let mut iv = vec![0; aead.iv_size().unwrap()];
+                let mut iv = vec![0; aead.nonce_size().unwrap()];
                 crate::crypto::random(&mut iv);
 
                 let mut ciphertext = Vec::new();

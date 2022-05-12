@@ -2881,7 +2881,7 @@ impl<'a> Encryptor<'a> {
         }
 
         let aead = if let Some(algo) = self.aead_algo {
-            let mut nonce = vec![0; algo.iv_size()?];
+            let mut nonce = vec![0; algo.nonce_size()?];
             crypto::random(&mut nonce);
             Some(AEADParameters {
                 algo,

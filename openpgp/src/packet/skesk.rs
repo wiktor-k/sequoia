@@ -456,7 +456,7 @@ impl SKESK5 {
 
         // Derive key and make a cipher.
         let key = s2k.derive_key(password, esk_algo.key_size()?)?;
-        let mut iv = vec![0u8; esk_aead.iv_size()?];
+        let mut iv = vec![0u8; esk_aead.nonce_size()?];
         crypto::random(&mut iv);
         let mut ctx = esk_aead.context(esk_algo, &key, &iv, CipherOp::Encrypt)?;
 
@@ -573,7 +573,7 @@ impl From<SKESK5> for Packet {
 impl Arbitrary for SKESK5 {
     fn arbitrary(g: &mut Gen) -> Self {
         let algo = AEADAlgorithm::EAX;  // The only one we dig.
-        let mut iv = vec![0u8; algo.iv_size().unwrap()];
+        let mut iv = vec![0u8; algo.nonce_size().unwrap()];
         for b in iv.iter_mut() {
             *b = u8::arbitrary(g);
         }

@@ -342,7 +342,7 @@ mod has_access_to_prekey {
         {
             // The nonce is a simple counter.
             let mut nonce_store = [0u8; aead::MAX_NONCE_LEN];
-            let nonce_len = AEAD_ALGO.iv_size()
+            let nonce_len = AEAD_ALGO.nonce_size()
                 .expect("Mandatory algorithm unsupported");
             assert!(nonce_len >= 8);
             let nonce = &mut nonce_store[..nonce_len];
@@ -359,7 +359,7 @@ mod has_access_to_prekey {
         {
             // The nonce is a simple counter.
             let mut nonce_store = [0u8; aead::MAX_NONCE_LEN];
-            let nonce_len = AEAD_ALGO.iv_size()
+            let nonce_len = AEAD_ALGO.nonce_size()
                 .expect("Mandatory algorithm unsupported");
             assert!(nonce_len >= 8);
             let nonce = &mut nonce_store[..nonce_len];

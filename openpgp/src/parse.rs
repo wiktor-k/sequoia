@@ -2720,7 +2720,7 @@ impl SKESK5 {
             php_try!(php.parse_u8("aead_algo")).into();
         let s2k = php_try!(S2K::parse_v4(&mut php));
         let s2k_supported = s2k.is_supported();
-        let iv_size = php_try!(aead_algo.iv_size());
+        let iv_size = php_try!(aead_algo.nonce_size());
         let digest_size = php_try!(aead_algo.digest_size());
 
         // The rest of the packet is (potentially) the S2K
@@ -2922,7 +2922,7 @@ impl AED1 {
         }
         let chunk_size: u64 = 1 << (chunk_size + 6);
 
-        let iv_size = php_try!(aead.iv_size());
+        let iv_size = php_try!(aead.nonce_size());
         let iv = php_try!(php.parse_bytes("iv", iv_size));
 
         let aed = php_try!(Self::new(

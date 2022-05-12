@@ -4,6 +4,7 @@
 
 * Changes in 1.9.0
 ** New functionality
+   - AEADAlgorithm::nonce_size replaces AEADAlgorithm::iv_size
    - crypto::backend
    - packet::Any
    - Packet::version
