@@ -41,7 +41,8 @@ fn main() {
 
     for shell in &[Shell::Bash, Shell::Fish, Shell::Zsh, Shell::PowerShell,
                    Shell::Elvish] {
-        clap_complete::generate_to(*shell, &mut sq, "sq", &outdir).unwrap();
+        let path = clap_complete::generate_to(*shell, &mut sq, "sq", &outdir).unwrap();
+        println!("cargo:warning=completion file is generated: {:?}", path);
     };
 }
 
