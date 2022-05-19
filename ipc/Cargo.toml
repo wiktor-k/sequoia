@@ -44,7 +44,7 @@ winapi = { version = "0.3.8", default-features = false, features = ["winsock2"] 
 ctor = "0.1"
 
 [build-dependencies]
-lalrpop = ">=0.17"
+lalrpop = { version = ">=0.17", default-features = false }
 
 [dev-dependencies]
 clap = "2.33"

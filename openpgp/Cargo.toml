@@ -82,7 +82,7 @@ getrandom = { version = "0.2", features = ["js"] }
 rand07 = { package = "rand", version = "0.7", features = ["wasm-bindgen"] }
 
 [build-dependencies]
-lalrpop = ">=0.17"
+lalrpop = { version = ">=0.17", default-features = false }
 
 [dev-dependencies]
 quickcheck = { version = "1", default-features = false }
