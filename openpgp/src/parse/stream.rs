@@ -886,6 +886,9 @@ impl<V: VerificationHelper> VerificationHelper for NoDecryptionHelper<V> {
     {
         self.v.check(structure)
     }
+    fn inspect(&mut self, pp: &PacketParser) -> Result<()> {
+        self.v.inspect(pp)
+    }
 }
 
 impl<V: VerificationHelper> DecryptionHelper for NoDecryptionHelper<V> {
