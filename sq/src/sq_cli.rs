@@ -1,7 +1,6 @@
 /// Command-line parser for sq.
-
-use clap::{Command, Arg, ArgGroup};
-use clap::{Parser, CommandFactory};
+use clap::{Arg, ArgGroup, Command, ArgEnum};
+use clap::{CommandFactory, Parser};
 
 pub fn build() -> Command<'static> {
     configure(Command::new("sq"),
@@ -1863,7 +1862,6 @@ $ sq autocrypt encode-sender --prefer-encrypt mutual juliet.pgp
     app
 }
 
-// TODO: convert possible values to enum
 // TODO?: Option<_> conflicts with default value
 // TODO: Use PathBuf as input type for more type safety? Investigate conversion
 // TODO: use indoc to transparently (de-)indent static strings
@@ -1906,10 +1904,38 @@ pub struct ArmorCommand {
         long = "label",
         value_name = "LABEL",
         help = "Selects the kind of armor header",
-        possible_values = &["auto", "message", "cert", "key", "sig", "file"],
-        default_value = "auto",
+        default_value_t = CliArmorKind::Auto,
+        arg_enum
     )]
-    kind: String,
+    pub kind: CliArmorKind,
+}
+
+#[derive(ArgEnum)]
+#[derive(Debug, Clone)]
+pub enum CliArmorKind {
+    Auto,
+    Message,
+    #[clap(name = "cert")]
+    PublicKey,
+    #[clap(name = "key")]
+    SecretKey,
+    #[clap(name = "sig")]
+    Signature,
+    File,
+}
+
+use sequoia_openpgp::armor::Kind as OpenPGPArmorKind;
+impl From<CliArmorKind> for Option<OpenPGPArmorKind> {
+    fn from(c: CliArmorKind) -> Self {
+        match c {
+            CliArmorKind::Auto => None,
+            CliArmorKind::Message => Some(OpenPGPArmorKind::Message),
+            CliArmorKind::PublicKey => Some(OpenPGPArmorKind::PublicKey),
+            CliArmorKind::SecretKey => Some(OpenPGPArmorKind::SecretKey),
+            CliArmorKind::Signature => Some(OpenPGPArmorKind::Signature),
+            CliArmorKind::File => Some(OpenPGPArmorKind::File),
+        }
+    }
 }
 
 #[derive(Parser, Debug)]

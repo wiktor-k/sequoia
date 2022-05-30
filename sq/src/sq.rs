@@ -570,8 +570,11 @@ fn main() -> Result<()> {
         },
 
         Some(("armor", m)) => {
-            let input = open_or_stdin(m.value_of("input"))?;
-            let mut want_kind = parse_armor_kind(m.value_of("kind"));
+            use clap::FromArgMatches;
+            let command = sq_cli::ArmorCommand::from_arg_matches(m)?;
+
+            let input = open_or_stdin(command.input.as_deref())?;
+            let mut want_kind: Option<armor::Kind> = command.kind.into();
 
             // Peek at the data.  If it looks like it is armored
             // data, avoid armoring it again.
@@ -590,7 +593,7 @@ fn main() -> Result<()> {
             {
                 // It is already armored and has the correct kind.
                 let mut output =
-                    config.create_or_stdout_safe(m.value_of("output"))?;
+                    config.create_or_stdout_safe(command.output.as_deref())?;
                 io::copy(&mut input, &mut output)?;
                 return Ok(());
             }
@@ -605,7 +608,7 @@ fn main() -> Result<()> {
             let want_kind = want_kind.expect("given or detected");
 
             let mut output =
-                config.create_or_stdout_pgp(m.value_of("output"),
+                config.create_or_stdout_pgp(command.output.as_deref(),
                                             false, want_kind)?;
 
             if already_armored {
