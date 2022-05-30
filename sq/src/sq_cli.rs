@@ -369,38 +369,6 @@ signatures, consider using sequoia-sqv.
                          .help("Verifies signatures with CERT"))
         )
 
-        .subcommand(Command::new("dearmor")
-                    .display_order(510)
-                    .about("Converts ASCII to binary")
-                    .long_about(
-"Converts ASCII to binary
-
-To make encrypted data easier to handle and transport, OpenPGP data
-can be transformed to an ASCII representation called ASCII Armor.  sq
-transparently handles armored data, but this subcommand can be used to
-explicitly convert existing ASCII-encoded OpenPGP data to its binary
-representation.
-
-The converse operation is \"sq armor\".
-")
-                    .after_help(
-"EXAMPLES:
-
-# Convert a ASCII certificate to binary
-$ sq dearmor ascii-juliet.pgp
-
-# Convert a ASCII message to binary
-$ sq dearmor ascii-message.pgp
-")
-                    .arg(Arg::new("input")
-                         .value_name("FILE")
-                         .help("Reads from FILE or stdin if omitted"))
-                    .arg(Arg::new("output")
-                         .short('o').long("output").value_name("FILE")
-                         .help("Writes to FILE or stdout if omitted"))
-        )
-
-
         .subcommand(Command::new("inspect")
                     .display_order(600)
                     .about("Inspects data, like file(1)")
@@ -1889,7 +1857,8 @@ $ sq autocrypt encode-sender --prefer-encrypt mutual juliet.pgp
                 )
         )
     }
-    .subcommand(ArmorCommand::command());
+    .subcommand(ArmorCommand::command())
+    .subcommand(DearmorCommand::command());
 
     app
 }
@@ -1941,4 +1910,41 @@ pub struct ArmorCommand {
         default_value = "auto",
     )]
     kind: String,
+}
+
+#[derive(Parser, Debug)]
+#[clap(name = "dearmor", display_order(510))]
+#[clap(
+    about = "Converts ASCII to binary",
+    long_about =
+"Converts ASCII to binary
+
+To make encrypted data easier to handle and transport, OpenPGP data
+can be transformed to an ASCII representation called ASCII Armor.  sq
+transparently handles armored data, but this subcommand can be used to
+explicitly convert existing ASCII-encoded OpenPGP data to its binary
+representation.
+
+The converse operation is \"sq armor\".
+",
+    after_help =
+"EXAMPLES:
+
+# Convert a ASCII certificate to binary
+$ sq dearmor ascii-juliet.pgp
+
+# Convert a ASCII message to binary
+$ sq dearmor ascii-message.pgp
+",
+    )]
+pub struct DearmorCommand {
+    #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
+    pub input: Option<String>,
+    #[clap(
+        short,
+        long,
+        value_name = "FILE",
+        help = "Writes to FILE or stdout if omitted"
+    )]
+    pub output: Option<String>,
 }
