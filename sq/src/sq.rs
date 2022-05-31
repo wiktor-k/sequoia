@@ -390,6 +390,8 @@ impl Config<'_> {
     }
 }
 
+// TODO: Use `derive`d command structs. No more values_of
+// TODO: Handling (and cli position) of global arguments
 fn main() -> Result<()> {
     let policy = &mut P::new();
 
@@ -569,6 +571,7 @@ fn main() -> Result<()> {
                              &mut output, signatures, certs)?;
         },
 
+        // TODO: Extract body to commands/armor.rs
         Some(("armor", m)) => {
             use clap::FromArgMatches;
             let command = sq_cli::ArmorCommand::from_arg_matches(m)?;

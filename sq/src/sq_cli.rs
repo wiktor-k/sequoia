@@ -8,6 +8,7 @@ pub fn build() -> Command<'static> {
     )
 }
 
+// TODO: use clap_derive for the whole CLI
 /// Defines the CLI.
 ///
 /// The order of top-level subcommands is:
