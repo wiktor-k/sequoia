@@ -1546,71 +1546,6 @@ as being human readable."))
                                      .value_name("FILE")
                                      .help("Reads from FILE or stdin if omitted"))
                     )
-        )
-
-        .subcommand(Command::new("wkd")
-                    .display_order(420)
-                    .about("Interacts with Web Key Directories")
-                    .subcommand_required(true)
-                    .arg_required_else_help(true)
-                    .arg(Arg::new("policy")
-                         .short('p').long("policy").value_name("NETWORK-POLICY")
-                         .possible_values(&["offline", "anonymized",
-                                            "encrypted", "insecure"])
-                         .default_value("encrypted")
-                         .help("Sets the network policy to use"))
-                    .subcommand(Command::new("url")
-                                .about("Prints the Web Key Directory URL of \
-                                        an email address.")
-                                .arg(Arg::new("input")
-                                    .value_name("ADDRESS")
-                                    .required(true)
-                                    .help("Queries for ADDRESS"))
-                    )
-                    .subcommand(Command::new("get")
-                                .about("Queries for certs using \
-                                        Web Key Directory")
-                                .arg(Arg::new("input")
-                                    .value_name("ADDRESS")
-                                    .required(true)
-                                    .help("Queries a cert for ADDRESS"))
-                                .arg(Arg::new("binary")
-                                     .short('B').long("binary")
-                                     .help("Emits binary data"))
-                    )
-                    .subcommand(Command::new("generate")
-                                .about("Generates a Web Key Directory \
-                                        for the given domain and keys.  \
-                                        If the WKD exists, the new \
-                                        keys will be inserted and it \
-                                        is updated and existing ones \
-                                        will be updated.")
-                                .arg(Arg::new("base_directory")
-                                     .value_name("WEB-ROOT")
-                                     .required(true)
-                                     .help("Writes the WKD to WEB-ROOT")
-                                     .long_help(
-                                         "Writes the WKD to WEB-ROOT. \
-                                          Transfer this directory to \
-                                          the webserver."))
-                                .arg(Arg::new("domain")
-                                    .value_name("FQDN")
-                                    .help("Generates a WKD for \
-                                           a fully qualified domain name")
-                                    .required(true))
-                                .arg(Arg::new("input")
-                                    .value_name("CERT-RING")
-                                    .help("Adds certificates from CERT-RING to \
-                                           the WKD"))
-                                .arg(Arg::new("direct_method")
-                                     .short('d').long("direct-method")
-                                     .help("Uses the direct method \
-                                            [default: advanced method]"))
-                                .arg(Arg::new("skip")
-                                     .short('s').long("skip")
-                                     .help("Skips certificates that do not have \
-                                            User IDs for given domain."))
-                    )
         );
 
     let app = if ! feature_autocrypt {
@@ -1623,7 +1558,8 @@ as being human readable."))
     .subcommand(ArmorCommand::command())
     .subcommand(DearmorCommand::command())
     .subcommand(SignCommand::command())
-    .subcommand(VerifyCommand::command());
+    .subcommand(VerifyCommand::command())
+    .subcommand(WkdCommand::command());
 
     app
 }
@@ -1934,6 +1870,111 @@ pub struct SignCommand {
     // there may be multiple notations? Like something like Vec<(String, String)>.
     // TODO: Also, no need for the Option
     pub notation: Option<Vec<String>>,
+}
+
+#[derive(Parser, Debug)]
+#[clap(
+    name = "wkd",
+    display_order = 420,
+    about = "Interacts with Web Key Directories",
+    subcommand_required = true,
+    arg_required_else_help = true,
+)]
+pub struct WkdCommand {
+    #[clap(
+        short = 'p',
+        long = "policy",
+        value_name = "NETWORK-POLICY",
+        default_value_t = WkdNetworkPolicy::Encrypted,
+        arg_enum,
+        help = "Sets the network policy to use",
+    )]
+    pub policy: WkdNetworkPolicy,
+    #[clap(subcommand)]
+    pub subcommand: WkdSubcommands,
+}
+
+#[derive(ArgEnum, Clone, Debug)]
+pub enum WkdNetworkPolicy {
+    Offline,
+    Anonymized,
+    Encrypted,
+    Insecure,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum WkdSubcommands {
+    Url(WkdUrlCommand),
+    Get(WkdGetCommand),
+    Generate(WkdGenerateCommand),
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    about = "Prints the Web Key Directory URL of an email address.",
+)]
+pub struct WkdUrlCommand {
+    #[clap(
+        value_name = "ADDRESS",
+        help = "Queries for ADDRESS",
+    )]
+    pub input: String,
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    about = "Queries for certs using Web Key Directory",
+)]
+pub struct WkdGetCommand {
+    #[clap(
+        value_name = "ADDRESS",
+        help = "Queries a cert for ADDRESS",
+    )]
+    pub input: String,
+    #[clap(
+        short = 'B',
+        long,
+        help = "Emits binary data",
+    )]
+    pub binary: bool,
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    about = "Generates a Web Key Directory for the given domain and keys.  \
+        If the WKD exists, the new keys will be inserted and it \
+        is updated and existing ones will be updated.",
+)]
+pub struct WkdGenerateCommand {
+    #[clap(
+        value_name = "WEB-ROOT",
+        help = "Writes the WKD to WEB-ROOT",
+        long_help = "Writes the WKD to WEB-ROOT. Transfer this directory to \
+            the webserver.",
+    )]
+    pub base_directory: String,
+    #[clap(
+        value_name = "FQDN",
+        help = "Generates a WKD for a fully qualified domain name",
+    )]
+    pub domain: String,
+    #[clap(
+        value_name = "CERT-RING",
+        help = "Adds certificates from CERT-RING to the WKD",
+    )]
+    pub input: Option<String>,
+    #[clap(
+        short = 'd',
+        long = "direct-method",
+        help = "Uses the direct method [default: advanced method]",
+    )]
+    pub direct_method: bool,
+    #[clap(
+        short = 's',
+        long = "skip",
+        help = "Skips certificates that do not have User IDs for given domain.",
+    )]
+    pub skip: bool,
 }
 
 #[cfg(feature = "autocrypt")]
