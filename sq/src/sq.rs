@@ -628,9 +628,12 @@ fn main() -> Result<()> {
             output.finalize()?;
         },
         Some(("dearmor",  m)) => {
-            let mut input = open_or_stdin(m.value_of("input"))?;
+            use clap::FromArgMatches;
+            let command = sq_cli::DearmorCommand::from_arg_matches(m)?;
+
+            let mut input = open_or_stdin(command.input.as_deref())?;
             let mut output =
-                config.create_or_stdout_safe(m.value_of("output"))?;
+                config.create_or_stdout_safe(command.output.as_deref())?;
             let mut filter = armor::Reader::from_reader(&mut input, None);
             io::copy(&mut filter, &mut output)?;
         },
