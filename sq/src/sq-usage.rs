@@ -1113,7 +1113,7 @@
 //!     -o, --output <FILE>
 //!             Writes to FILE or stdout if omitted
 //!
-//!         --prefer-encrypt <prefer-encrypt>
+//!         --prefer-encrypt <PREFER-ENCRYPT>
 //!             Sets the prefer-encrypt attribute
 //! 
 //!             [default: nopreference]
