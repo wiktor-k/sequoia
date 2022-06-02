@@ -11,16 +11,21 @@ use sequoia_autocrypt as autocrypt;
 use crate::{
     Config,
     open_or_stdin,
+    sq_cli,
 };
 
-pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
-    match m.subcommand() {
-        Some(("decode",  m)) => {
-            let input = open_or_stdin(m.value_of("input"))?;
-            let mut output =
-                config.create_or_stdout_pgp(m.value_of("output"),
-                                            m.is_present("binary"),
-                                            armor::Kind::PublicKey)?;
+use sq_cli::autocrypt::{AutocryptSubcommands, AutocryptCommand};
+
+pub fn dispatch(config: Config, c: &AutocryptCommand) -> Result<()> {
+
+    match &c.subcommand {
+        AutocryptSubcommands::Decode(command) => {
+            let input = open_or_stdin(command.io.input.as_deref())?;
+            let mut output = config.create_or_stdout_pgp(
+                command.io.output.as_deref(),
+                command.binary,
+                armor::Kind::PublicKey,
+            )?;
             let ac = autocrypt::AutocryptHeaders::from_reader(input)?;
             for h in &ac.headers {
                 if let Some(ref cert) = h.key {
@@ -28,13 +33,13 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
                 }
             }
             output.finalize()?;
-        },
-        Some(("encode-sender",  m)) => {
-            let input = open_or_stdin(m.value_of("input"))?;
+        }
+        AutocryptSubcommands::EncodeSender(command) => {
+            let input = open_or_stdin(command.io.input.as_deref())?;
             let mut output =
-                config.create_or_stdout_safe(m.value_of("output"))?;
+                config.create_or_stdout_safe(command.io.output.as_deref())?;
             let cert = Cert::from_reader(input)?;
-            let addr = m.value_of("address").map(|a| a.to_string())
+            let addr = command.address.clone()
                 .or_else(|| {
                     cert.with_policy(&config.policy, None)
                         .and_then(|vcert| vcert.primary_userid()).ok()
@@ -46,12 +51,12 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
                 &addr.ok_or_else(|| anyhow::anyhow!(
                     "No well-formed primary userid found, use \
                      --address to specify one"))?,
-                m.value_of("prefer-encrypt").expect("has default"))?;
+                Some(command.prefer_encrypt.to_string().as_str()))?;
             write!(&mut output, "Autocrypt: ")?;
             ac.serialize(&mut output)?;
         },
-        _ => unreachable!(),
     }
 
     Ok(())
 }
+

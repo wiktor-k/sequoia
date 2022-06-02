@@ -1618,7 +1618,7 @@ as being human readable."))
         app
     } else {
         // With Autocrypt support.
-        app.subcommand(AutocryptCommand::command())
+        app.subcommand(autocrypt::AutocryptCommand::command())
     }
     .subcommand(ArmorCommand::command())
     .subcommand(DearmorCommand::command())
@@ -1936,11 +1936,16 @@ pub struct SignCommand {
     pub notation: Option<Vec<String>>,
 }
 
-#[derive(Parser, Debug)]
-#[clap(name = "autocrypt", display_order(400))]
-#[clap(
-    about = "Communicates certificates using Autocrypt",
-    long_about =
+#[cfg(feature = "autocrypt")]
+pub mod autocrypt {
+    use super::*;
+
+    #[derive(Parser, Debug)]
+    #[clap(
+        name = "autocrypt",
+        display_order(400),
+        about = "Communicates certificates using Autocrypt",
+        long_about =
 "Communicates certificates using Autocrypt
 
 Autocrypt is a standard for mail user agents to provide convenient
@@ -1950,24 +1955,25 @@ communicate certificates between clients.
 
 See https://autocrypt.org/
 ",
-    subcommand_required = true,
-    arg_required_else_help = true,
-)]
-pub struct AutocryptCommand {
-    #[clap(subcommand)]
-    subcommand: AutocryptSubCommands,
-}
+        subcommand_required = true,
+        arg_required_else_help = true,
+    )]
+    pub struct AutocryptCommand {
+        #[clap(subcommand)]
+        pub subcommand: AutocryptSubcommands,
+    }
 
-#[derive(Debug, Subcommand)]
-pub enum AutocryptSubCommands {
-    Decode(AutocyptDecodeCommand),
+    #[derive(Debug, Subcommand)]
+    pub enum AutocryptSubcommands {
+        Decode(AutocryptDecodeCommand),
 
-    EncodeSender(AutocyptEncodeSenderCommand),
-}
-#[derive(Debug, Args)]
-#[clap(
-    about = "Reads Autocrypt-encoded certificates",
-    long_about =
+        EncodeSender(AutocryptEncodeSenderCommand),
+    }
+
+    #[derive(Debug, Args)]
+    #[clap(
+        about = "Reads Autocrypt-encoded certificates",
+        long_about =
 "Reads Autocrypt-encoded certificates
 
 Given an autocrypt header (or an key-gossip header), this command
@@ -1975,30 +1981,30 @@ extracts the certificate encoded within it.
 
 The converse operation is \"sq autocrypt encode-sender\".
 ",
-    after_help =
+        after_help =
 "EXAMPLES:
 
 # Extract all certificates from a mail
 $ sq autocrypt decode autocrypt.eml
 ",
-)]
-pub struct AutocyptDecodeCommand {
-    #[clap(flatten)]
-    pub io: IoArgs,
-    #[clap(
-        short = 'B',
-        long,
-        help = "Emits binary data",
     )]
-    pub binary: bool,
-}
+    pub struct AutocryptDecodeCommand {
+        #[clap(flatten)]
+        pub io: IoArgs,
+        #[clap(
+            short = 'B',
+            long,
+            help = "Emits binary data",
+        )]
+        pub binary: bool,
+    }
 
-//#[derive(Subcommand)]
-#[derive(Debug, Args)]
-#[clap(
-    name = "encode-sender",
-    about = "Encodes a certificate into an Autocrypt header",
-    long_about =
+    //#[derive(Subcommand)]
+    #[derive(Debug, Args)]
+    #[clap(
+        name = "encode-sender",
+        about = "Encodes a certificate into an Autocrypt header",
+        long_about =
 "Encodes a certificate into an Autocrypt header
 
 A certificate can be encoded and included in a header of an email
@@ -2009,7 +2015,7 @@ information).
 
 The converse operation is \"sq autocrypt decode\".
 ",
-    after_help =
+        after_help =
 "EXAMPLES:
 
 # Encodes a certificate
@@ -2021,33 +2027,42 @@ $ sq autocrypt encode-sender --email juliet@example.org juliet.pgp
 # Encodes a certificate while indicating the willingness to encrypt
 $ sq autocrypt encode-sender --prefer-encrypt mutual juliet.pgp
 ",
-)]
-pub struct AutocyptEncodeSenderCommand {
-    #[clap(flatten)]
-    pub io: IoArgs,
-    // TODO the help message looks like "primary userid" might be the default
-    // email. clarify
-    #[clap(
-        long = "email",
-        value_name = "ADDRESS",
-        help = "Sets the address [default: primary userid]",
     )]
-    pub address: Option<String>,
-    #[clap(
-        long = "prefer-encrypt",
-        value_name = "PREFER-ENCRYPT",
-        default_value_t = PreferEncryptArgs::NoPreference,
-        help = "Sets the prefer-encrypt attribute",
-        arg_enum,
-    )]
-    pub prefer_encrypt: PreferEncryptArgs,
+    pub struct AutocryptEncodeSenderCommand {
+        #[clap(flatten)]
+        pub io: IoArgs,
+        // TODO the help message looks like "primary userid" might be the default
+        // email. clarify
+        #[clap(
+            long = "email",
+            value_name = "ADDRESS",
+            help = "Sets the address [default: primary userid]",
+        )]
+        pub address: Option<String>,
+        #[clap(
+            long = "prefer-encrypt",
+            value_name = "PREFER-ENCRYPT",
+            default_value_t = PreferEncryptArgs::NoPreference,
+            help = "Sets the prefer-encrypt attribute",
+            arg_enum,
+        )]
+        pub prefer_encrypt: PreferEncryptArgs,
 
-}
+    }
 
-#[derive(ArgEnum)]
-#[derive(Debug, Clone)]
-pub enum PreferEncryptArgs {
-    #[clap(name = "nopreference")]
-    NoPreference,
-    Mutual
+    #[derive(ArgEnum, Debug, Clone)]
+    pub enum PreferEncryptArgs {
+        #[clap(name = "nopreference")]
+        NoPreference,
+        Mutual
+    }
+
+    impl std::fmt::Display for PreferEncryptArgs {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                PreferEncryptArgs::Mutual => write!(f, "mutual"),
+                PreferEncryptArgs::NoPreference => write!(f, "nopreference"),
+            }
+        }
+    }
 }

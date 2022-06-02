@@ -641,8 +641,11 @@ fn main() -> Result<()> {
             io::copy(&mut filter, &mut output)?;
         },
         #[cfg(feature = "autocrypt")]
-        Some(("autocrypt", m)) => commands::autocrypt::dispatch(config, m)?,
-
+        Some(("autocrypt", m)) => {
+            use clap::FromArgMatches;
+            let command = sq_cli::autocrypt::AutocryptCommand::from_arg_matches(m)?;
+            commands::autocrypt::dispatch(config, &command)?;
+        },
         Some(("inspect",  m)) => {
             // sq inspect does not have --output, but commands::inspect does.
             // Work around this mismatch by always creating a stdout output.
