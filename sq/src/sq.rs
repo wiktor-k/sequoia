@@ -491,8 +491,8 @@ fn main() -> Result<()> {
             use clap::FromArgMatches;
             let command = sq_cli::SignCommand::from_arg_matches(m)?;
 
-            let mut input = open_or_stdin(command.input.as_deref())?;
-            let output = command.output.as_deref();
+            let mut input = open_or_stdin(command.io.input.as_deref())?;
+            let output = command.io.output.as_deref();
             let detached = command.detached;
             let binary = command.binary;
             let append = command.append;
@@ -560,9 +560,9 @@ fn main() -> Result<()> {
             let command = sq_cli::VerifyCommand::from_arg_matches(m)?;
 
             // TODO: Fix interface of open_or_stdin, create_or_stdout_safe, etc.
-            let mut input = open_or_stdin(command.input.as_deref())?;
+            let mut input = open_or_stdin(command.io.input.as_deref())?;
             let mut output =
-                config.create_or_stdout_safe(command.output.as_deref())?;
+                config.create_or_stdout_safe(command.io.output.as_deref())?;
             let mut detached = if let Some(f) = command.detached {
                 Some(File::open(f)?)
             } else {
@@ -634,9 +634,9 @@ fn main() -> Result<()> {
             use clap::FromArgMatches;
             let command = sq_cli::DearmorCommand::from_arg_matches(m)?;
 
-            let mut input = open_or_stdin(command.input.as_deref())?;
+            let mut input = open_or_stdin(command.io.input.as_deref())?;
             let mut output =
-                config.create_or_stdout_safe(command.output.as_deref())?;
+                config.create_or_stdout_safe(command.io.output.as_deref())?;
             let mut filter = armor::Reader::from_reader(&mut input, None);
             io::copy(&mut filter, &mut output)?;
         },

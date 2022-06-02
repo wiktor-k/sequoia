@@ -1,5 +1,5 @@
 /// Command-line parser for sq.
-use clap::{Arg, ArgGroup, Command, ArgEnum};
+use clap::{Arg, ArgGroup, Command, ArgEnum, Args};
 use clap::{CommandFactory, Parser};
 
 pub fn build() -> Command<'static> {
@@ -1716,6 +1716,19 @@ $ sq autocrypt encode-sender --prefer-encrypt mutual juliet.pgp
     app
 }
 
+#[derive(Debug, Args)]
+pub struct IoArgs {
+    #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
+    pub input: Option<String>,
+    #[clap(
+        short,
+        long,
+        value_name = "FILE",
+        help = "Writes to FILE or stdout if omitted"
+    )]
+    pub output: Option<String>,
+}
+
 // TODO?: Option<_> conflicts with default value
 // TODO: Use PathBuf as input type for more type safety? Investigate conversion
 // TODO: use indoc to transparently (de-)indent static strings
@@ -1818,15 +1831,8 @@ $ sq dearmor ascii-message.pgp
 ",
     )]
 pub struct DearmorCommand {
-    #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
-    pub input: Option<String>,
-    #[clap(
-        short,
-        long,
-        value_name = "FILE",
-        help = "Writes to FILE or stdout if omitted"
-    )]
-    pub output: Option<String>,
+    #[clap(flatten)]
+    pub io: IoArgs,
 }
 
 #[derive(Parser, Debug)]
@@ -1868,15 +1874,8 @@ signatures, consider using sequoia-sqv.
 ",
     )]
 pub struct VerifyCommand {
-    #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
-    pub input: Option<String>,
-    #[clap(
-        short,
-        long,
-        value_name = "FILE",
-        help = "Writes to FILE or stdout if omitted"
-    )]
-    pub output: Option<String>,
+    #[clap(flatten)]
+    pub io: IoArgs,
     #[clap(
         long = "detached",
         value_name = "SIG",
@@ -1931,15 +1930,8 @@ $ sq sign --detached --signer-key juliet.pgp message.txt
 ",
     )]
 pub struct SignCommand {
-    #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
-    pub input: Option<String>,
-    #[clap(
-        short,
-        long,
-        value_name = "FILE",
-        help = "Writes to FILE or stdout if omitted"
-    )]
-    pub output: Option<String>,
+    #[clap(flatten)]
+    pub io: IoArgs,
     // TODO: Why capital B?
     #[clap(
         short = 'B',
