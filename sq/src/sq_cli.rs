@@ -1509,43 +1509,6 @@ as being human readable."))
                              .short('B').long("binary")
                              .help("Emits binary data"))
                 )
-        )
-        .subcommand(Command::new("keyserver")
-                    .display_order(410)
-                    .about("Interacts with keyservers")
-                    .subcommand_required(true)
-                    .arg_required_else_help(true)
-                    .arg(Arg::new("policy")
-                         .short('p').long("policy").value_name("NETWORK-POLICY")
-                         .possible_values(&["offline", "anonymized",
-                                            "encrypted", "insecure"])
-                         .default_value("encrypted")
-                         .help("Sets the network policy to use"))
-                    .arg(Arg::new("server")
-                         .short('s').long("server").value_name("URI")
-                         .help("Sets the keyserver to use"))
-                    .subcommand(Command::new("get")
-                                .about("Retrieves a key")
-                                .arg(Arg::new("output")
-                                     .short('o').long("output").value_name("FILE")
-                                     .help("Writes to FILE or stdout if omitted"))
-                                .arg(Arg::new("binary")
-                                     .short('B').long("binary")
-                                     .help("Emits binary data"))
-                                .arg(Arg::new("query")
-                                     .value_name("QUERY")
-                                     .required(true)
-                                     .help(
-                                         "Retrieve certificate(s) using QUERY. \
-                                          This may be a fingerprint, a KeyID, \
-                                          or an email address."))
-                    )
-                    .subcommand(Command::new("send")
-                                .about("Sends a key")
-                                .arg(Arg::new("input")
-                                     .value_name("FILE")
-                                     .help("Reads from FILE or stdin if omitted"))
-                    )
         );
 
     let app = if ! feature_autocrypt {
@@ -1559,7 +1522,8 @@ as being human readable."))
     .subcommand(DearmorCommand::command())
     .subcommand(SignCommand::command())
     .subcommand(VerifyCommand::command())
-    .subcommand(WkdCommand::command());
+    .subcommand(WkdCommand::command())
+    .subcommand(KeyserverCommand::command());
 
     app
 }
@@ -1975,6 +1939,85 @@ pub struct WkdGenerateCommand {
         help = "Skips certificates that do not have User IDs for given domain.",
     )]
     pub skip: bool,
+}
+
+#[derive(Parser, Debug)]
+#[clap(
+    name = "keyserver",
+    display_order = 410,
+    about = "Interacts with keyservers",
+    subcommand_required = true,
+    arg_required_else_help = true,
+)]
+pub struct KeyserverCommand {
+    #[clap(
+        short,
+        long,
+        value_name = "NETWORK-POLICY",
+        default_value_t = KeyserverPolicy::Encrypted,
+        help = "Sets the network policy to use",
+        arg_enum,
+    )]
+    pub policy: KeyserverPolicy,
+    #[clap(
+        short,
+        long,
+        value_name = "URI",
+        help = "Sets the keyserver to use",
+    )]
+    pub server: Option<String>,
+    #[clap(subcommand)]
+    pub subcommand: KeyserverSubcommands,
+}
+
+#[derive(ArgEnum, Clone, Debug)]
+pub enum KeyserverPolicy {
+    Offline,
+    Anonymized,
+    Encrypted,
+    Insecure,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum KeyserverSubcommands {
+    Get(KeyserverGetCommand),
+    Send(KeyserverSendCommand),
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    about = "Retrieves a key",
+)]
+pub struct KeyserverGetCommand {
+    #[clap(
+        short,
+        long,
+        value_name = "FILE",
+        help = "Writes to FILE or stdout if omitted"
+    )]
+    pub output: Option<String>,
+    #[clap(
+        short = 'B',
+        long,
+        help = "Emits binary data",
+    )]
+    pub binary: bool,
+    #[clap(
+        value_name = "QUERY",
+        help = "Retrieve certificate(s) using QUERY. \
+            This may be a fingerprint, a KeyID, \
+            or an email address.",
+    )]
+    pub query: String,
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    about = "Sends a key",
+)]
+pub struct KeyserverSendCommand {
+    #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
+    pub input: Option<String>,
 }
 
 #[cfg(feature = "autocrypt")]
