@@ -1641,7 +1641,7 @@ include a certification-capable key.")
                              .long("certificate")
                              .alias("cert")
                              .help("
-The certificate contain the User ID to revoke")
+The certificate containing the User ID to revoke")
                              .long_help("
 Reads the certificate to revoke from FILE or stdin, if omitted.  It is
 an error for the file to contain more than one certificate.")
