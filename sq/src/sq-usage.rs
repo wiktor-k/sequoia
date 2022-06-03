@@ -1653,7 +1653,6 @@
 //! ### Subcommand revoke certificate
 //!
 //! ```text
-//!
 //! Revokes a certificate
 //!
 //! Creates a revocation certificate for the certificate.
@@ -1734,21 +1733,17 @@
 //!             Print help information
 //!
 //!         --notation <NAME> <VALUE>
-//! 
 //!             Adds a notation to the certification.  A user-defined notation's
-//!             name
-//!             must be of the form "name@a.domain.you.control.org".  If the
+//!             name must be of the form "name@a.domain.you.control.org". If the
 //!             notation's name starts with a !, then the notation is marked as
-//!             being
-//!             critical.  If a consumer of a signature doesn't understand a
-//!             critical
-//!             notation, then it will ignore the signature.  The notation is marked
-//!             as being human readable.
+//!             being critical.  If a consumer of a signature doesn't understand a
+//!             critical notation, then it will ignore the signature.  The notation
+//!             is marked as being human readable.
 //!
 //!         --private-key-store <KEY_STORE>
 //!             Provides parameters for private key store
 //!
-//!         --revocation-key <FILE>
+//!         --revocation-key <KEY>
 //! 
 //!             Signs the revocation certificate using KEY.  If the key is different
 //!             from the certificate, this creates a third-party revocation.  If
@@ -1758,7 +1753,6 @@
 //!             then that key is used to sign the revocation certificate.
 //!
 //!     -t, --time <TIME>
-//! 
 //!             Chooses keys valid at the specified time and sets the revocation
 //!             certificate's creation time
 //! ```
@@ -1766,7 +1760,6 @@
 //! ### Subcommand revoke subkey
 //!
 //! ```text
-//!
 //! Revokes a subkey
 //!
 //! Creates a revocation certificate for a subkey.
@@ -1785,7 +1778,6 @@
 //!
 //! ARGS:
 //!     <SUBKEY>
-//! 
 //!             The subkey to revoke.  This must either be the subkey's Key ID or
 //!             its
 //!             fingerprint.
@@ -1836,15 +1828,14 @@
 //!             instance, if Alice has created a new key, she would generate a
 //!             'superseded' revocation certificate for her old key, and might
 //!             include
-//!             the message "I've created a new subkey, please refresh the
-//!             certificate."
+//!             the message "I've created a new subkey, please use
+//!             that in the future."
 //!
 //! OPTIONS:
 //!     -B, --binary
 //!             Emits binary data
 //!
 //!         --certificate <FILE>
-//! 
 //!             Reads the certificate containing the subkey to revoke from FILE or
 //!             stdin,
 //!             if omitted.  It is an error for the file to contain more than one
@@ -1854,21 +1845,17 @@
 //!             Print help information
 //!
 //!         --notation <NAME> <VALUE>
-//! 
 //!             Adds a notation to the certification.  A user-defined notation's
-//!             name
-//!             must be of the form "name@a.domain.you.control.org".  If the
+//!             name must be of the form "name@a.domain.you.control.org". If the
 //!             notation's name starts with a !, then the notation is marked as
-//!             being
-//!             critical.  If a consumer of a signature doesn't understand a
-//!             critical
-//!             notation, then it will ignore the signature.  The notation is marked
-//!             as being human readable.
+//!             being critical.  If a consumer of a signature doesn't understand a
+//!             critical notation, then it will ignore the signature.  The notation
+//!             is marked as being human readable.
 //!
 //!         --private-key-store <KEY_STORE>
 //!             Provides parameters for private key store
 //!
-//!         --revocation-key <FILE>
+//!         --revocation-key <KEY>
 //! 
 //!             Signs the revocation certificate using KEY.  If the key is different
 //!             from the certificate, this creates a third-party revocation.  If
@@ -1878,7 +1865,6 @@
 //!             then that key is used to sign the revocation certificate.
 //!
 //!     -t, --time <TIME>
-//! 
 //!             Chooses keys valid at the specified time and sets the revocation
 //!             certificate's creation time
 //! ```
@@ -1905,15 +1891,12 @@
 //!
 //! ARGS:
 //!     <USERID>
-//! 
-//! 
 //!             The User ID to revoke.  By default, this must exactly match a
 //!             self-signed User ID.  Use --force to generate a revocation
 //!             certificate
 //!             for a User ID, which is not self signed.
 //!
 //!     <REASON>
-//! 
 //!             The reason for the revocation.  This must be either: retired, or
 //!             unspecified:
 //! 
@@ -1951,30 +1934,25 @@
 //!             Emits binary data
 //!
 //!         --certificate <FILE>
-//! 
-//!             Reads the certificate to revoke from FILE or stdin, if omitted.  It
-//!             is
-//!             an error for the file to contain more than one certificate.
+//!             Reads the certificate to revoke from FILE or stdin,
+//!             if omitted.  It is an error for the file to contain more than one
+//!             certificate.
 //!
 //!     -h, --help
 //!             Print help information
 //!
 //!         --notation <NAME> <VALUE>
-//! 
 //!             Adds a notation to the certification.  A user-defined notation's
-//!             name
-//!             must be of the form "name@a.domain.you.control.org".  If the
+//!             name must be of the form "name@a.domain.you.control.org". If the
 //!             notation's name starts with a !, then the notation is marked as
-//!             being
-//!             critical.  If a consumer of a signature doesn't understand a
-//!             critical
-//!             notation, then it will ignore the signature.  The notation is marked
-//!             as being human readable.
+//!             being critical.  If a consumer of a signature doesn't understand a
+//!             critical notation, then it will ignore the signature.  The notation
+//!             is marked as being human readable.
 //!
 //!         --private-key-store <KEY_STORE>
 //!             Provides parameters for private key store
 //!
-//!         --revocation-key <FILE>
+//!         --revocation-key <KEY>
 //! 
 //!             Signs the revocation certificate using KEY.  If the key is different
 //!             from the certificate, this creates a third-party revocation.  If
@@ -1984,7 +1962,6 @@
 //!             then that key is used to sign the revocation certificate.
 //!
 //!     -t, --time <TIME>
-//! 
 //!             Chooses keys valid at the specified time and sets the revocation
 //!             certificate's creation time
 //! ```
