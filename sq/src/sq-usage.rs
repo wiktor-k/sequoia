@@ -1396,7 +1396,6 @@
 //! ## Subcommand packet
 //!
 //! ```text
-//!
 //! Low-level packet manipulation
 //!
 //! An OpenPGP data stream consists of packets.  These tools allow working
