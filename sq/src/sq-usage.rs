@@ -1715,7 +1715,7 @@
 //!             revocation
 //!             certificate.  It explains why the certificate has been revoked.  For
 //!             instance, if Alice has created a new key, she would generate a
-//!             'superceded' revocation certificate for her old key, and might
+//!             'superseded' revocation certificate for her old key, and might
 //!             include
 //!             the message "I've created a new certificate, FINGERPRINT, please use
 //!             that in the future."
@@ -1834,7 +1834,7 @@
 //!             revocation
 //!             certificate.  It explains why the subkey has been revoked.  For
 //!             instance, if Alice has created a new key, she would generate a
-//!             'superceded' revocation certificate for her old key, and might
+//!             'superseded' revocation certificate for her old key, and might
 //!             include
 //!             the message "I've created a new subkey, please refresh the
 //!             certificate."
@@ -1941,7 +1941,7 @@
 //!             revocation
 //!             certificate.  It explains why the certificate has been revoked.  For
 //!             instance, if Alice has created a new key, she would generate a
-//!             'superceded' revocation certificate for her old key, and might
+//!             'superseded' revocation certificate for her old key, and might
 //!             include
 //!             the message "I've created a new certificate, FINGERPRINT, please use
 //!             that in the future."
