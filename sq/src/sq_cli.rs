@@ -135,89 +135,6 @@ $ sq decrypt ciphertext.pgp
                     .arg(Arg::new("hex")
                          .short('x').long("hex")
                          .help("Prints a hexdump (implies --dump)"))
-        )
-
-        .subcommand(Command::new("encrypt")
-                    .display_order(100)
-                    .about("Encrypts a message")
-                    .long_about(
-"Encrypts a message
-
-Encrypts a message for any number of recipients and with any number of
-passwords, optionally signing the message in the process.
-
-The converse operation is \"sq decrypt\".
-")
-                    .after_help(
-"EXAMPLES:
-
-# Encrypt a file using a certificate
-$ sq encrypt --recipient-cert romeo.pgp message.txt
-
-# Encrypt a file creating a signature in the process
-$ sq encrypt --recipient-cert romeo.pgp --signer-key juliet.pgp message.txt
-
-# Encrypt a file using a password
-$ sq encrypt --symmetric message.txt
-")
-                    .arg(Arg::new("input")
-                         .value_name("FILE")
-                         .help("Reads from FILE or stdin if omitted"))
-                    .arg(Arg::new("output")
-                         .short('o').long("output").value_name("FILE")
-                         .help("Writes to FILE or stdout if omitted"))
-                    .arg(Arg::new("binary")
-                         .short('B').long("binary")
-                         .help("Emits binary data"))
-                    .arg(Arg::new("recipients-cert-file")
-                         .long("recipient-cert").value_name("CERT-RING")
-                         .multiple_occurrences(true)
-                         .help("Encrypts for all recipients in CERT-RING"))
-                    .arg(Arg::new("signer-key-file")
-                         .long("signer-key").value_name("KEY")
-                         .multiple_occurrences(true)
-                         .help("Signs the message with KEY"))
-                    .arg(Arg::new("private-key-store")
-                         .long("private-key-store").value_name("KEY_STORE")
-                         .help("Provides parameters for private key store"))
-                    .arg(Arg::new("symmetric")
-                         .short('s').long("symmetric")
-                         .multiple_occurrences(true)
-                         .help("Adds a password to encrypt with")
-                         .long_help("Adds a password to encrypt with.  \
-                                     The message can be decrypted with \
-                                     either one of the recipient's keys, \
-                                     or any password."))
-                    .arg(Arg::new("mode")
-                         .long("mode").value_name("MODE")
-                         .possible_values(&["transport", "rest", "all"])
-                         .default_value("all")
-                         .help("Selects what kind of keys are considered for \
-                                encryption.")
-                         .long_help(
-                             "Selects what kind of keys are considered for \
-                                encryption.  Transport select subkeys marked \
-                                as suitable for transport encryption, rest \
-                                selects those for encrypting data at rest, \
-                                and all selects all encryption-capable \
-                                subkeys."))
-                    .arg(Arg::new("compression")
-                         .long("compression").value_name("KIND")
-                         .possible_values(&["none", "pad", "zip", "zlib",
-                                            "bzip2"])
-                         .default_value("pad")
-                         .help("Selects compression scheme to use"))
-                    .arg(Arg::new("time")
-                         .short('t').long("time").value_name("TIME")
-                         .help("Chooses keys valid at the specified time and \
-                                sets the signature's creation time"))
-                    .arg(Arg::new("use-expired-subkey")
-                         .long("use-expired-subkey")
-                         .help("Falls back to expired encryption subkeys")
-                         .long_help(
-                             "If a certificate has only expired \
-                              encryption-capable subkeys, falls back \
-                              to using the one that expired last"))
         );
 
     let app = if ! feature_autocrypt {
@@ -238,7 +155,8 @@ $ sq encrypt --symmetric message.txt
     .subcommand(CertifyCommand::command())
     .subcommand(KeyringCommand::command())
     .subcommand(KeyCommand::command())
-    .subcommand(InspectCommand::command());
+    .subcommand(InspectCommand::command())
+    .subcommand(EncryptCommand::command());
 
     app
 }
@@ -2377,6 +2295,128 @@ struct InspectCommand {
     )]
     pub certifications: bool,
 
+}
+
+#[derive(Parser, Debug)]
+#[clap(
+    name = "encrypt",
+    display_order = 100,
+    about = "Encrypts a message",
+    long_about =
+"Encrypts a message
+
+Encrypts a message for any number of recipients and with any number of
+passwords, optionally signing the message in the process.
+
+The converse operation is \"sq decrypt\".
+",
+    after_help =
+"EXAMPLES:
+
+# Encrypt a file using a certificate
+$ sq encrypt --recipient-cert romeo.pgp message.txt
+
+# Encrypt a file creating a signature in the process
+$ sq encrypt --recipient-cert romeo.pgp --signer-key juliet.pgp message.txt
+
+# Encrypt a file using a password
+$ sq encrypt --symmetric message.txt
+",
+)]
+pub struct EncryptCommand {
+    #[clap(flatten)]
+    pub io: IoArgs,
+    #[clap(
+        short = 'B',
+        long,
+        help = "Emits binary data",
+    )]
+    pub binary: bool,
+    #[clap(
+        long = "recipient-cert",
+        value_name = "CERT-RING",
+        multiple_occurrences = true,
+        help = "Encrypts for all recipients in CERT-RING",
+    )]
+    pub recipients_cert_file: Vec<String>,
+    #[clap(
+        long = "signer-key",
+        value_name = "KEY",
+        help = "Signs the message with KEY",
+    )]
+    pub signer_key_file: Vec<String>,
+    #[clap(
+        long = "private-key-store",
+        value_name = "KEY_STORE",
+        help = "Provides parameters for private key store",
+    )]
+    pub private_key_store: Option<String>,
+    #[clap(
+        short = 's',
+        long = "symmetric",
+        help = "Adds a password to encrypt with",
+        multiple_occurrences = true,
+        long_help = "Adds a password to encrypt with.  \
+            The message can be decrypted with \
+            either one of the recipient's keys, or any password.",
+    )]
+    pub symmetric: bool,
+    #[clap(
+        long = "mode",
+        value_name = "MODE",
+        default_value_t = EncryptEncryptionMode::All,
+        help = "Selects what kind of keys are considered for encryption.",
+        long_help =
+            "Selects what kind of keys are considered for \
+            encryption.  Transport select subkeys marked \
+            as suitable for transport encryption, rest \
+            selects those for encrypting data at rest, \
+            and all selects all encryption-capable \
+            subkeys.",
+        arg_enum,
+    )]
+    pub mode: EncryptEncryptionMode,
+    #[clap(
+        long = "compression",
+        value_name = "KIND",
+        default_value_t = EncryptCompressionMode::Pad,
+        help = "Selects compression scheme to use",
+        arg_enum,
+    )]
+    pub compression: EncryptCompressionMode,
+    #[clap(
+        short = 't',
+        long = "time",
+        value_name = "TIME",
+        help = "Chooses keys valid at the specified time and \
+            sets the signature's creation time",
+    )]
+    pub time: Option<String>,
+    #[clap(
+        long = "use-expired-subkey",
+        help = "Falls back to expired encryption subkeys",
+        long_help =
+            "If a certificate has only expired \
+            encryption-capable subkeys, falls back \
+            to using the one that expired last",
+    )]
+    pub use_expired_subkey: bool,
+}
+
+#[derive(ArgEnum, Debug, Clone)]
+pub enum EncryptEncryptionMode {
+    Transport,
+    Rest,
+    All
+}
+
+#[derive(ArgEnum, Debug, Clone)]
+pub enum EncryptCompressionMode {
+    None,
+    Pad,
+    Zip,
+    Zlib,
+    Bzip2
 }
 
 #[cfg(feature = "autocrypt")]
