@@ -4538,7 +4538,7 @@ impl signature::SignatureBuilder {
     ///
     /// [Trust Signature subpacket]: https://tools.ietf.org/html/rfc4880#section-5.2.3.13
     ///
-    /// The Trust Signature subpacket indicates to degree to which a
+    /// The Trust Signature subpacket indicates the degree to which a
     /// certificate holder is trusted to certify other keys.
     ///
     /// A level of 0 means that the certificate holder is not trusted
