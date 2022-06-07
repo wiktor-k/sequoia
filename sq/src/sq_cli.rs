@@ -252,318 +252,6 @@ $ sq inspect message.sig
                     .arg(Arg::new("certifications")
                          .long("certifications")
                          .help("Prints third-party certifications"))
-        )
-
-        .subcommand(
-            Command::new("key")
-                .display_order(300)
-                .about("Manages keys")
-                    .long_about(
-"Manages keys
-
-We use the term \"key\" to refer to OpenPGP keys that do contain
-secrets.  This subcommand provides primitives to generate and
-otherwise manipulate keys.
-
-Conversely, we use the term \"certificate\", or cert for short, to refer
-to OpenPGP keys that do not contain secrets.  See \"sq keyring\" for
-operations on certificates.
-")
-                .subcommand_required(true)
-                .arg_required_else_help(true)
-                .subcommand(
-                    Command::new("generate")
-                        .display_order(100)
-                        .about("Generates a new key")
-                        .long_about(
-"Generates a new key
-
-Generating a key is the prerequisite to receiving encrypted messages
-and creating signatures.  There are a few parameters to this process,
-but we provide reasonable defaults for most users.
-
-When generating a key, we also generate a revocation certificate.
-This can be used in case the key is superseded, lost, or compromised.
-It is a good idea to keep a copy of this in a safe place.
-
-After generating a key, use \"sq key extract-cert\" to get the
-certificate corresponding to the key.  The key must be kept secure,
-while the certificate should be handed out to correspondents, e.g. by
-uploading it to a keyserver.
-")
-                        .after_help(
-"EXAMPLES:
-
-# First, this generates a key
-$ sq key generate --userid \"<juliet@example.org>\" --export juliet.key.pgp
-
-# Then, this extracts the certificate for distribution
-$ sq key extract-cert --output juliet.cert.pgp juliet.key.pgp
-
-# Generates a key protecting it with a password
-$ sq key generate --userid \"<juliet@example.org>\" --with-password
-
-# Generates a key with multiple userids
-$ sq key generate --userid \"<juliet@example.org>\" --userid \"Juliet Capulet\"
-")
-                        .arg(Arg::new("userid")
-                             .short('u').long("userid").value_name("EMAIL")
-                             .multiple_occurrences(true)
-                             .help("Adds a userid to the key"))
-                        .arg(Arg::new("cipher-suite")
-                             .short('c').long("cipher-suite").value_name("CIPHER-SUITE")
-                             .possible_values(&["rsa3k", "rsa4k", "cv25519"])
-                             .default_value("cv25519")
-                             .help("Selects the cryptographic algorithms for \
-                                    the key"))
-                        .arg(Arg::new("with-password")
-                             .long("with-password")
-                             .help("Protects the key with a password"))
-
-                        .arg(Arg::new("creation-time")
-                             .long("creation-time").value_name("CREATION_TIME")
-                             .help("Sets the key's creation time to TIME (as ISO 8601)")
-                             .long_help("\
-Sets the key's creation time to TIME.  TIME is interpreted as an ISO 8601
-timestamp.  To set the creation time to June 9, 2011 at midnight UTC,
-you can do:
-
-$ sq key generate --creation-time 20110609 --export noam.pgp
-
-To include a time, add a T, the time and optionally the timezone (the
-default timezone is UTC):
-
-$ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
-"))
-
-                        .group(ArgGroup::new("expiration-group")
-                               .args(&["expires", "expires-in"]))
-
-                        .arg(Arg::new("expires")
-                             .long("expires").value_name("TIME")
-                             .help("Makes the key expire at TIME (as ISO 8601)")
-                             .long_help(
-                                 "Makes the key expire at TIME (as ISO 8601). \
-                                  Use \"never\" to create keys that do not \
-                                  expire."))
-                        .arg(Arg::new("expires-in")
-                             .long("expires-in").value_name("DURATION")
-                             // Catch negative numbers.
-                             .allow_hyphen_values(true)
-                             .help("Makes the key expire after DURATION \
-                                    (as N[ymwds]) [default: 3y]")
-                             .long_help(
-                                 "Makes the key expire after DURATION. \
-                                  Either \"N[ymwds]\", for N years, months, \
-                                  weeks, days, seconds, or \"never\"."))
-
-                        .group(ArgGroup::new("cap-sign")
-                               .args(&["can-sign", "cannot-sign"]))
-                        .arg(Arg::new("can-sign")
-                             .long("can-sign")
-                             .help("Adds a signing-capable subkey (default)"))
-                        .arg(Arg::new("cannot-sign")
-                             .long("cannot-sign")
-                             .help("Adds no signing-capable subkey"))
-
-                        .group(ArgGroup::new("cap-authenticate")
-                               .args(&["can-authenticate", "cannot-authenticate"]))
-                        .arg(Arg::new("can-authenticate")
-                             .long("can-authenticate")
-                             .help("Adds an authentication-capable subkey (default)"))
-                        .arg(Arg::new("cannot-authenticate")
-                             .long("cannot-authenticate")
-                             .help("Adds no authentication-capable subkey"))
-
-                        .group(ArgGroup::new("cap-encrypt")
-                               .args(&["can-encrypt", "cannot-encrypt"]))
-                        .arg(Arg::new("can-encrypt")
-                             .long("can-encrypt").value_name("PURPOSE")
-                             .possible_values(&["transport", "storage",
-                                                "universal"])
-                             .help("Adds an encryption-capable subkey \
-                                    [default: universal]")
-                             .long_help(
-                                 "Adds an encryption-capable subkey. \
-                                  Encryption-capable subkeys can be marked as \
-                                  suitable for transport encryption, storage \
-                                  encryption, or both. \
-                                  [default: universal]"))
-                        .arg(Arg::new("cannot-encrypt")
-                             .long("cannot-encrypt")
-                             .help("Adds no encryption-capable subkey"))
-
-                        .arg(Arg::new("export")
-                             .short('e').long("export").value_name("OUTFILE")
-                             .help("Writes the key to OUTFILE")
-                             .required(true))
-                        .arg(Arg::new("rev-cert")
-                             .long("rev-cert").value_name("FILE or -")
-                             .required_if_eq("export", "-")
-                             .help("Writes the revocation certificate to FILE")
-                             .long_help(
-                                 "Writes the revocation certificate to FILE. \
-                                  mandatory if OUTFILE is \"-\". \
-                                  [default: <OUTFILE>.rev]"))
-                )
-                .subcommand(
-                    Command::new("password")
-                        .display_order(105)
-                        .about("Changes password protecting secrets")
-                        .long_about(
-"Changes password protecting secrets
-
-Secret key material in keys can be protected by a password.  This
-subcommand changes or clears this encryption password.
-
-To emit the key with unencrypted secrets, either use `--clear` or
-supply a zero-length password when prompted for the new password.
-")
-                        .after_help(
-"EXAMPLES:
-
-# First, generate a key
-$ sq key generate --userid \"<juliet@example.org>\" --export juliet.key.pgp
-
-# Then, encrypt the secrets in the key with a password.
-$ sq key password < juliet.key.pgp > juliet.encrypted_key.pgp
-
-# And remove the password again.
-$ sq key password --clear < juliet.encrypted_key.pgp > juliet.decrypted_key.pgp
-")
-                        .arg(Arg::new("clear")
-                             .long("clear")
-                             .help("Emit a key with unencrypted secrets"))
-                        .arg(Arg::new("output")
-                             .short('o').long("output").value_name("FILE")
-                             .help("Writes to FILE or stdout if omitted"))
-                        .arg(Arg::new("binary")
-                             .short('B').long("binary")
-                             .help("Emits binary data"))
-                        .arg(Arg::new("key")
-                             .value_name("FILE")
-                             .help("Reads from FILE or stdin if omitted"))
-                )
-                .subcommand(Command::new("extract-cert")
-                            .display_order(110)
-                            .about("Converts a key to a cert")
-                            .long_about(
-"Converts a key to a cert
-
-After generating a key, use this command to get the certificate
-corresponding to the key.  The key must be kept secure, while the
-certificate should be handed out to correspondents, e.g. by uploading
-it to a keyserver.
-")
-                            .after_help(
-                                "EXAMPLES:
-
-# First, this generates a key
-$ sq key generate --userid \"<juliet@example.org>\" --export juliet.key.pgp
-
-# Then, this extracts the certificate for distribution
-$ sq key extract-cert --output juliet.cert.pgp juliet.key.pgp
-")
-                            .arg(Arg::new("input")
-                                 .value_name("FILE")
-                                 .help("Reads from FILE or stdin if omitted"))
-                            .arg(Arg::new("output")
-                                 .short('o').long("output").value_name("FILE")
-                                 .help("Writes to FILE or stdout if omitted"))
-                            .arg(Arg::new("binary")
-                                 .short('B').long("binary")
-                                 .help("Emits binary data"))
-                )
-                .subcommand(
-                    Command::new("adopt")
-                        .display_order(800)
-                        .about("Binds keys from one certificate to another")
-                        .long_about(
-"
-Binds keys from one certificate to another
-
-This command allows one to transfer primary keys and subkeys into an
-existing certificate.  Say you want to transition to a new
-certificate, but have an authentication subkey on your current
-certificate.  You want to keep the authentication subkey because it
-allows access to SSH servers and updating their configuration is not
-feasible.
-")
-                        .after_help(
-"EXAMPLES:
-
-# Adopt an subkey into the new cert
-$ sq key adopt --keyring juliet-old.pgp --key 0123456789ABCDEF -- juliet-new.pgp
-")
-                        .arg(Arg::new("keyring")
-                             .short('r').long("keyring").value_name("KEY-RING")
-                             .multiple_occurrences(true)
-                             .help("Supplies keys for use in --key."))
-                        .arg(Arg::new("key")
-                             .short('k').long("key").value_name("KEY")
-                             .multiple_occurrences(true)
-                             .required(true)
-                             .help("Adds the key or subkey KEY to the \
-                                    TARGET-KEY"))
-                        .arg(Arg::new("allow-broken-crypto")
-                             .long("allow-broken-crypto")
-                             .help("Allows adopting keys from certificates \
-                                    using broken cryptography"))
-                        .arg(Arg::new("certificate")
-                             .value_name("TARGET-KEY")
-                             .help("Adds keys to TARGET-KEY"))
-                        .arg(Arg::new("output")
-                             .short('o').long("output").value_name("FILE")
-                             .help("Writes to FILE or stdout if omitted"))
-                        .arg(Arg::new("binary")
-                             .short('B').long("binary")
-                             .help("Emits binary data"))
-                )
-                .subcommand(
-                    Command::new("attest-certifications")
-                        .display_order(200)
-                        .about("Attests to third-party certifications")
-                        .long_about(
-"
-Attests to third-party certifications allowing for their distribution
-
-To prevent certificate flooding attacks, modern key servers prevent
-uncontrolled distribution of third-party certifications on
-certificates.  To make the key holder the sovereign over the
-information over what information is distributed with the certificate,
-the key holder needs to explicitly attest to third-party
-certifications.
-
-After the attestation has been created, the certificate has to be
-distributed, e.g. by uploading it to a keyserver.
-")
-                        .after_help(
-"EXAMPLES:
-
-# Attest to all certifications present on the key
-$ sq key attest-certifications juliet.pgp
-
-# Retract prior attestations on the key
-$ sq key attest-certifications --none juliet.pgp
-")
-                        .arg(Arg::new("none")
-                             .long("none")
-                             .conflicts_with("all")
-                             .help("Removes all prior attestations"))
-                        .arg(Arg::new("all")
-                             .long("all")
-                             .conflicts_with("none")
-                             .help("Attests to all certifications [default]"))
-                        .arg(Arg::new("key")
-                             .value_name("KEY")
-                             .help("Changes attestations on KEY"))
-                        .arg(Arg::new("output")
-                             .short('o').long("output").value_name("FILE")
-                             .help("Writes to FILE or stdout if omitted"))
-                        .arg(Arg::new("binary")
-                             .short('B').long("binary")
-                             .help("Emits binary data"))
-                )
         );
 
     let app = if ! feature_autocrypt {
@@ -582,7 +270,8 @@ $ sq key attest-certifications --none juliet.pgp
     .subcommand(RevokeCommand::command())
     .subcommand(PacketCommand::command())
     .subcommand(CertifyCommand::command())
-    .subcommand(KeyringCommand::command());
+    .subcommand(KeyringCommand::command())
+    .subcommand(KeyCommand::command());
 
     app
 }
@@ -2074,6 +1763,426 @@ pub struct KeyringSplitCommand {
         help = "Emits binary data",
     )]
     pub binary: bool,
+}
+
+#[derive(Parser, Debug)]
+#[clap(
+    name = "key",
+    display_order = 300,
+    about = "Manages keys",
+    long_about =
+"Manages keys
+
+We use the term \"key\" to refer to OpenPGP keys that do contain
+secrets.  This subcommand provides primitives to generate and
+otherwise manipulate keys.
+
+Conversely, we use the term \"certificate\", or cert for short, to refer
+to OpenPGP keys that do not contain secrets.  See \"sq keyring\" for
+operations on certificates.
+",
+    subcommand_required = true,
+    arg_required_else_help = true,
+)]
+pub struct KeyCommand {
+    #[clap(subcommand)]
+    pub subcommand: KeySubcommands,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum KeySubcommands {
+    Generate(KeyGenerateCommand),
+    Password(KeyPasswordCommand),
+    ExtractCert(KeyExtractCertCommand),
+    Adopt(KeyAdoptCommand),
+    AttestCertifications(KeyAttestCertificationsCommand),
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    display_order = 100,
+    about = "Generates a new key",
+    long_about =
+"Generates a new key
+
+Generating a key is the prerequisite to receiving encrypted messages
+and creating signatures.  There are a few parameters to this process,
+but we provide reasonable defaults for most users.
+
+When generating a key, we also generate a revocation certificate.
+This can be used in case the key is superseded, lost, or compromised.
+It is a good idea to keep a copy of this in a safe place.
+
+After generating a key, use \"sq key extract-cert\" to get the
+certificate corresponding to the key.  The key must be kept secure,
+while the certificate should be handed out to correspondents, e.g. by
+uploading it to a keyserver.
+",
+    after_help =
+"EXAMPLES:
+
+# First, this generates a key
+$ sq key generate --userid \"<juliet@example.org>\" --export juliet.key.pgp
+
+# Then, this extracts the certificate for distribution
+$ sq key extract-cert --output juliet.cert.pgp juliet.key.pgp
+
+# Generates a key protecting it with a password
+$ sq key generate --userid \"<juliet@example.org>\" --with-password
+
+# Generates a key with multiple userids
+$ sq key generate --userid \"<juliet@example.org>\" --userid \"Juliet Capulet\"
+",
+)]
+#[clap(group(ArgGroup::new("expiration-group").args(&["expires", "expires-in"])))]
+#[clap(group(ArgGroup::new("cap-sign").args(&["can-sign", "cannot-sign"])))]
+#[clap(group(ArgGroup::new("cap-authenticate").args(&["can-authenticate", "cannot-authenticate"])))]
+#[clap(group(ArgGroup::new("cap-encrypt").args(&["can-encrypt", "cannot-encrypt"])))]
+pub struct KeyGenerateCommand {
+    #[clap(
+        short = 'u',
+        long = "userid",
+        value_name = "EMAIL",
+        help = "Adds a userid to the key"
+    )]
+    pub userid: Option<Vec<String>>,
+    #[clap(
+        short = 'c',
+        long = "cipher-suite",
+        value_name = "CIPHER-SUITE",
+        default_value_t = KeyCipherSuite::Cv25519,
+        help = "Selects the cryptographic algorithms for the key",
+        arg_enum,
+    )]
+    pub cipher_suite: KeyCipherSuite,
+    #[clap(
+        long = "with-password",
+        help = "Protects the key with a password",
+    )]
+    pub with_password: bool,
+    #[clap(
+        long = "creation-time",
+        value_name = "CREATION_TIME",
+        help = "Sets the key's creation time to TIME (as ISO 8601)",
+        long_help = "\
+Sets the key's creation time to TIME.  TIME is interpreted as an ISO 8601
+timestamp.  To set the creation time to June 9, 2011 at midnight UTC,
+you can do:
+
+$ sq key generate --creation-time 20110609 --export noam.pgp
+
+To include a time, add a T, the time and optionally the timezone (the
+default timezone is UTC):
+
+$ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
+",
+    )]
+    pub creation_time: Option<String>,
+    #[clap(
+        long = "expires",
+        value_name = "TIME",
+        help = "Makes the key expire at TIME (as ISO 8601)",
+        long_help =
+            "Makes the key expire at TIME (as ISO 8601). \
+            Use \"never\" to create keys that do not expire.",
+    )]
+    pub expires: Option<String>,
+    #[clap(
+        long = "expires-in",
+        value_name = "DURATION",
+        // Catch negative numbers.
+        allow_hyphen_values = true,
+        help = "Makes the key expire after DURATION \
+            (as N[ymwds]) [default: 5y]",
+        long_help =
+            "Makes the key expire after DURATION. \
+            Either \"N[ymwds]\", for N years, months, \
+            weeks, days, seconds, or \"never\".",
+    )]
+    pub expires_in: Option<String>,
+    #[clap(
+        long = "can-sign",
+        help ="Adds a signing-capable subkey (default)",
+    )]
+    pub can_sign: bool,
+    #[clap(
+        long = "cannot-sign",
+        help = "Adds no signing-capable subkey",
+    )]
+    pub cannot_sign: bool,
+    #[clap(
+        long = "can-authenticate",
+        help = "Adds an authentication-capable subkey (default)",
+    )]
+    pub can_authenticate: bool,
+    #[clap(
+        long = "cannot-authenticate",
+        help = "Adds no authentication-capable subkey",
+    )]
+    pub cannot_authenticate: bool,
+    #[clap(
+        long = "can-encrypt",
+        value_name = "PURPOSE",
+        help = "Adds an encryption-capable subkey [default: universal]",
+        long_help =
+            "Adds an encryption-capable subkey. \
+            Encryption-capable subkeys can be marked as \
+            suitable for transport encryption, storage \
+            encryption, or both. \
+            [default: universal]",
+        arg_enum,
+    )]
+    pub can_encrypt: Option<KeyEncryptPurpose>,
+    #[clap(
+        long = "cannot-encrypt",
+        help = "Adds no encryption-capable subkey",
+    )]
+    pub cannot_encrypt: bool,
+    #[clap(
+        short = 'e',
+        long = "export",
+        value_name = "OUTFILE",
+        help = "Writes the key to OUTFILE",
+    )]
+    pub export: String,
+    #[clap(
+        long = "rev-cert",
+        value_name = "FILE or -",
+        required_if_eq("export", "-"),
+        help = "Writes the revocation certificate to FILE",
+        long_help =
+            "Writes the revocation certificate to FILE. \
+            mandatory if OUTFILE is \"-\". \
+            [default: <OUTFILE>.rev]",
+    )]
+    pub rev_cert: Option<String>
+}
+
+#[derive(ArgEnum, Clone, Debug)]
+pub enum KeyCipherSuite {
+    Rsa3k,
+    Rsa4k,
+    Cv25519
+}
+
+#[derive(ArgEnum, Clone, Debug)]
+pub enum KeyEncryptPurpose {
+    Transport,
+    Storage,
+    Universal
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    name = "password",
+    display_order = 105,
+    about = "Changes password protecting secrets",
+    long_about = 
+"Changes password protecting secrets
+
+Secret key material in keys can be protected by a password.  This
+subcommand changes or clears this encryption password.
+
+To emit the key with unencrypted secrets, either use `--clear` or
+supply a zero-length password when prompted for the new password.
+",
+    after_help =
+"EXAMPLES:
+
+# First, generate a key
+$ sq key generate --userid \"<juliet@example.org>\" --export juliet.key.pgp
+
+# Then, encrypt the secrets in the key with a password.
+$ sq key password < juliet.key.pgp > juliet.encrypted_key.pgp
+
+# And remove the password again.
+$ sq key password --clear < juliet.encrypted_key.pgp > juliet.decrypted_key.pgp
+",
+)]
+pub struct KeyPasswordCommand {
+    #[clap(
+        long = "clear",
+        help = "Emit a key with unencrypted secrets",
+    )]
+    pub clear: bool,
+    #[clap(
+        short,
+        long,
+        value_name = "FILE",
+        help = "Writes to FILE or stdout if omitted"
+    )]
+    pub output: Option<String>,
+    #[clap(
+        short = 'B',
+        long,
+        help = "Emits binary data",
+    )]
+    pub binary: bool,
+    #[clap(
+        value_name = "FILE",
+        help = "Reads from FILE or stdin if omitted",
+    )]
+    key: Option<String>
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    name = "extract-cert",
+    display_order = 110,
+    about = "Converts a key to a cert",
+    long_about =
+"Converts a key to a cert
+
+After generating a key, use this command to get the certificate
+corresponding to the key.  The key must be kept secure, while the
+certificate should be handed out to correspondents, e.g. by uploading
+it to a keyserver.
+",
+    after_help = "EXAMPLES:
+
+# First, this generates a key
+$ sq key generate --userid \"<juliet@example.org>\" --export juliet.key.pgp
+
+# Then, this extracts the certificate for distribution
+$ sq key extract-cert --output juliet.cert.pgp juliet.key.pgp
+",
+)]
+pub struct KeyExtractCertCommand {
+    #[clap(flatten)]
+    pub io: IoArgs,
+    #[clap(
+        short = 'B',
+        long,
+        help = "Emits binary data",
+    )]
+    pub binary: bool,
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    name = "adopt",
+    display_order = 800,
+    about = "Binds keys from one certificate to another",
+    long_about = "
+Binds keys from one certificate to another
+
+This command allows one to transfer primary keys and subkeys into an
+existing certificate.  Say you want to transition to a new
+certificate, but have an authentication subkey on your current
+certificate.  You want to keep the authentication subkey because it
+allows access to SSH servers and updating their configuration is not
+feasible.
+",
+    after_help =
+"EXAMPLES:
+
+# Adopt an subkey into the new cert
+$ sq key adopt --keyring juliet-old.pgp --key 0123456789ABCDEF -- juliet-new.pgp
+",
+)]
+pub struct KeyAdoptCommand {
+    #[clap(
+        short = 'r',
+        long = "keyring",
+        value_name = "KEY-RING",
+        help = "Supplies keys for use in --key.",
+    )]
+    pub keyring: Vec<String>,
+    #[clap(
+        short = 'k',
+        long = "key",
+        value_name = "KEY",
+        required(true),
+        help = "Adds the key or subkey KEY to the TARGET-KEY",
+    )]
+    pub key: Vec<String>,
+    #[clap(
+        long = "allow-broken-crypto",
+        help = "Allows adopting keys from certificates \
+            using broken cryptography",
+    )]
+    pub allow_broken_crypto: bool,
+    #[clap(
+        value_name = "TARGET-KEY",
+        help = "Adds keys to TARGET-KEY",
+    )]
+    pub certificate: Option<String>,
+    #[clap(
+        short,
+        long,
+        value_name = "FILE",
+        help = "Writes to FILE or stdout if omitted"
+    )]
+    pub output: Option<String>,
+    #[clap(
+        short = 'B',
+        long,
+        help = "Emits binary data",
+    )]
+    pub binary: bool,
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    name = "attest-certifications",
+    display_order = 200,
+    about = "Attests to third-party certifications",
+    long_about =
+"
+Attests to third-party certifications allowing for their distribution
+
+To prevent certificate flooding attacks, modern key servers prevent
+uncontrolled distribution of third-party certifications on
+certificates.  To make the key holder the sovereign over the
+information over what information is distributed with the certificate,
+the key holder needs to explicitly attest to third-party
+certifications.
+
+After the attestation has been created, the certificate has to be
+distributed, e.g. by uploading it to a keyserver.
+",
+    after_help =
+"EXAMPLES:
+
+# Attest to all certifications present on the key
+$ sq key attest-certifications juliet.pgp
+
+# Retract prior attestations on the key
+$ sq key attest-certifications --none juliet.pgp
+",
+)]
+pub struct KeyAttestCertificationsCommand {
+    #[clap(
+        long = "none",
+        conflicts_with = "all",
+        help = "Removes all prior attestations",
+    )]
+    pub none: bool,
+    #[clap(
+        long = "all",
+        conflicts_with = "none",
+        help = "Attests to all certifications [default]",
+    )]
+    pub all: bool,
+    #[clap(
+        value_name = "KEY",
+        help = "Changes attestations on KEY",
+    )]
+    key: Option<String>,
+    #[clap(
+        short,
+        long,
+        value_name = "FILE",
+        help = "Writes to FILE or stdout if omitted"
+    )]
+    pub output: Option<String>,
+    #[clap(
+        short = 'B',
+        long,
+        help = "Emits binary data",
+    )]
+    pub binary: bool,
+
 }
 
 #[derive(Parser, Debug)]
