@@ -564,251 +564,6 @@ $ sq key attest-certifications --none juliet.pgp
                              .short('B').long("binary")
                              .help("Emits binary data"))
                 )
-        )
-
-        .subcommand(
-            Command::new("keyring")
-                .display_order(310)
-                .about("Manages collections of keys or certs")
-                .long_about(
-"Manages collections of keys or certs
-
-Collections of keys or certficicates (also known as \"keyrings\" when
-they contain secret key material, and \"certrings\" when they don't) are
-any number of concatenated certificates.  This subcommand provides
-tools to list, split, join, merge, and filter keyrings.
-
-Note: In the documentation of this subcommand, we sometimes use the
-terms keys and certs interchangeably.
-")
-                .subcommand_required(true)
-                .arg_required_else_help(true)
-                .subcommand(
-                    Command::new("filter")
-                        .display_order(600)
-                        .about("Joins keys into a keyring applying a filter")
-                        .long_about(
-"Joins keys into a keyring applying a filter
-
-This can be used to filter keys based on given predicates,
-e.g. whether they have a user id containing an email address with a
-certain domain.  Additionally, the keys can be pruned to only include
-components matching the predicates.
-
-If no filters are supplied, everything matches.
-
-If multiple predicates are given, they are or'ed, i.e. a key matches
-if any of the predicates match.  To require all predicates to match,
-chain multiple invocations of this command.  See EXAMPLES for
-inspiration.
-")
-                        .after_help(
-"EXAMPLES:
-
-# Converts a key to a cert (i.e., remove any secret key material)
-$ sq keyring filter --to-cert cat juliet.pgp
-
-# Gets the keys with a user id on example.org
-$ sq keyring filter --domain example.org keys.pgp
-
-# Gets the keys with a user id on example.org or example.net
-$ sq keyring filter --domain example.org --domain example.net keys.pgp
-
-# Gets the keys with a user id with the name Juliet
-$ sq keyring filter --name Juliet keys.pgp
-
-# Gets the keys with a user id with the name Juliet on example.org
-$ sq keyring filter --domain example.org keys.pgp | \\
-  sq keyring filter --name Juliet
-
-# Gets the keys with a user id on example.org, pruning other userids
-$ sq keyring filter --domain example.org --prune-certs certs.pgp
-")
-                        .arg(Arg::new("input")
-                             .value_name("FILE")
-                             .multiple_occurrences(true)
-                             .help("Reads from FILE or stdin if omitted"))
-                        .arg(Arg::new("output")
-                             .short('o').long("output").value_name("FILE")
-                             .help("Writes to FILE or stdout if omitted"))
-                        .arg(Arg::new("userid")
-                             .long("userid").value_name("USERID")
-                             .multiple_occurrences(true)
-                             .help("Matches on USERID")
-                             .long_help(
-                                 "Case-sensitively matches on the \
-                                  user id, requiring an exact match."))
-                        .arg(Arg::new("name")
-                             .long("name").value_name("NAME")
-                             .multiple_occurrences(true)
-                             .help("Matches on NAME")
-                             .long_help(
-                                 "Parses user ids into name and email \
-                                  and case-sensitively matches on the \
-                                  name, requiring an exact match."))
-                        .arg(Arg::new("email")
-                             .long("email").value_name("ADDRESS")
-                             .multiple_occurrences(true)
-                             .help("Matches on email ADDRESS")
-                             .long_help(
-                                 "Parses user ids into name and email \
-                                  address and case-sensitively matches \
-                                  on the email address, requiring an \
-                                  exact match."))
-                        .arg(Arg::new("domain")
-                             .long("domain").value_name("FQDN")
-                             .multiple_occurrences(true)
-                             .help("Matches on email domain FQDN")
-                             .long_help(
-                                 "Parses user ids into name and email \
-                                  address and case-sensitively matches \
-                                  on the domain of the email address, \
-                                  requiring an exact match."))
-                        .arg(Arg::new("handle")
-                             .long("handle").value_name("FINGERPRINT|KEYID")
-                             .multiple_occurrences(true)
-                             .help("Matches on (sub)key fingerprints and key ids")
-                             .long_help(
-                                 "Matches on both primary keys and subkeys, \
-                                  including those certificates that match the \
-                                  given fingerprint or key id."))
-                        .arg(Arg::new("prune-certs")
-                             .short('P').long("prune-certs")
-                             .help("Removes certificate components not \
-                                    matching the filter"))
-                        .arg(Arg::new("binary")
-                             .short('B').long("binary")
-                             .help("Emits binary data"))
-                        .arg(Arg::new("to-certificate")
-                             .long("to-cert")
-                             .help("Converts any keys in the input to \
-                                    certificates.  Converting a key to a \
-                                    certificate removes secret key material \
-                                    from the key thereby turning it into \
-                                    a certificate."))
-                )
-                .subcommand(
-                    Command::new("join")
-                        .display_order(300)
-                        .about("Joins keys or keyrings into a single keyring")
-                        .long_about(
-"Joins keys or keyrings into a single keyring
-
-Unlike \"sq keyring merge\", multiple versions of the same key are not
-merged together.
-
-The converse operation is \"sq keyring split\".
-")
-                        .after_help(
-"EXAMPLES:
-
-# Collect certs for an email conversation
-$ sq keyring join juliet.pgp romeo.pgp alice.pgp
-")
-                        .arg(Arg::new("input")
-                             .value_name("FILE")
-                             .multiple_occurrences(true)
-                             .help("Sets the input files to use"))
-                        .arg(Arg::new("output")
-                             .short('o').long("output").value_name("FILE")
-                             .help("Sets the output file to use"))
-                        .arg(Arg::new("binary")
-                             .short('B').long("binary")
-                             .help("Don't ASCII-armor the keyring"))
-                )
-                .subcommand(
-                    Command::new("merge")
-                        .display_order(350)
-                        .about("Merges keys or keyrings into a single keyring")
-                        .long_about(
-"Merges keys or keyrings into a single keyring
-
-Unlike \"sq keyring join\", the certificates are buffered and multiple
-versions of the same certificate are merged together.  Where data is
-replaced (e.g., secret key material), data from the later certificate
-is preferred.
-")
-                        .after_help(
-"EXAMPLES:
-
-# Merge certificate updates
-$ sq keyring merge certs.pgp romeo-updates.pgp
-")
-                        .arg(Arg::new("input")
-                             .value_name("FILE")
-                             .multiple_occurrences(true)
-                             .help("Reads from FILE"))
-                        .arg(Arg::new("output")
-                             .short('o').long("output").value_name("FILE")
-                             .help("Writes to FILE or stdout if omitted"))
-                        .arg(Arg::new("binary")
-                             .short('B').long("binary")
-                             .help("Emits binary data"))
-                )
-                .subcommand(
-                    Command::new("list")
-                        .about("Lists keys in a keyring")
-                        .display_order(100)
-                        .long_about(
-"Lists keys in a keyring
-
-Prints the fingerprint as well as the primary userid for every
-certificate encountered in the keyring.
-")
-                        .after_help(
-"EXAMPLES:
-
-# List all certs
-$ sq keyring list certs.pgp
-
-# List all certs with a userid on example.org
-$ sq keyring filter --domain example.org certs.pgp | sq keyring list
-")
-                        .arg(Arg::new("input")
-                             .value_name("FILE")
-                             .help("Reads from FILE or stdin if omitted"))
-                        .arg(Arg::new("all-userids")
-                             .long("--all-userids")
-                             .help("Lists all user ids")
-                             .long_help(
-                                 "Lists all user ids, even those that are \
-                                  expired, revoked, or not valid under the \
-                                  standard policy."))
-                )
-                .subcommand(
-                    Command::new("split")
-                        .display_order(200)
-                        .about("Splits a keyring into individual keys")
-                        .long_about(
-"Splits a keyring into individual keys
-
-Splitting up a keyring into individual keys helps with curating a
-keyring.
-
-The converse operation is \"sq keyring join\".
-")
-                        .after_help(
-"EXAMPLES:
-
-# Split all certs
-$ sq keyring split certs.pgp
-
-# Split all certs, merging them first to avoid duplicates
-$ sq keyring merge certs.pgp | sq keyring split
-")
-                        .arg(Arg::new("input")
-                             .value_name("FILE")
-                             .help("Reads from FILE or stdin if omitted"))
-                        .arg(Arg::new("prefix")
-                             .short('p').long("prefix").value_name("FILE")
-                             .help("Writes to files with prefix FILE \
-                                    [defaults to the input filename with a \
-                                    dash, or \"output\" if keyring is read \
-                                    from stdin]"))
-                        .arg(Arg::new("binary")
-                             .short('B').long("binary")
-                             .help("Emits binary data"))
-                )
         );
 
     let app = if ! feature_autocrypt {
@@ -826,7 +581,8 @@ $ sq keyring merge certs.pgp | sq keyring split
     .subcommand(KeyserverCommand::command())
     .subcommand(RevokeCommand::command())
     .subcommand(PacketCommand::command())
-    .subcommand(CertifyCommand::command());
+    .subcommand(CertifyCommand::command())
+    .subcommand(KeyringCommand::command());
 
     app
 }
@@ -2000,6 +1756,324 @@ $ sq certify --time 20130721T0550+0200 neal.pgp ada.pgp ada
         help = "Certifies USERID for CERTIFICATE.",
     )]
     pub userid: String,
+}
+
+
+#[derive(Parser, Debug)]
+#[clap(
+    name = "keyring",
+    display_order = 310,
+    about = "Manages collections of keys or certs",
+    long_about =
+"Manages collections of keys or certs
+
+Collections of keys or certficicates (also known as \"keyrings\" when
+they contain secret key material, and \"certrings\" when they don't) are
+any number of concatenated certificates.  This subcommand provides
+tools to list, split, join, merge, and filter keyrings.
+
+Note: In the documentation of this subcommand, we sometimes use the
+terms keys and certs interchangeably.
+",
+    subcommand_required = true,
+    arg_required_else_help = true,
+)]
+pub struct KeyringCommand {
+    #[clap(subcommand)]
+    pub subcommand: KeyringSubcommands,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum KeyringSubcommands {
+    Filter(KeyringFilterCommand),
+    Join(KeyringJoinCommand),
+    Merge(KeyringMergeCommand),
+    List(KeyringListCommand),
+    Split(KeyringSplitCommand),
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    display_order = 600,
+    about = "Joins keys into a keyring applying a filter",
+    long_about =
+"Joins keys into a keyring applying a filter
+
+This can be used to filter keys based on given predicates,
+e.g. whether they have a user id containing an email address with a
+certain domain.  Additionally, the keys can be pruned to only include
+components matching the predicates.
+
+If no filters are supplied, everything matches.
+
+If multiple predicates are given, they are or'ed, i.e. a key matches
+if any of the predicates match.  To require all predicates to match,
+chain multiple invocations of this command.  See EXAMPLES for
+inspiration.
+",
+    after_help =
+"EXAMPLES:
+
+# Converts a key to a cert (i.e., remove any secret key material)
+$ sq keyring filter --to-cert cat juliet.pgp
+
+# Gets the keys with a user id on example.org
+$ sq keyring filter --domain example.org keys.pgp
+
+# Gets the keys with a user id on example.org or example.net
+$ sq keyring filter --domain example.org --domain example.net keys.pgp
+
+# Gets the keys with a user id with the name Juliet
+$ sq keyring filter --name Juliet keys.pgp
+
+# Gets the keys with a user id with the name Juliet on example.org
+$ sq keyring filter --domain example.org keys.pgp | \\
+  sq keyring filter --name Juliet
+
+# Gets the keys with a user id on example.org, pruning other userids
+$ sq keyring filter --domain example.org --prune-certs certs.pgp
+",
+)]
+pub struct KeyringFilterCommand {
+    #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
+    pub input: Vec<String>,
+    #[clap(
+        short,
+        long,
+        value_name = "FILE",
+        help = "Writes to FILE or stdout if omitted"
+    )]
+    pub output: Option<String>,
+    #[clap(
+        long = "userid",
+        value_name = "USERID",
+        multiple_occurrences = true,
+        help = "Matches on USERID",
+        long_help = "Case-sensitively matches on the \
+                user id, requiring an exact match.",
+    )]
+    pub userid: Option<Vec<String>>,
+    #[clap(
+        long = "name",
+        value_name = "NAME",
+        multiple_occurrences = true,
+        help = "Matches on NAME",
+        long_help = "Parses user ids into name and email \
+            and case-sensitively matches on the \
+            name, requiring an exact match.",
+    )]
+    pub name: Option<Vec<String>>,
+    #[clap(
+        long = "email",
+        value_name = "ADDRESS",
+        multiple_occurrences = true,
+        help = "Matches on email ADDRESS",
+        long_help = "Parses user ids into name and email \
+            address and case-sensitively matches \
+            on the email address, requiring an exact match.",
+    )]
+    pub email: Option<Vec<String>>,
+    #[clap(
+        long = "domain",
+        value_name = "FQDN",
+        help = "Matches on email domain FQDN",
+        long_help =
+            "Parses user ids into name and email \
+            address and case-sensitively matches \
+            on the domain of the email address, \
+            requiring an exact match.",
+    )]
+    pub domain: Option<Vec<String>>,
+    #[clap(
+        long = "handle",
+        value_name = "FINGERPRINT|KEYID",
+        help = "Matches on (sub)key fingerprints and key ids",
+        long_help =
+            "Matches on both primary keys and subkeys, \
+            including those certificates that match the \
+            given fingerprint or key id.",
+    )]
+    pub handle: Option<Vec<String>>,
+    #[clap(
+        short = 'P',
+        long = "prune-certs",
+        help = "Removes certificate components not matching the filter",
+    )]
+    pub prune_certs: bool,
+    #[clap(
+        short = 'B',
+        long = "binary",
+        help = "Emits binary data",
+    )]
+    pub binary: bool,
+    #[clap(
+        long = "to-cert",
+        help = "Converts any keys in the input to \
+            certificates.  Converting a key to a \
+            certificate removes secret key material \
+            from the key thereby turning it into \
+            a certificate.",
+    )]
+    pub to_certificate: bool,
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    display_order = 300,
+    about = "Joins keys or keyrings into a single keyring",
+    long_about =
+"Joins keys or keyrings into a single keyring
+
+Unlike \"sq keyring merge\", multiple versions of the same key are not
+merged together.
+
+The converse operation is \"sq keyring split\".
+",
+    after_help =
+"EXAMPLES:
+
+# Collect certs for an email conversation
+$ sq keyring join juliet.pgp romeo.pgp alice.pgp
+",
+)]
+pub struct KeyringJoinCommand {
+    #[clap(value_name = "FILE", help = "Sets the input files to use")]
+    pub input: Vec<String>,
+    #[clap(
+        short,
+        long,
+        value_name = "FILE",
+        help = "Sets the output file to use"
+    )]
+    pub output: Option<String>,
+    #[clap(
+        short = 'B',
+        long = "binary",
+        help = "Don't ASCII-armor the keyring",
+    )]
+    pub binary: bool,
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    display_order = 350,
+    about = "Merges keys or keyrings into a single keyring",
+    long_about =
+"Merges keys or keyrings into a single keyring
+
+Unlike \"sq keyring join\", the certificates are buffered and multiple
+versions of the same certificate are merged together.  Where data is
+replaced (e.g., secret key material), data from the later certificate
+is preferred.
+",
+    after_help =
+"EXAMPLES:
+
+# Merge certificate updates
+$ sq keyring merge certs.pgp romeo-updates.pgp
+",
+)]
+pub struct KeyringMergeCommand {
+    #[clap(
+        value_name = "FILE",
+        help = "Reads from FILE",
+    )]
+    pub input: Vec<String>,
+    #[clap(
+        short,
+        long,
+        value_name = "FILE",
+        help = "Writes to FILE or stdout if omitted"
+    )]
+    pub output: Option<String>,
+    #[clap(
+        short = 'B',
+        long = "binary",
+        help = "Emits binary data",
+    )]
+    pub binary: bool,
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    about = "Lists keys in a keyring",
+    display_order = 100,
+    long_about =
+"Lists keys in a keyring
+
+Prints the fingerprint as well as the primary userid for every
+certificate encountered in the keyring.
+",
+    after_help =
+"EXAMPLES:
+
+# List all certs
+$ sq keyring list certs.pgp
+
+# List all certs with a userid on example.org
+$ sq keyring filter --domain example.org certs.pgp | sq keyring list
+",
+)]
+pub struct KeyringListCommand {
+    #[clap(
+        value_name = "FILE",
+        help = "Reads from FILE or stdin if omitted",
+    )]
+    pub input: Option<String>,
+    #[clap(
+        long = "--all-userids",
+        help = "Lists all user ids",
+        long_help = "Lists all user ids, even those that are \
+            expired, revoked, or not valid under the \
+            standard policy.",
+    )]
+    pub all_userids: bool,
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    display_order = 200,
+    about = "Splits a keyring into individual keys",
+    long_about =
+"Splits a keyring into individual keys
+
+Splitting up a keyring into individual keys helps with curating a
+keyring.
+
+The converse operation is \"sq keyring join\".
+",
+    after_help =
+"EXAMPLES:
+
+# Split all certs
+$ sq keyring split certs.pgp
+
+# Split all certs, merging them first to avoid duplicates
+$ sq keyring merge certs.pgp | sq keyring split
+",
+)]
+pub struct KeyringSplitCommand {
+    #[clap(
+        value_name = "FILE",
+        help = "Reads from FILE or stdin if omitted",
+    )]
+    pub input: Option<String>,
+    #[clap(
+        short = 'p',
+        long = "prefix",
+        value_name = "FILE",
+        help = "Writes to files with prefix FILE \
+            [defaults to the input filename with a \
+            dash, or \"output\" if keyring is read \
+            from stdin]",
+    )]
+    pub prefix: Option<String>,
+    #[clap(
+        short = 'B',
+        long,
+        help = "Emits binary data",
+    )]
+    pub binary: bool,
 }
 
 #[derive(Parser, Debug)]
