@@ -311,16 +311,35 @@ fn list(config: Config,
 fn split(input: &mut (dyn io::Read + Sync + Send), prefix: &str, binary: bool)
          -> Result<()> {
     for (i, cert) in CertParser::from_reader(input)?.enumerate() {
-        let cert = cert.context("Malformed certificate in keyring")?;
-        let filename = format!(
-            "{}{}-{:X}",
-            prefix,
-            i,
-            cert.fingerprint());
+        let (filename, cert) = match cert {
+            Ok(cert) => {
+                let filename = format!(
+                    "{}{}-{:X}",
+                    prefix,
+                    i,
+                    cert.fingerprint());
+                (filename, Ok(cert))
+            },
+            Err(mut e) => if let Some(openpgp::Error::UnsupportedCert2(m, p)) =
+                e.downcast_mut::<openpgp::Error>()
+            {
+                // We didn't understand the cert.  But, we can still
+                // write it out!
+                let filename = format!(
+                    "{}{}-{}",
+                    prefix,
+                    i,
+                    to_filename_fragment(m).unwrap_or_else(|| "unknown".to_string()));
+                (filename, Err(std::mem::take(p)))
+            } else {
+                return Err(e.context("Malformed certificate in keyring"));
+            },
+        };
 
         // Try to be more helpful by including the first userid in the
         // filename.
-        let mut sink = if let Some(f) = cert.userids().next()
+        let mut sink = if let Some(f) = cert.as_ref().ok()
+            .and_then(|cert| cert.userids().next())
             .and_then(|uid| uid.email().unwrap_or(None))
             .and_then(to_filename_fragment)
         {
@@ -339,7 +358,12 @@ fn split(input: &mut (dyn io::Read + Sync + Send), prefix: &str, binary: bool)
         };
 
         if binary {
-            cert.as_tsk().serialize(&mut sink)?;
+            match cert {
+                Ok(cert) => cert.as_tsk().serialize(&mut sink)?,
+                Err(packets) => for p in packets {
+                    p.serialize(&mut sink)?;
+                },
+            }
         } else {
             use sequoia_openpgp::serialize::stream::{Message, Armorer};
             let message = Message::new(sink);
@@ -347,7 +371,12 @@ fn split(input: &mut (dyn io::Read + Sync + Send), prefix: &str, binary: bool)
             // XXX: should detect kind, see above
                 .kind(sequoia_openpgp::armor::Kind::PublicKey)
                 .build()?;
-            cert.as_tsk().serialize(&mut message)?;
+            match cert {
+                Ok(cert) => cert.as_tsk().serialize(&mut message)?,
+                Err(packets) => for p in packets {
+                    p.serialize(&mut message)?;
+                },
+            }
             message.finalize()?;
         }
     }
