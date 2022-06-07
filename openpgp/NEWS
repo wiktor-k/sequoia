@@ -4,7 +4,10 @@
 
 * Changes in 1.10.0
 ** New functionality
+   - Error::UnsupportedCert2
    - TryFrom<Packet> for Unknown
+** Deprecated functionality
+   - Error::UnsupportedCert, use Error::UnsupportedCert2 instead
 * Changes in 1.9.0
 ** New functionality
    - AEADAlgorithm::nonce_size replaces AEADAlgorithm::iv_size

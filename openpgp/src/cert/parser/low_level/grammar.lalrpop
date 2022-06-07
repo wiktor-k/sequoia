@@ -83,11 +83,28 @@ pub Cert: Option<Cert> = {
 
                 Ok(Some(cert))
             }
-            Some((Packet::Unknown(unknown), _sigs)) => {
+            Some((Packet::Unknown(unknown), sigs)) => {
+                let mut packets: Vec<Packet> = Default::default();
+                packets.push(unknown.into());
+                for sig in sigs {
+                    packets.push(sig.into());
+                }
+                for c in c.unwrap_or_default().into_iter() {
+                    match c {
+                        Component::SubkeyBundle(b) =>
+                            b.into_packets().for_each(|p| packets.push(p)),
+                        Component::UserIDBundle(b) =>
+                            b.into_packets().for_each(|p| packets.push(p)),
+                        Component::UserAttributeBundle(b) =>
+                            b.into_packets().for_each(|p| packets.push(p)),
+                        Component::UnknownBundle(b) =>
+                            b.into_packets().for_each(|p| packets.push(p)),
+                    }
+                }
                 Err(ParseError::User {
-                    error: Error::UnsupportedCert(format!(
-                        "Unsupported primary key: Unparsable {} ({:?}).",
-                        unknown.tag(), unknown).into())
+                    error: Error::UnsupportedCert2(
+                        "Unsupported primary key".into(),
+                        packets),
                 })
             }
             None => {

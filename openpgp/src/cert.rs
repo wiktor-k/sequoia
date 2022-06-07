@@ -4123,16 +4123,16 @@ mod test {
         // v3 primary keys are not supported.
 
         let cert = Cert::from_bytes(crate::tests::key("john-v3.pgp"));
-        assert_match!(Error::UnsupportedCert(_)
+        assert_match!(Error::UnsupportedCert2(..)
                       = cert.err().unwrap().downcast::<Error>().unwrap());
 
         let cert = Cert::from_bytes(crate::tests::key("john-v3-secret.pgp"));
-        assert_match!(Error::UnsupportedCert(_)
+        assert_match!(Error::UnsupportedCert2(..)
                       = cert.err().unwrap().downcast::<Error>().unwrap());
 
         // Lutz's key is a v3 key.
         let cert = Cert::from_bytes(crate::tests::key("lutz.gpg"));
-        assert_match!(Error::UnsupportedCert(_)
+        assert_match!(Error::UnsupportedCert2(..)
                       = cert.err().unwrap().downcast::<Error>().unwrap());
 
         // v3 certifications are not supported

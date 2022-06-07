@@ -792,21 +792,47 @@ impl<'a> CertParser<'a> {
             self.packets.push(pk);
         }
 
-        let packets = orig.packets.len();
-        t!("Finalizing certificate with {} packets", packets);
-        let tokens = orig.packets
-            .into_iter()
-            .filter_map(|p| p.into())
-            .collect::<Vec<Token>>();
-        t!("{} tokens: {:?}", tokens.len(), tokens);
-        if tokens.len() != packets {
+        let n_packets = orig.packets.len();
+        t!("Finalizing certificate with {} packets", n_packets);
+
+        // Convert to tokens, but preserve packets if it fails.
+        use std::convert::TryInto;
+        let mut failed = false;
+        let mut packets: Vec<Packet> = Vec::with_capacity(0);
+        let mut tokens: Vec<Token> = Vec::with_capacity(n_packets);
+        for p in orig.packets {
+            if failed {
+                // Just stash the packet.
+                packets.push(p);
+            } else {
+                match p.try_into() {
+                    Ok(t) => tokens.push(t),
+                    Err(p) => {
+                        // Conversion failed.  Revert the whole process.
+                        packets.reserve(n_packets);
+                        for t in tokens.drain(..) {
+                            packets.push({
+                                let p: Option<Packet> = t.into();
+                                p.expect("token created with packet")
+                            });
+                        }
+                        packets.push(p);
+                        failed = true;
+                    },
+                }
+            }
+        }
+
+        if failed {
             // There was at least one packet that doesn't belong in a
             // Cert.  Fail now.
-            let err = Error::UnsupportedCert(
-                "Packet sequence includes non-Cert packets.".into());
+            let err = Error::UnsupportedCert2(
+                "Packet sequence includes non-Cert packets.".into(),
+                packets);
             t!("Invalid certificate: {}", err);
             return Err(err.into());
         }
+        t!("{} tokens: {:?}", tokens.len(), tokens);
 
         let certo = match CertLowLevelParser::new()
             .parse(Lexer::from_tokens(&tokens))
@@ -861,7 +887,7 @@ impl<'a> CertParser<'a> {
 
         t!("Returning {:?}, constructed from {} packets",
            certo.as_ref().map(|c| c.fingerprint()),
-           packets);
+           n_packets);
 
         Ok(certo)
     }

@@ -296,6 +296,11 @@ pub enum Error {
     /// unsupported format.  In particular, Sequoia does not support
     /// version 3 keys.
     #[error("Unsupported Cert: {0}")]
+    UnsupportedCert2(String, Vec<Packet>),
+
+    /// Unsupported Cert, deprecated version.
+    #[deprecated(since = "1.10.0", note = "Use UnsupportedCert2 instead.")]
+    #[error("Unsupported Cert: {0}")]
     UnsupportedCert(String),
 
     /// Index out of range.
