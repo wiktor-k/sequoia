@@ -1636,7 +1636,7 @@ impl SignatureBuilder {
 
                 if t > now {
                     return Err(Error::InvalidOperation(
-                        "Cannot create valid signature newer than template"
+                        "Cannot create valid signature newer than SignatureBuilder template"
                             .into()).into());
                 }
 
