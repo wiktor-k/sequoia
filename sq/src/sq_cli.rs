@@ -218,40 +218,6 @@ $ sq encrypt --symmetric message.txt
                              "If a certificate has only expired \
                               encryption-capable subkeys, falls back \
                               to using the one that expired last"))
-        )
-
-        .subcommand(Command::new("inspect")
-                    .display_order(600)
-                    .about("Inspects data, like file(1)")
-                    .long_about(
-"Inspects data, like file(1)
-
-It is often difficult to tell from cursory inspection using cat(1) or
-file(1) what kind of OpenPGP one is looking at.  This subcommand
-inspects the data and provides a meaningful human-readable description
-of it.
-")
-                    .after_help(
-"EXAMPLES:
-
-# Inspects a certificate
-$ sq inspect juliet.pgp
-
-# Inspects a certificate ring
-$ sq inspect certs.pgp
-
-# Inspects a message
-$ sq inspect message.pgp
-
-# Inspects a detached signature
-$ sq inspect message.sig
-")
-                    .arg(Arg::new("input")
-                         .value_name("FILE")
-                         .help("Reads from FILE or stdin if omitted"))
-                    .arg(Arg::new("certifications")
-                         .long("certifications")
-                         .help("Prints third-party certifications"))
         );
 
     let app = if ! feature_autocrypt {
@@ -271,7 +237,8 @@ $ sq inspect message.sig
     .subcommand(PacketCommand::command())
     .subcommand(CertifyCommand::command())
     .subcommand(KeyringCommand::command())
-    .subcommand(KeyCommand::command());
+    .subcommand(KeyCommand::command())
+    .subcommand(InspectCommand::command());
 
     app
 }
@@ -2367,6 +2334,49 @@ pub struct KeyserverGetCommand {
 pub struct KeyserverSendCommand {
     #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
     pub input: Option<String>,
+}
+
+#[derive(Parser, Debug)]
+#[clap(
+    name = "inspect",
+    display_order(600),
+    about = "Inspects data, like file(1)",
+    long_about =
+"Inspects data, like file(1)
+
+It is often difficult to tell from cursory inspection using cat(1) or
+file(1) what kind of OpenPGP one is looking at.  This subcommand
+inspects the data and provides a meaningful human-readable description
+of it.
+",
+    after_help =
+"EXAMPLES:
+
+# Inspects a certificate
+$ sq inspect juliet.pgp
+
+# Inspects a certificate ring
+$ sq inspect certs.pgp
+
+# Inspects a message
+$ sq inspect message.pgp
+
+# Inspects a detached signature
+$ sq inspect message.sig
+",
+)]
+struct InspectCommand {
+    #[clap(
+        value_name = "FILE",
+        help = "Reads from FILE or stdin if omitted",
+    )]
+    pub input: Option<String>,
+    #[clap(
+        long = "certifications",
+        help = "Prints third-party certifications",
+    )]
+    pub certifications: bool,
+
 }
 
 #[cfg(feature = "autocrypt")]
