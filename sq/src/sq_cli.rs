@@ -2056,7 +2056,8 @@ pub struct WkdGetCommand {
 
 #[derive(Debug, Args)]
 #[clap(
-    about = "Generates a Web Key Directory for the given domain and keys.  \
+    about = "Generates a Web Key Directory for the given domain and keys.",
+    long_about = "Generates a Web Key Directory for the given domain and keys.  \
         If the WKD exists, the new keys will be inserted and it \
         is updated and existing ones will be updated.",
 )]
