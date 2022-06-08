@@ -553,19 +553,21 @@ fn main() -> Result<()> {
             }
         },
         Some(("verify",  m)) => {
-            let mut input = open_or_stdin(m.value_of("input"))?;
+            use clap::FromArgMatches;
+            let command = sq_cli::VerifyCommand::from_arg_matches(m)?;
+
+            // TODO: Fix interface of open_or_stdin, create_or_stdout_safe, etc.
+            let mut input = open_or_stdin(command.input.as_deref())?;
             let mut output =
-                config.create_or_stdout_safe(m.value_of("output"))?;
-            let mut detached = if let Some(f) = m.value_of("detached") {
+                config.create_or_stdout_safe(command.output.as_deref())?;
+            let mut detached = if let Some(f) = command.detached {
                 Some(File::open(f)?)
             } else {
                 None
             };
-            let signatures: usize =
-                m.value_of("signatures").expect("has a default").parse()?;
-            let certs = m.values_of("sender-cert-file")
-                .map(load_certs)
-                .unwrap_or_else(|| Ok(vec![]))?;
+            let signatures = command.signatures;
+            // TODO ugly adaptation to load_certs' signature, fix later
+            let certs = load_certs(command.sender_cert_file.iter().map(|s| s.as_ref()))?;
             commands::verify(config, &mut input,
                              detached.as_mut().map(|r| r as &mut (dyn io::Read + Sync + Send)),
                              &mut output, signatures, certs)?;
