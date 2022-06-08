@@ -242,21 +242,40 @@ impl From<PublicKeyAlgorithm> for u8 {
 impl fmt::Display for PublicKeyAlgorithm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use crate::PublicKeyAlgorithm::*;
-        #[allow(deprecated)]
-        match *self {
-            RSAEncryptSign => f.write_str("RSA (Encrypt or Sign)"),
-            RSAEncrypt => f.write_str("RSA Encrypt-Only"),
-            RSASign => f.write_str("RSA Sign-Only"),
-            ElGamalEncrypt => f.write_str("ElGamal (Encrypt-Only)"),
-            DSA => f.write_str("DSA (Digital Signature Algorithm)"),
-            ECDSA => f.write_str("ECDSA public key algorithm"),
-            ElGamalEncryptSign => f.write_str("ElGamal (Encrypt or Sign)"),
-            ECDH => f.write_str("ECDH public key algorithm"),
-            EdDSA => f.write_str("EdDSA Edwards-curve Digital Signature Algorithm"),
-            Private(u) =>
-                f.write_fmt(format_args!("Private/Experimental public key algorithm {}", u)),
-            Unknown(u) =>
-                f.write_fmt(format_args!("Unknown public key algorithm {}", u)),
+        if f.alternate() {
+            #[allow(deprecated)]
+            match *self {
+                RSAEncryptSign => f.write_str("RSA (Encrypt or Sign)"),
+                RSAEncrypt => f.write_str("RSA Encrypt-Only"),
+                RSASign => f.write_str("RSA Sign-Only"),
+                ElGamalEncrypt => f.write_str("ElGamal (Encrypt-Only)"),
+                DSA => f.write_str("DSA (Digital Signature Algorithm)"),
+                ECDSA => f.write_str("ECDSA public key algorithm"),
+                ElGamalEncryptSign => f.write_str("ElGamal (Encrypt or Sign)"),
+                ECDH => f.write_str("ECDH public key algorithm"),
+                EdDSA => f.write_str("EdDSA Edwards-curve Digital Signature Algorithm"),
+                Private(u) =>
+                    f.write_fmt(format_args!("Private/Experimental public key algorithm {}", u)),
+                Unknown(u) =>
+                    f.write_fmt(format_args!("Unknown public key algorithm {}", u)),
+            }
+        } else {
+            #[allow(deprecated)]
+            match *self {
+                RSAEncryptSign => f.write_str("RSA"),
+                RSAEncrypt => f.write_str("RSA"),
+                RSASign => f.write_str("RSA"),
+                ElGamalEncrypt => f.write_str("ElGamal"),
+                DSA => f.write_str("DSA"),
+                ECDSA => f.write_str("ECDSA"),
+                ElGamalEncryptSign => f.write_str("ElGamal"),
+                ECDH => f.write_str("ECDH"),
+                EdDSA => f.write_str("EdDSA"),
+                Private(u) =>
+                    f.write_fmt(format_args!("Private algo {}", u)),
+                Unknown(u) =>
+                    f.write_fmt(format_args!("Unknown algo {}", u)),
+            }
         }
     }
 }

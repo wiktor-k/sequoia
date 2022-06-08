@@ -354,7 +354,7 @@ the default ever changes.
 given an installed sq
 when I run sq key generate --export key.pgp --cipher-suite=cv25519
 when I run sq inspect key.pgp
-then stdout contains "Public-key algo: EdDSA Edwards-curve Digital Signature Algorithm"
+then stdout contains "Public-key algo: EdDSA"
 then stdout contains "Public-key size: 256 bits"
 ~~~
 
