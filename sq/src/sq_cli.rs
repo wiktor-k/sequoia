@@ -547,7 +547,7 @@ pub struct PacketSplitCommand {
         long = "prefix",
         value_name = "PREFIX",
         help = "Writes to files with PREFIX \
-            [defaults: FILE a dash, or \"output\" if read from stdin)",
+            [defaults: \"FILE-\" if FILE is set, or \"output-\" if read from stdin]",
     )]
     pub prefix: Option<String>,
 }
@@ -1552,11 +1552,9 @@ pub struct KeyringSplitCommand {
     #[clap(
         short = 'p',
         long = "prefix",
-        value_name = "FILE",
-        help = "Writes to files with prefix FILE \
-            [defaults to the input filename with a \
-            dash, or \"output\" if keyring is read \
-            from stdin]",
+        value_name = "PREFIX",
+        help = "Writes to files with PREFIX \
+            [defaults: \"FILE-\" if FILE is set, or \"output-\" if read from stdin]",
     )]
     pub prefix: Option<String>,
     #[clap(

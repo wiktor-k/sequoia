@@ -749,9 +749,9 @@
 //!     -h, --help
 //!             Print help information
 //!
-//!     -p, --prefix <FILE>
-//!             Writes to files with prefix FILE [defaults to the input filename
-//!             with a dash, or "output" if keyring is read from stdin]
+//!     -p, --prefix <PREFIX>
+//!             Writes to files with PREFIX [defaults: "FILE-" if FILE is set, or
+//!             "output-" if read from stdin]
 //!
 //! EXAMPLES:
 //!
@@ -1536,8 +1536,8 @@
 //!             Print help information
 //!
 //!     -p, --prefix <PREFIX>
-//!             Writes to files with PREFIX [defaults: FILE a dash, or "output" if
-//!             read from stdin)
+//!             Writes to files with PREFIX [defaults: "FILE-" if FILE is set, or
+//!             "output-" if read from stdin]
 //!
 //! EXAMPLES:
 //!
