@@ -696,7 +696,7 @@ pub struct RevokeCertificateCommand {
         alias = "cert",
         help = "The certificate to revoke",
         long_help =
-"Reads the certificate to revoke from FILE or stdin, if omitted.  It is
+"Reads the certificate to revoke from FILE or stdin, if omitted.  It is \
 an error for the file to contain more than one certificate.",
     )]
     pub input: Option<String>,
@@ -705,9 +705,9 @@ an error for the file to contain more than one certificate.",
         value_name = "KEY",
         help = "Signs the revocation certificate using KEY",
         long_help =
-"Signs the revocation certificate using KEY.  If the key is different
-from the certificate, this creates a third-party revocation.  If this
-option is not provided, and the certificate includes secret key material,
+"Signs the revocation certificate using KEY.  If the key is different \
+from the certificate, this creates a third-party revocation.  If this \
+option is not provided, and the certificate includes secret key material, \
 then that key is used to sign the revocation certificate.",
     )]
     pub secret_key_file: Option<String>,
@@ -727,12 +727,12 @@ then that key is used to sign the revocation certificate.",
 superseded, retired, or unspecified:
 
   - compromised means that the secret key material may have been
-    compromised.  Prefer this value if you suspect that the secret key
-    has been leaked.
+    compromised.  Prefer this value if you suspect that the secret
+    key has been leaked.
 
-  - superseded means that the owner of the certificate has replaced it
-    with a new certificate.  Prefer \"compromised\" if the secret key
-    material has been compromised even if the certificate is also
+  - superseded means that the owner of the certificate has replaced
+    it with a new certificate.  Prefer \"compromised\" if the secret
+    key material has been compromised even if the certificate is also
     being replaced!  You should include the fingerprint of the new
     certificate in the message.
 
@@ -744,8 +744,8 @@ superseded, retired, or unspecified:
     who to contact instead in the message.
 
   - unspecified means that none of the three other three reasons
-    apply.  OpenPGP implementations conservatively treat this type of
-    revocation similar to a compromised key.
+    apply.  OpenPGP implementations conservatively treat this type
+    of revocation similar to a compromised key.
 
 If the reason happened in the past, you should specify that using the
 --time argument.  This allows OpenPGP implementations to more
@@ -759,11 +759,11 @@ of the certificate.",
         value_name = "MESSAGE",
         help = "A short, explanatory text",
         long_help =
-"A short, explanatory text that is shown to a viewer of the revocation
-certificate.  It explains why the certificate has been revoked.  For
-instance, if Alice has created a new key, she would generate a
-'superseded' revocation certificate for her old key, and might include
-the message \"I've created a new certificate, FINGERPRINT, please use
+"A short, explanatory text that is shown to a viewer of the revocation \
+certificate.  It explains why the certificate has been revoked.  For \
+instance, if Alice has created a new key, she would generate a \
+'superseded' revocation certificate for her old key, and might include \
+the message \"I've created a new certificate, FINGERPRINT, please use \
 that in the future.\"",
     )]
     pub message: String,
@@ -772,7 +772,7 @@ that in the future.\"",
         long,
         value_name = "TIME",
         help =
-"Chooses keys valid at the specified time and sets the revocation
+"Chooses keys valid at the specified time and sets the revocation \
 certificate's creation time",
     )]
     pub time: Option<String>,
@@ -815,13 +815,13 @@ pub enum RevocationReason {
 
 Creates a revocation certificate for a subkey.
 
-If \"--revocation-key\" is provided, then that key is used to create
-the signature.  If that key is different from the certificate being
-revoked, this creates a third-party revocation.  This is normally only
-useful if the owner of the certificate designated the key to be a
+If \"--revocation-key\" is provided, then that key is used to create \
+the signature.  If that key is different from the certificate being \
+revoked, this creates a third-party revocation.  This is normally only \
+useful if the owner of the certificate designated the key to be a \
 designated revoker.
 
-If \"--revocation-key\" is not provided, then the certificate must
+If \"--revocation-key\" is not provided, then the certificate must \
 include a certification-capable key.",
 )]
 pub struct RevokeSubkeyCommand {
@@ -831,8 +831,8 @@ pub struct RevokeSubkeyCommand {
         alias = "cert",
         help = "The certificate containing the subkey to revoke",
         long_help =
-"Reads the certificate containing the subkey to revoke from FILE or stdin,
-if omitted.  It is an error for the file to contain more than one
+"Reads the certificate containing the subkey to revoke from FILE or stdin, \
+if omitted.  It is an error for the file to contain more than one \
 certificate."
     )]
     pub input: Option<String>,
@@ -841,9 +841,9 @@ certificate."
         value_name = "KEY",
         help = "Signs the revocation certificate using KEY",
         long_help =
-"Signs the revocation certificate using KEY.  If the key is different
-from the certificate, this creates a third-party revocation.  If this
-option is not provided, and the certificate includes secret key material,
+"Signs the revocation certificate using KEY.  If the key is different \
+from the certificate, this creates a third-party revocation.  If this \
+option is not provided, and the certificate includes secret key material, \
 then that key is used to sign the revocation certificate.",
     )]
     pub secret_key_file: Option<String>,
@@ -857,7 +857,7 @@ then that key is used to sign the revocation certificate.",
         value_name = "SUBKEY",
         help = "The subkey to revoke",
         long_help =
-"The subkey to revoke.  This must either be the subkey's Key ID or its
+"The subkey to revoke.  This must either be the subkey's Key ID or its \
 fingerprint.",
     )]
     pub subkey: String,
@@ -867,18 +867,18 @@ fingerprint.",
         required = true,
         help = "The reason for the revocation",
         long_help =
-"The reason for the revocation.  This must be either: compromised,
+"The reason for the revocation.  This must be either: compromised, \
 superseded, retired, or unspecified:
 
   - compromised means that the secret key material may have been
-    compromised.  Prefer this value if you suspect that the secret key
-    has been leaked.
+    compromised.  Prefer this value if you suspect that the secret
+    key has been leaked.
 
-  - superseded means that the owner of the certificate has replaced it
-    with a new certificate.  Prefer \"compromised\" if the secret key
-    material has been compromised even if the certificate is also
-    being replaced!  You should include the fingerprint of the new
-    certificate in the message.
+  - superseded means that the owner of the certificate has replaced
+    it with a new certificate.  Prefer \"compromised\" if the secret
+    key material has been compromised even if the certificate is
+    also being replaced!  You should include the fingerprint of the
+    new certificate in the message.
 
   - retired means that this certificate should not be used anymore,
     and there is no replacement.  This is appropriate when someone
@@ -888,12 +888,12 @@ superseded, retired, or unspecified:
     who to contact instead in the message.
 
   - unspecified means that none of the three other three reasons
-    apply.  OpenPGP implementations conservatively treat this type of
-    revocation similar to a compromised key.
+    apply.  OpenPGP implementations conservatively treat this type
+    of revocation similar to a compromised key.
 
-If the reason happened in the past, you should specify that using the
---time argument.  This allows OpenPGP implementations to more
-accurately reason about objects whose validity depends on the validity
+If the reason happened in the past, you should specify that using the \
+--time argument.  This allows OpenPGP implementations to more \
+accurately reason about objects whose validity depends on the validity \
 of the certificate.",
     arg_enum,
     )]
@@ -902,10 +902,10 @@ of the certificate.",
         value_name = "MESSAGE",
         help = "A short, explanatory text",
         long_help =
-"A short, explanatory text that is shown to a viewer of the revocation
-certificate.  It explains why the subkey has been revoked.  For
-instance, if Alice has created a new key, she would generate a
-'superseded' revocation certificate for her old key, and might include
+"A short, explanatory text that is shown to a viewer of the revocation \
+certificate.  It explains why the subkey has been revoked.  For \
+instance, if Alice has created a new key, she would generate a \
+'superseded' revocation certificate for her old key, and might include \
 the message \"I've created a new subkey, please refresh the certificate."
     )]
     pub message: String,
@@ -914,7 +914,7 @@ the message \"I've created a new subkey, please refresh the certificate."
         long,
         value_name = "TIME",
         help =
-"Chooses keys valid at the specified time and sets the revocation
+"Chooses keys valid at the specified time and sets the revocation \
 certificate's creation time",
     )]
     pub time: Option<String>,
@@ -949,13 +949,13 @@ certificate's creation time",
 
 Creates a revocation certificate for a User ID.
 
-If \"--revocation-key\" is provided, then that key is used to create
-the signature.  If that key is different from the certificate being
-revoked, this creates a third-party revocation.  This is normally only
-useful if the owner of the certificate designated the key to be a
+If \"--revocation-key\" is provided, then that key is used to create \
+the signature.  If that key is different from the certificate being \
+revoked, this creates a third-party revocation.  This is normally only \
+useful if the owner of the certificate designated the key to be a \
 designated revoker.
 
-If \"--revocation-key\" is not provided, then the certificate must
+If \"--revocation-key\" is not provided, then the certificate must \
 include a certification-capable key.",
 )]
 pub struct RevokeUseridCommand {
@@ -965,8 +965,8 @@ pub struct RevokeUseridCommand {
         alias = "cert",
         help = "The certificate containing the User ID to revoke",
         long_help =
-"Reads the certificate to revoke from FILE or stdin,
-if omitted.  It is an error for the file to contain more than one
+"Reads the certificate to revoke from FILE or stdin, \
+if omitted.  It is an error for the file to contain more than one \
 certificate."
     )]
     pub input: Option<String>,
@@ -975,9 +975,9 @@ certificate."
         value_name = "KEY",
         help = "Signs the revocation certificate using KEY",
         long_help =
-"Signs the revocation certificate using KEY.  If the key is different
-from the certificate, this creates a third-party revocation.  If this
-option is not provided, and the certificate includes secret key material,
+"Signs the revocation certificate using KEY.  If the key is different \
+from the certificate, this creates a third-party revocation.  If this \
+option is not provided, and the certificate includes secret key material, \
 then that key is used to sign the revocation certificate.",
     )]
     pub secret_key_file: Option<String>,
@@ -991,8 +991,8 @@ then that key is used to sign the revocation certificate.",
         value_name = "USERID",
         help = "The User ID to revoke",
         long_help =
-"The User ID to revoke.  By default, this must exactly match a
-self-signed User ID.  Use --force to generate a revocation certificate
+"The User ID to revoke.  By default, this must exactly match a \
+self-signed User ID.  Use --force to generate a revocation certificate \
 for a User ID, which is not self signed."
     )]
     pub userid: String,
@@ -1001,7 +1001,7 @@ for a User ID, which is not self signed."
         value_name = "REASON",
         help = "The reason for the revocation",
         long_help =
-"The reason for the revocation.  This must be either: retired, or
+"The reason for the revocation.  This must be either: retired, or \
 unspecified:
 
   - retired means that this User ID is no longer valid.  This is
@@ -1013,9 +1013,9 @@ unspecified:
 
   - unspecified means that a different reason applies.
 
-If the reason happened in the past, you should specify that using the
---time argument.  This allows OpenPGP implementations to more
-accurately reason about objects whose validity depends on the validity
+If the reason happened in the past, you should specify that using the \
+--time argument.  This allows OpenPGP implementations to more \
+accurately reason about objects whose validity depends on the validity \
 of a User ID."
     )]
     pub reason: UseridRevocationReason,
@@ -1023,11 +1023,11 @@ of a User ID."
         value_name = "MESSAGE",
         help = "A short, explanatory text",
         long_help =
-"A short, explanatory text that is shown to a viewer of the revocation
-certificate.  It explains why the certificate has been revoked.  For
-instance, if Alice has created a new key, she would generate a
-'superseded' revocation certificate for her old key, and might include
-the message \"I've created a new certificate, FINGERPRINT, please use
+"A short, explanatory text that is shown to a viewer of the revocation \
+certificate.  It explains why the certificate has been revoked.  For \
+instance, if Alice has created a new key, she would generate a \
+'superseded' revocation certificate for her old key, and might include \
+the message \"I've created a new certificate, FINGERPRINT, please use \
 that in the future.\"",
     )]
     pub message: String,
@@ -1036,7 +1036,7 @@ that in the future.\"",
         long,
         value_name = "TIME",
         help =
-"Chooses keys valid at the specified time and sets the revocation
+"Chooses keys valid at the specified time and sets the revocation \
 certificate's creation time",
     )]
     pub time: Option<String>,
