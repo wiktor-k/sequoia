@@ -617,7 +617,6 @@
 //! ### Subcommand key adopt
 //!
 //! ```text
-//!
 //! Binds keys from one certificate to another
 //!
 //! This command allows one to transfer primary keys and subkeys into an
@@ -916,7 +915,6 @@
 //! ## Subcommand certify
 //!
 //! ```text
-//!
 //! Certifies a User ID for a Certificate
 //!
 //! Using a certification a keyholder may vouch for the fact that another
@@ -1479,7 +1477,6 @@
 //! ### Subcommand packet decrypt
 //!
 //! ```text
-//!
 //! Unwraps an encryption container
 //!
 //! Decrypts a message, dumping the content of the encryption container
@@ -1521,7 +1518,6 @@
 //! ### Subcommand packet split
 //!
 //! ```text
-//!
 //! Splits a message into packets
 //!
 //! Splitting a packet sequence into individual packets, then recombining
@@ -1554,7 +1550,6 @@
 //! ### Subcommand packet join
 //!
 //! ```text
-//!
 //! Joins packets split across files
 //!
 //! Splitting a packet sequence into individual packets, then recombining
@@ -1598,7 +1593,6 @@
 //! ## Subcommand revoke
 //!
 //! ```text
-//!
 //! Generates revocation certificates.
 //!
 //! A revocation certificate indicates that a certificate, a subkey, a
@@ -1670,7 +1664,6 @@
 //!
 //! ARGS:
 //!     <REASON>
-//! 
 //!             The reason for the revocation.  This must be either: compromised,
 //!             superseded, retired, or unspecified:
 //! 
@@ -1708,7 +1701,6 @@
 //!             [possible values: compromised, superseded, retired, unspecified]
 //!
 //!     <MESSAGE>
-//! 
 //!             A short, explanatory text that is shown to a viewer of the
 //!             revocation
 //!             certificate.  It explains why the certificate has been revoked.  For
@@ -1723,7 +1715,6 @@
 //!             Emits binary data
 //!
 //!         --certificate <FILE>
-//! 
 //!             Reads the certificate to revoke from FILE or stdin, if omitted.  It
 //!             is
 //!             an error for the file to contain more than one certificate.
@@ -1743,7 +1734,6 @@
 //!             Provides parameters for private key store
 //!
 //!         --revocation-key <KEY>
-//! 
 //!             Signs the revocation certificate using KEY.  If the key is different
 //!             from the certificate, this creates a third-party revocation.  If
 //!             this
@@ -1782,7 +1772,6 @@
 //!             fingerprint.
 //!
 //!     <REASON>
-//! 
 //!             The reason for the revocation.  This must be either: compromised,
 //!             superseded, retired, or unspecified:
 //! 
@@ -1820,7 +1809,6 @@
 //!             [possible values: compromised, superseded, retired, unspecified]
 //!
 //!     <MESSAGE>
-//! 
 //!             A short, explanatory text that is shown to a viewer of the
 //!             revocation
 //!             certificate.  It explains why the subkey has been revoked.  For
@@ -1855,7 +1843,6 @@
 //!             Provides parameters for private key store
 //!
 //!         --revocation-key <KEY>
-//! 
 //!             Signs the revocation certificate using KEY.  If the key is different
 //!             from the certificate, this creates a third-party revocation.  If
 //!             this
@@ -1871,7 +1858,6 @@
 //! ### Subcommand revoke userid
 //!
 //! ```text
-//!
 //! Revokes a User ID
 //!
 //! Creates a revocation certificate for a User ID.
@@ -1918,7 +1904,6 @@
 //!             [possible values: retired, unspecified]
 //!
 //!     <MESSAGE>
-//! 
 //!             A short, explanatory text that is shown to a viewer of the
 //!             revocation
 //!             certificate.  It explains why the certificate has been revoked.  For
@@ -1952,7 +1937,6 @@
 //!             Provides parameters for private key store
 //!
 //!         --revocation-key <KEY>
-//! 
 //!             Signs the revocation certificate using KEY.  If the key is different
 //!             from the certificate, this creates a third-party revocation.  If
 //!             this

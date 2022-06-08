@@ -485,8 +485,7 @@ pub struct PacketDumpCommand {
 #[clap(
     display_order = 200,
     about = "Unwraps an encryption container",
-    long_about = "
-Unwraps an encryption container
+    long_about = "Unwraps an encryption container
 
 Decrypts a message, dumping the content of the encryption container
 without further processing.  The result is a valid OpenPGP message
@@ -531,8 +530,7 @@ pub struct PacketDecryptCommand {
 #[clap(
     display_order = 300,
     about = "Splits a message into packets",
-    long_about = "
-Splits a message into packets
+    long_about = "Splits a message into packets
 
 Splitting a packet sequence into individual packets, then recombining
 them freely with \"sq packet join\" is a great way to experiment with
@@ -564,8 +562,7 @@ pub struct PacketSplitCommand {
 #[clap(
     display_order = 310,
     about = "Joins packets split across files",
-    long_about = "
-Joins packets split across files
+    long_about = "Joins packets split across files
 
 Splitting a packet sequence into individual packets, then recombining
 them freely with \"sq packet join\" is a great way to experiment with
@@ -625,8 +622,7 @@ pub enum PacketKind {
     name = "revoke",
     display_order = 700,
     about = "Generates revocation certificates",
-    long_about = "
-Generates revocation certificates.
+    long_about = "Generates revocation certificates.
 
 A revocation certificate indicates that a certificate, a subkey, a
 User ID, or a signature should not be used anymore.
@@ -699,8 +695,8 @@ pub struct RevokeCertificateCommand {
         long = "certificate",
         alias = "cert",
         help = "The certificate to revoke",
-        long_help = "
-Reads the certificate to revoke from FILE or stdin, if omitted.  It is
+        long_help =
+"Reads the certificate to revoke from FILE or stdin, if omitted.  It is
 an error for the file to contain more than one certificate.",
     )]
     pub input: Option<String>,
@@ -708,8 +704,8 @@ an error for the file to contain more than one certificate.",
         long = "revocation-key",
         value_name = "KEY",
         help = "Signs the revocation certificate using KEY",
-        long_help = "
-Signs the revocation certificate using KEY.  If the key is different
+        long_help =
+"Signs the revocation certificate using KEY.  If the key is different
 from the certificate, this creates a third-party revocation.  If this
 option is not provided, and the certificate includes secret key material,
 then that key is used to sign the revocation certificate.",
@@ -726,8 +722,8 @@ then that key is used to sign the revocation certificate.",
         value_name = "REASON",
         required = true,
         help = "The reason for the revocation",
-        long_help = "
-The reason for the revocation.  This must be either: compromised,
+        long_help =
+"The reason for the revocation.  This must be either: compromised,
 superseded, retired, or unspecified:
 
   - compromised means that the secret key material may have been
@@ -762,8 +758,8 @@ of the certificate.",
     #[clap(
         value_name = "MESSAGE",
         help = "A short, explanatory text",
-        long_help = "
-A short, explanatory text that is shown to a viewer of the revocation
+        long_help =
+"A short, explanatory text that is shown to a viewer of the revocation
 certificate.  It explains why the certificate has been revoked.  For
 instance, if Alice has created a new key, she would generate a
 'superseded' revocation certificate for her old key, and might include
@@ -844,8 +840,8 @@ certificate."
         long = "revocation-key",
         value_name = "KEY",
         help = "Signs the revocation certificate using KEY",
-        long_help = "
-Signs the revocation certificate using KEY.  If the key is different
+        long_help =
+"Signs the revocation certificate using KEY.  If the key is different
 from the certificate, this creates a third-party revocation.  If this
 option is not provided, and the certificate includes secret key material,
 then that key is used to sign the revocation certificate.",
@@ -870,8 +866,8 @@ fingerprint.",
         value_name = "REASON",
         required = true,
         help = "The reason for the revocation",
-        long_help = "
-The reason for the revocation.  This must be either: compromised,
+        long_help =
+"The reason for the revocation.  This must be either: compromised,
 superseded, retired, or unspecified:
 
   - compromised means that the secret key material may have been
@@ -905,8 +901,8 @@ of the certificate.",
     #[clap(
         value_name = "MESSAGE",
         help = "A short, explanatory text",
-        long_help = "
-A short, explanatory text that is shown to a viewer of the revocation
+        long_help =
+"A short, explanatory text that is shown to a viewer of the revocation
 certificate.  It explains why the subkey has been revoked.  For
 instance, if Alice has created a new key, she would generate a
 'superseded' revocation certificate for her old key, and might include
@@ -949,8 +945,8 @@ certificate's creation time",
 #[clap(
     display_order = 110,
     about = "Revoke a User ID",
-    long_about = "
-Revokes a User ID
+    long_about =
+"Revokes a User ID
 
 Creates a revocation certificate for a User ID.
 
@@ -979,8 +975,8 @@ certificate."
         long = "revocation-key",
         value_name = "KEY",
         help = "Signs the revocation certificate using KEY",
-        long_help = "
-Signs the revocation certificate using KEY.  If the key is different
+        long_help =
+"Signs the revocation certificate using KEY.  If the key is different
 from the certificate, this creates a third-party revocation.  If this
 option is not provided, and the certificate includes secret key material,
 then that key is used to sign the revocation certificate.",
@@ -1027,8 +1023,8 @@ of a User ID."
     #[clap(
         value_name = "MESSAGE",
         help = "A short, explanatory text",
-        long_help = "
-A short, explanatory text that is shown to a viewer of the revocation
+        long_help =
+"A short, explanatory text that is shown to a viewer of the revocation
 certificate.  It explains why the certificate has been revoked.  For
 instance, if Alice has created a new key, she would generate a
 'superseded' revocation certificate for her old key, and might include
@@ -1078,8 +1074,8 @@ pub enum UseridRevocationReason {
     name = "certify",
     display_order = 320,
     about = "Certifies a User ID for a Certificate",
-    long_about = "
-Certifies a User ID for a Certificate
+    long_about =
+"Certifies a User ID for a Certificate
 
 Using a certification a keyholder may vouch for the fact that another
 certificate legitimately belongs to a user id.  In the context of
@@ -1876,8 +1872,8 @@ pub struct KeyExtractCertCommand {
     name = "adopt",
     display_order = 800,
     about = "Binds keys from one certificate to another",
-    long_about = "
-Binds keys from one certificate to another
+    long_about =
+"Binds keys from one certificate to another
 
 This command allows one to transfer primary keys and subkeys into an
 existing certificate.  Say you want to transition to a new
