@@ -2338,6 +2338,13 @@ impl Cert {
     /// certificate, it replaces the existing signature.  This way,
     /// the unhashed subpacket area can be updated.
     ///
+    /// On success, this function returns the certificate with the
+    /// packets merged in, and a boolean indicating whether the
+    /// certificate actually changed.  Changed here means that at
+    /// least one new packet was added, or an existing packet was
+    /// updated.  Alternatively, changed means that the serialized
+    /// form has changed.
+    ///
     /// [Known packets that don't belong in a TPK or TSK]: https://tools.ietf.org/html/rfc4880#section-11
     /// [unknown components]: Cert::unknowns()
     ///
@@ -2359,9 +2366,17 @@ impl Cert {
     /// assert!(cert.is_tsk());
     ///
     ///
+    /// // Merging in the certificate doesn't change it.
+    /// let identical_cert = cert.clone();
+    /// let (cert, changed) =
+    ///     cert.insert_packets2(identical_cert.into_packets())?;
+    /// assert!(! changed);
+    ///
+    ///
     /// // Merge in the revocation certificate.
     /// assert_eq!(cert.primary_key().self_revocations().count(), 0);
-    /// let cert = cert.insert_packets(rev)?;
+    /// let (cert, changed) = cert.insert_packets2(rev)?;
+    /// assert!(changed);
     /// assert_eq!(cert.primary_key().self_revocations().count(), 1);
     ///
     ///
@@ -2371,7 +2386,8 @@ impl Cert {
     ///     openpgp::Error::UnsupportedPacketType(tag).into());
     ///
     /// // It shows up as an unknown component.
-    /// let cert = cert.insert_packets(unknown)?;
+    /// let (cert, changed) = cert.insert_packets2(unknown)?;
+    /// assert!(changed);
     /// assert_eq!(cert.unknowns().count(), 1);
     /// for p in cert.unknowns() {
     ///     assert_eq!(p.tag(), tag);
@@ -2414,7 +2430,8 @@ impl Cert {
     ///
     /// // Merge in the public key.  Recall: the packets that are
     /// // being merged into the certificate take precedence.
-    /// let cert = cert.insert_packets(pk)?;
+    /// let (cert, changed) = cert.insert_packets2(pk)?;
+    /// assert!(changed);
     ///
     /// // The secret key material is stripped.
     /// assert!(! cert.primary_key().has_secret());
@@ -2454,7 +2471,8 @@ impl Cert {
     ///
     /// // Merge in the signature.  Recall: the packets that are
     /// // being merged into the certificate take precedence.
-    /// let cert = cert.insert_packets(sig)?;
+    /// let (cert, changed) = cert.insert_packets2(sig)?;
+    /// assert!(changed);
     ///
     /// // The old binding signature is replaced.
     /// assert_eq!(cert.userids().nth(0).unwrap().self_signatures().count(), 1);
@@ -2464,11 +2482,144 @@ impl Cert {
     ///                .subpackets(SubpacketTag::NotationData).count(), 1);
     /// # Ok(()) }
     /// ```
-    pub fn insert_packets<I>(self, packets: I)
-        -> Result<Self>
+    pub fn insert_packets2<I>(self, packets: I)
+        -> Result<(Self, bool)>
         where I: IntoIterator,
               I::Item: Into<Packet>,
     {
+        self.insert_packets_merge(packets, |_old, new| Ok(new))
+    }
+
+    /// Adds packets to the certificate with an explicit merge policy.
+    ///
+    /// Like [`Cert::insert_packets2`], but also takes a function that
+    /// will be called on inserts and replacements that can be used to
+    /// log changes to the certificate, and to influence how packets
+    /// are merged.  The merge function takes two parameters, an
+    /// optional existing packet, and the packet to be merged in.
+    ///
+    /// If a new packet is inserted, there is no packet currently in
+    /// the certificate.  Hence, the first parameter to the merge
+    /// function is `None`.
+    ///
+    /// If an existing packet is updated, there is a packet currently
+    /// in the certificate that matches the given packet.  Hence, the
+    /// first parameter to the merge function is
+    /// `Some(existing_packet)`.
+    ///
+    /// Both packets given to the merge function are considered equal
+    /// when considering the normalized form (only comparing public
+    /// key parameters and ignoring unhashed signature subpackets, see
+    /// [`Packet::normalized_hash`]).  It must return a packet that
+    /// equals the input packet.  In practice that means that the
+    /// merge function returns either the old packet, the new packet,
+    /// or a combination of both packets.  If the merge function
+    /// returns a different packet, this function returns
+    /// `Error::InvalidOperation`.
+    ///
+    /// If the merge function returns the existing packet, this
+    /// function will still consider this as a change to the
+    /// certificate.  In other words, it may return that the
+    /// certificate has changed even if the serialized representation
+    /// is not changed.
+    ///
+    /// # Examples
+    ///
+    /// In the first example, we give an explicit merge function that
+    /// just returns the new packet.  This policy prefers the new
+    /// packet.  This is the policy used by [`Cert::insert_packets2`].
+    ///
+    /// ```
+    /// use sequoia_openpgp as openpgp;
+    /// use openpgp::crypto::Password;
+    /// use openpgp::cert::prelude::CertBuilder;
+    ///
+    /// # fn main() -> openpgp::Result<()> {
+    /// let p0 = Password::from("old password");
+    /// let p1 = Password::from("new password");
+    ///
+    /// // Create a new key.
+    /// let (cert, rev) =
+    ///       CertBuilder::general_purpose(None, Some("alice@example.org"))
+    ///       .set_password(Some(p0.clone()))
+    ///       .generate()?;
+    /// assert!(cert.is_tsk());
+    ///
+    /// // Change the password for the primary key.
+    /// let pk = cert.primary_key().key().clone().parts_into_secret()?
+    ///     .decrypt_secret(&p0)?
+    ///     .encrypt_secret(&p1)?;
+    ///
+    /// // Merge it back in, with a policy projecting to the new packet.
+    /// let (cert, changed) =
+    ///     cert.insert_packets_merge(pk, |_old, new| Ok(new))?;
+    /// assert!(changed);
+    ///
+    /// // Make sure we can still decrypt the primary key using the
+    /// // new password.
+    /// assert!(cert.primary_key().key().clone().parts_into_secret()?
+    ///         .decrypt_secret(&p1).is_ok());
+    /// # Ok(()) }
+    /// ```
+    ///
+    /// In the second example, we give an explicit merge function that
+    /// returns the old packet if given, falling back to the new
+    /// packet, if not.  This policy prefers the existing packets.
+    ///
+    /// ```
+    /// use sequoia_openpgp as openpgp;
+    /// use openpgp::crypto::Password;
+    /// use openpgp::cert::prelude::CertBuilder;
+    ///
+    /// # fn main() -> openpgp::Result<()> {
+    /// let p0 = Password::from("old password");
+    /// let p1 = Password::from("new password");
+    ///
+    /// // Create a new key.
+    /// let (cert, rev) =
+    ///       CertBuilder::general_purpose(None, Some("alice@example.org"))
+    ///       .set_password(Some(p0.clone()))
+    ///       .generate()?;
+    /// assert!(cert.is_tsk());
+    ///
+    /// // Change the password for the primary key.
+    /// let pk = cert.primary_key().key().clone().parts_into_secret()?
+    ///     .decrypt_secret(&p0)?
+    ///     .encrypt_secret(&p1)?;
+    ///
+    /// // Merge it back in, with a policy preferring to the old packet.
+    /// let (cert, changed) =
+    ///     cert.insert_packets_merge(pk, |old, new| Ok(old.unwrap_or(new)))?;
+    /// assert!(changed); // Overestimates changes.
+    ///
+    /// // Make sure we can still decrypt the primary key using the
+    /// // old password.
+    /// assert!(cert.primary_key().key().clone().parts_into_secret()?
+    ///         .decrypt_secret(&p0).is_ok());
+    /// # Ok(()) }
+    /// ```
+    pub fn insert_packets_merge<P, I>(self, packets: P, merge: I)
+        -> Result<(Self, bool)>
+        where P: IntoIterator,
+              P::Item: Into<Packet>,
+              I: Fn(Option<Packet>, Packet) -> Result<Packet>,
+    {
+        self.insert_packets_(&mut packets.into_iter().map(Into::into),
+                             Box::new(merge))
+    }
+
+    /// Adds packets to the certificate with an explicit merge policy.
+    ///
+    /// This implements all the Cert::insert_packets* functions.  Its
+    /// arguments `packets` and `merge` use dynamic dispatch so that
+    /// we avoid the cost of monomorphization.
+    fn insert_packets_<'a>(self,
+                           packets: &mut dyn Iterator<Item = Packet>,
+                           merge: Box<dyn Fn(Option<Packet>, Packet)
+                                             -> Result<Packet> + 'a>)
+        -> Result<(Self, bool)>
+    {
+        let mut changed = false;
         let mut combined = self.into_packets().collect::<Vec<_>>();
 
         // Hashes a packet ignoring the unhashed subpacket area and
@@ -2509,7 +2660,6 @@ impl Cert {
 
         // Now we merge in the new packets.
         for p in packets {
-            let p = p.into();
             Cert::valid_packet(&p)?;
 
             let hash = hash_packet(&p);
@@ -2574,10 +2724,37 @@ impl Cert {
 
             match action {
                 Drop => (),
-                Overwrite(i) => combined[i] = p,
+                Overwrite(i) => {
+                    // Existing packet.
+                    let existing =
+                        std::mem::replace(&mut combined[i],
+                                          Packet::Marker(Default::default()));
+                    let merged = merge(Some(existing), p)?;
+                    let merged_hash = hash_packet(&merged);
+                    if hash != merged_hash {
+                        return Err(Error::InvalidOperation(
+                            format!("merge function changed packet hash \
+                                     (expected: {}, got: {})",
+                                    hash, merged_hash)).into());
+                    }
+
+                    combined[i] = merged;
+                    changed = true;
+                },
                 Insert => {
-                    // New packet.  Add it to combined.
-                    combined.push(p);
+                    // New packet.
+                    let merged = merge(None, p)?;
+                    let merged_hash = hash_packet(&merged);
+                    if hash != merged_hash {
+                        return Err(Error::InvalidOperation(
+                            format!("merge function changed packet hash \
+                                     (expected: {}, got: {})",
+                                    hash, merged_hash)).into());
+                    }
+
+                    // Add it to combined.
+                    combined.push(merged);
+                    changed = true;
 
                     // Because the caller might insert the same packet
                     // multiple times, we need to also add it to
@@ -2595,7 +2772,19 @@ impl Cert {
             }
         }
 
-        Cert::try_from(combined)
+        Cert::try_from(combined).map(|cert| (cert, changed))
+    }
+
+    /// Adds packets to the certificate.
+    ///
+    /// Like [`Cert::insert_packets2`], but does not return whether
+    /// the certificate changed.
+    pub fn insert_packets<I>(self, packets: I)
+        -> Result<Self>
+        where I: IntoIterator,
+              I::Item: Into<Packet>,
+    {
+        self.insert_packets2(packets).map(|(cert, _)| cert)
     }
 
     /// Returns whether at least one of the keys includes secret

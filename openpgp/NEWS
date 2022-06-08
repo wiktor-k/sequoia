@@ -4,6 +4,8 @@
 
 * Changes in 1.10.0
 ** New functionality
+   - Cert::insert_packets2
+   - Cert::insert_packets_merge
    - Error::UnsupportedCert2
    - TryFrom<Packet> for Unknown
    - types::{Curve, SymmetricAlgorithm, AEADAlgorithm,
