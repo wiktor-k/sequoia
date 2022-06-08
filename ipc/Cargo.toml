@@ -24,7 +24,7 @@ sequoia-openpgp = { path = "../openpgp", version = "1.0.0", default-features = f
 
 anyhow = "1.0.18"
 buffered-reader = { path = "../buffered-reader", version = "1.0.0", default-features = false }
-capnp-rpc = "0.13"
+capnp-rpc = "0.14"
 fs2 = "0.4.2"
 futures = "0.3.5"
 lalrpop-util = ">=0.17"
@@ -34,8 +34,8 @@ memsec = { version = ">=0.5", default-features = false }
 rand = { version = "0.8" }
 tempfile = "3.1"
 thiserror = "1.0.2"
-tokio = { version = "1.13.1", features = [ "rt-multi-thread", "io-util", "net" ] }
-tokio-util = { version = "0.6", features = ["compat"] }
+tokio = { version = "1.19", features = [ "rt-multi-thread", "io-util", "net" ] }
+tokio-util = { version = "0.7", features = ["compat"] }
 socket2 = "0.4"
 dirs = "4.0"
 
