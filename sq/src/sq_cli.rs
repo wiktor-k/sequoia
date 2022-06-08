@@ -906,8 +906,7 @@ of the certificate.",
 certificate.  It explains why the subkey has been revoked.  For
 instance, if Alice has created a new key, she would generate a
 'superseded' revocation certificate for her old key, and might include
-the message \"I've created a new subkey, please use
-that in the future.\"",
+the message \"I've created a new subkey, please refresh the certificate."
     )]
     pub message: String,
     #[clap(
