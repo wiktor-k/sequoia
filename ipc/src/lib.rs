@@ -143,6 +143,7 @@ impl Descriptor {
             cookie.send(&mut s)?;
 
             /* Tokioize.  */
+            s.set_nonblocking(true)?;
             let stream = tokio::net::TcpStream::from_std(s)?;
             stream.set_nodelay(true)?;
 
