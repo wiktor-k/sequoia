@@ -310,64 +310,7 @@ $ sq sign --detached --signer-key juliet.pgp message.txt
                          .conflicts_with("merge"))
         )
 
-        .subcommand(Command::new("verify")
-                    .display_order(210)
-                    .about("Verifies signed messages or detached signatures")
-                    .long_about(
-"Verifies signed messages or detached signatures
 
-When verifying signed messages, the message is written to stdout or
-the file given to --output.
-
-When a detached message is verified, no output is produced.  Detached
-signatures are often used to sign software packages.
-
-Verification is only successful if there is no bad signature, and the
-number of successfully verified signatures reaches the threshold
-configured with the \"--signatures\" parameter.  If the verification
-fails, the program terminates with an exit status indicating failure.
-In addition to that, the last 25 MiB of the message are withheld,
-i.e. if the message is smaller than 25 MiB, no output is produced, and
-if it is larger, then the output will be truncated.
-
-The converse operation is \"sq sign\".
-")
-                    .after_help(
-"EXAMPLES:
-
-# Verify a signed message
-$ sq verify --signer-cert juliet.pgp signed-message.pgp
-
-# Verify a detached message
-$ sq verify --signer-cert juliet.pgp --detached message.sig message.txt
-
-SEE ALSO:
-
-If you are looking for a standalone program to verify detached
-signatures, consider using sequoia-sqv.
-")
-                    .arg(Arg::new("input")
-                         .value_name("FILE")
-                         .help("Reads from FILE or stdin if omitted"))
-                    .arg(Arg::new("output")
-                         .short('o').long("output").value_name("FILE")
-                         .help("Writes to FILE or stdout if omitted"))
-                    .arg(Arg::new("detached")
-                         .long("detached").value_name("SIG")
-                         .help("Verifies a detached signature"))
-                    .arg(Arg::new("signatures")
-                         .short('n').long("signatures").value_name("N")
-                         .default_value("1")
-                         .help("Sets the threshold of valid signatures to N")
-                         .long_help(
-                             "Sets the threshold of valid signatures to N. \
-                              If this threshold is not reached, the message \
-                              will not be considered verified."))
-                    .arg(Arg::new("sender-cert-file")
-                         .long("signer-cert").value_name("CERT")
-                         .multiple_occurrences(true)
-                         .help("Verifies signatures with CERT"))
-        )
 
         .subcommand(Command::new("inspect")
                     .display_order(600)
@@ -1858,7 +1801,8 @@ $ sq autocrypt encode-sender --prefer-encrypt mutual juliet.pgp
         )
     }
     .subcommand(ArmorCommand::command())
-    .subcommand(DearmorCommand::command());
+    .subcommand(DearmorCommand::command())
+    .subcommand(VerifyCommand::command());
 
     app
 }
@@ -1974,4 +1918,82 @@ pub struct DearmorCommand {
         help = "Writes to FILE or stdout if omitted"
     )]
     pub output: Option<String>,
+}
+
+#[derive(Parser, Debug)]
+#[clap(
+    name = "verify",
+    display_order(210),
+    about = "Verifies signed messages or detached signatures",
+    long_about = "Verifies signed messages or detached signatures
+
+When verifying signed messages, the message is written to stdout or
+the file given to --output.
+
+When a detached message is verified, no output is produced.  Detached
+signatures are often used to sign software packages.
+
+Verification is only successful if there is no bad signature, and the
+number of successfully verified signatures reaches the threshold
+configured with the \"--signatures\" parameter.  If the verification
+fails, the program terminates with an exit status indicating failure.
+In addition to that, the last 25 MiB of the message are withheld,
+i.e. if the message is smaller than 25 MiB, no output is produced, and
+if it is larger, then the output will be truncated.
+
+The converse operation is \"sq sign\".
+",
+    after_help =
+"EXAMPLES:
+
+# Verify a signed message
+$ sq verify --signer-cert juliet.pgp signed-message.pgp
+
+# Verify a detached message
+$ sq verify --signer-cert juliet.pgp --detached message.sig message.txt
+
+SEE ALSO:
+
+If you are looking for a standalone program to verify detached
+signatures, consider using sequoia-sqv.
+",
+    )]
+pub struct VerifyCommand {
+    #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
+    pub input: Option<String>,
+    #[clap(
+        short,
+        long,
+        value_name = "FILE",
+        help = "Writes to FILE or stdout if omitted"
+    )]
+    pub output: Option<String>,
+    #[clap(
+        long = "detached",
+        value_name = "SIG",
+        help = "Verifies a detached signature"
+    )]
+    pub detached: Option<String>,
+    #[clap(
+        short = 'n',
+        long = "signatures",
+        value_name = "N",
+        default_value_t = 1,
+        help = "Sets the threshold of valid signatures to N",
+        long_help = "Sets the threshold of valid signatures to N. \
+                            If this threshold is not reached, the message \
+                            will not be considered verified."
+    )]
+    pub signatures: usize,
+    #[clap(
+        long = "signer-cert",
+        value_name = "CERT",
+        help = "Verifies signatures with CERT",
+    )]
+    // TODO: Should at least one sender_cert_file be required? Verification does not make sense
+    // without one, does it?
+    // TODO Use PathBuf instead of String. Path representation is platform dependent, so Rust's
+    // utf-8 Strings are not quite appropriate.
+    // TODO: And adapt load_certs in sq.rs
+    pub sender_cert_file: Vec<String>,
 }
