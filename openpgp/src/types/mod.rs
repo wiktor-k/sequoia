@@ -390,21 +390,55 @@ impl Curve {
     }
 }
 
+/// Formats the elliptic curve name.
+///
+/// There are two ways the elliptic curve name can be formatted.  By
+/// default the short name is used.  The alternate format uses the
+/// full curve name.
+///
+/// # Examples
+///
+/// ```
+/// use sequoia_openpgp as openpgp;
+/// use openpgp::types::Curve;
+///
+/// // default, short format
+/// assert_eq!("NIST P-256", format!("{}", Curve::NistP256));
+///
+/// // alternate, long format
+/// assert_eq!("NIST curve P-256", format!("{:#}", Curve::NistP256));
+/// ```
 impl fmt::Display for Curve {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use self::Curve::*;
-        match *self {
-            NistP256 => f.write_str("NIST curve P-256"),
-            NistP384 => f.write_str("NIST curve P-384"),
-            NistP521 => f.write_str("NIST curve P-521"),
-            BrainpoolP256 => f.write_str("brainpoolP256r1"),
-            BrainpoolP512 => f.write_str("brainpoolP512r1"),
-            Ed25519
-                => f.write_str("D.J. Bernstein's \"Twisted\" Edwards curve Ed25519"),
-            Cv25519
-                => f.write_str("Elliptic curve Diffie-Hellman using D.J. Bernstein's Curve25519"),
-            Unknown(ref oid)
-             => write!(f, "Unknown curve (OID: {:?})", oid),
+        if f.alternate() {
+            match *self {
+                NistP256 => f.write_str("NIST curve P-256"),
+                NistP384 => f.write_str("NIST curve P-384"),
+                NistP521 => f.write_str("NIST curve P-521"),
+                BrainpoolP256 => f.write_str("brainpoolP256r1"),
+                BrainpoolP512 => f.write_str("brainpoolP512r1"),
+                Ed25519
+                    => f.write_str("D.J. Bernstein's \"Twisted\" Edwards curve Ed25519"),
+                Cv25519
+                    => f.write_str("Elliptic curve Diffie-Hellman using D.J. Bernstein's Curve25519"),
+                Unknown(ref oid)
+                    => write!(f, "Unknown curve (OID: {:?})", oid),
+            }
+        } else {
+            match *self {
+                NistP256 => f.write_str("NIST P-256"),
+                NistP384 => f.write_str("NIST P-384"),
+                NistP521 => f.write_str("NIST P-521"),
+                BrainpoolP256 => f.write_str("brainpoolP256r1"),
+                BrainpoolP512 => f.write_str("brainpoolP512r1"),
+                Ed25519
+                    => f.write_str("Ed25519"),
+                Cv25519
+                    => f.write_str("Curve25519"),
+                Unknown(ref oid)
+                    => write!(f, "Unknown curve {:?}", oid),
+            }
         }
     }
 }
