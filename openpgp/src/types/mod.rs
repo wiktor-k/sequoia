@@ -689,37 +689,89 @@ impl From<SymmetricAlgorithm> for u8 {
     }
 }
 
+
+/// Formats the symmetric algorithm name.
+///
+/// There are two ways the symmetric algorithm name can be formatted.
+/// By default the short name is used.  The alternate format uses the
+/// full algorithm name.
+///
+/// # Examples
+///
+/// ```
+/// use sequoia_openpgp as openpgp;
+/// use openpgp::types::SymmetricAlgorithm;
+///
+/// // default, short format
+/// assert_eq!("AES-128", format!("{}", SymmetricAlgorithm::AES128));
+///
+/// // alternate, long format
+/// assert_eq!("AES with 128-bit key", format!("{:#}", SymmetricAlgorithm::AES128));
+/// ```
 impl fmt::Display for SymmetricAlgorithm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            SymmetricAlgorithm::Unencrypted =>
-                f.write_str("Unencrypted"),
-            SymmetricAlgorithm::IDEA =>
-                f.write_str("IDEA"),
-            SymmetricAlgorithm::TripleDES =>
-                f.write_str("TripleDES (EDE-DES, 168 bit key derived from 192))"),
-            SymmetricAlgorithm::CAST5 =>
-                f.write_str("CAST5 (128 bit key, 16 rounds)"),
-            SymmetricAlgorithm::Blowfish =>
-                f.write_str("Blowfish (128 bit key, 16 rounds)"),
-            SymmetricAlgorithm::AES128 =>
-                f.write_str("AES with 128-bit key"),
-            SymmetricAlgorithm::AES192 =>
-                f.write_str("AES with 192-bit key"),
-            SymmetricAlgorithm::AES256 =>
-                f.write_str("AES with 256-bit key"),
-            SymmetricAlgorithm::Twofish =>
-                f.write_str("Twofish with 256-bit key"),
-            SymmetricAlgorithm::Camellia128 =>
-                f.write_str("Camellia with 128-bit key"),
-            SymmetricAlgorithm::Camellia192 =>
-                f.write_str("Camellia with 192-bit key"),
-            SymmetricAlgorithm::Camellia256 =>
-                f.write_str("Camellia with 256-bit key"),
-            SymmetricAlgorithm::Private(u) =>
-                f.write_fmt(format_args!("Private/Experimental symmetric key algorithm {}", u)),
-            SymmetricAlgorithm::Unknown(u) =>
-                f.write_fmt(format_args!("Unknown symmetric key algorithm {}", u)),
+        if f.alternate() {
+            match *self {
+                SymmetricAlgorithm::Unencrypted =>
+                    f.write_str("Unencrypted"),
+                SymmetricAlgorithm::IDEA =>
+                    f.write_str("IDEA"),
+                SymmetricAlgorithm::TripleDES =>
+                    f.write_str("TripleDES (EDE-DES, 168 bit key derived from 192))"),
+                SymmetricAlgorithm::CAST5 =>
+                    f.write_str("CAST5 (128 bit key, 16 rounds)"),
+                SymmetricAlgorithm::Blowfish =>
+                    f.write_str("Blowfish (128 bit key, 16 rounds)"),
+                SymmetricAlgorithm::AES128 =>
+                    f.write_str("AES with 128-bit key"),
+                SymmetricAlgorithm::AES192 =>
+                    f.write_str("AES with 192-bit key"),
+                SymmetricAlgorithm::AES256 =>
+                    f.write_str("AES with 256-bit key"),
+                SymmetricAlgorithm::Twofish =>
+                    f.write_str("Twofish with 256-bit key"),
+                SymmetricAlgorithm::Camellia128 =>
+                    f.write_str("Camellia with 128-bit key"),
+                SymmetricAlgorithm::Camellia192 =>
+                    f.write_str("Camellia with 192-bit key"),
+                SymmetricAlgorithm::Camellia256 =>
+                    f.write_str("Camellia with 256-bit key"),
+                SymmetricAlgorithm::Private(u) =>
+                    f.write_fmt(format_args!("Private/Experimental symmetric key algorithm {}", u)),
+                SymmetricAlgorithm::Unknown(u) =>
+                    f.write_fmt(format_args!("Unknown symmetric key algorithm {}", u)),
+            }
+        } else {
+            match *self {
+                SymmetricAlgorithm::Unencrypted =>
+                    f.write_str("Unencrypted"),
+                SymmetricAlgorithm::IDEA =>
+                    f.write_str("IDEA"),
+                SymmetricAlgorithm::TripleDES =>
+                    f.write_str("3DES"),
+                SymmetricAlgorithm::CAST5 =>
+                    f.write_str("CAST5"),
+                SymmetricAlgorithm::Blowfish =>
+                    f.write_str("Blowfish"),
+                SymmetricAlgorithm::AES128 =>
+                    f.write_str("AES-128"),
+                SymmetricAlgorithm::AES192 =>
+                    f.write_str("AES-192"),
+                SymmetricAlgorithm::AES256 =>
+                    f.write_str("AES-256"),
+                SymmetricAlgorithm::Twofish =>
+                    f.write_str("Twofish"),
+                SymmetricAlgorithm::Camellia128 =>
+                    f.write_str("Camellia-128"),
+                SymmetricAlgorithm::Camellia192 =>
+                    f.write_str("Camellia-192"),
+                SymmetricAlgorithm::Camellia256 =>
+                    f.write_str("Camellia-256"),
+                SymmetricAlgorithm::Private(u) =>
+                    f.write_fmt(format_args!("Private symmetric key algo {}", u)),
+                SymmetricAlgorithm::Unknown(u) =>
+                    f.write_fmt(format_args!("Unknown symmetric key algo {}", u)),
+            }
         }
     }
 }
