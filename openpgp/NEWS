@@ -8,6 +8,7 @@
    - TryFrom<Packet> for Unknown
 ** Deprecated functionality
    - Error::UnsupportedCert, use Error::UnsupportedCert2 instead
+   - DataFormat::MIME, no replacement, see #863 for details
 * Changes in 1.9.0
 ** New functionality
    - AEADAlgorithm::nonce_size replaces AEADAlgorithm::iv_size

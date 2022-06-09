@@ -1600,6 +1600,7 @@ pub enum DataFormat {
     /// This is defined in [Section 5.10 of RFC4880bis].
     ///
     ///   [Section 5.10 of RFC4880bis]: https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-05#section-5.10
+    #[deprecated(since = "1.10.0", note = "Do not use as semantics are unclear")]
     MIME,
 
     /// Unknown format specifier.
@@ -1626,6 +1627,7 @@ impl From<char> for DataFormat {
             'b' => Binary,
             't' => Text,
             'u' => Unicode,
+            #[allow(deprecated)]
             'm' => MIME,
             c => Unknown(c),
         }
@@ -1645,6 +1647,7 @@ impl From<DataFormat> for char {
             Binary => 'b',
             Text => 't',
             Unicode => 'u',
+            #[allow(deprecated)]
             MIME => 'm',
             Unknown(c) => c,
         }
@@ -1661,6 +1664,7 @@ impl fmt::Display for DataFormat {
                 f.write_str("Text data"),
             Unicode =>
                 f.write_str("Text data (UTF-8)"),
+            #[allow(deprecated)]
             MIME =>
                 f.write_str("MIME message body part"),
             Unknown(c) =>
