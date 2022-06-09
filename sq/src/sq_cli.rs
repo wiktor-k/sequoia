@@ -3,9 +3,7 @@ use clap::{Arg, ArgGroup, Command, ArgEnum, Args, Subcommand};
 use clap::{CommandFactory, Parser};
 
 pub fn build() -> Command<'static> {
-    configure(Command::new("sq"),
-              cfg!(feature = "autocrypt"),
-    )
+    configure(Command::new("sq"))
 }
 
 // TODO: use clap_derive for the whole CLI
@@ -20,8 +18,7 @@ pub fn build() -> Command<'static> {
 ///   - Armor                               (5xx)
 ///   - Inspection & packet manipulation    (6xx)
 pub fn configure(
-    app: Command<'static>,
-    feature_autocrypt: bool,
+    app: Command<'static>
 ) -> Command<'static> {
     let version = Box::leak(
         format!("{} (sequoia-openpgp {}, using {})",
@@ -64,29 +61,26 @@ to refer to OpenPGP keys that do contain secrets.
                Signatures that have unknown notations with the \
                critical bit set are considered invalid."));
 
-    let app = if ! feature_autocrypt {
-        // Without Autocrypt support.
-        app
-    } else {
-        // With Autocrypt support.
-        app.subcommand(autocrypt::AutocryptCommand::command())
-    }
-    .subcommand(ArmorCommand::command())
-    .subcommand(DearmorCommand::command())
-    .subcommand(SignCommand::command())
-    .subcommand(VerifyCommand::command())
-    .subcommand(WkdCommand::command())
-    .subcommand(KeyserverCommand::command())
-    .subcommand(RevokeCommand::command())
-    .subcommand(PacketCommand::command())
-    .subcommand(CertifyCommand::command())
-    .subcommand(KeyringCommand::command())
-    .subcommand(KeyCommand::command())
-    .subcommand(InspectCommand::command())
-    .subcommand(EncryptCommand::command())
-    .subcommand(DecryptCommand::command());
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "autocrypt")] {
+            let app = app.subcommand(autocrypt::AutocryptCommand::command());
+        }
+    };
 
-    app
+    app.subcommand(ArmorCommand::command())
+        .subcommand(DearmorCommand::command())
+        .subcommand(SignCommand::command())
+        .subcommand(VerifyCommand::command())
+        .subcommand(WkdCommand::command())
+        .subcommand(KeyserverCommand::command())
+        .subcommand(RevokeCommand::command())
+        .subcommand(PacketCommand::command())
+        .subcommand(CertifyCommand::command())
+        .subcommand(KeyringCommand::command())
+        .subcommand(KeyCommand::command())
+        .subcommand(InspectCommand::command())
+        .subcommand(EncryptCommand::command())
+        .subcommand(DecryptCommand::command())
 }
 
 #[derive(Debug, Args)]
