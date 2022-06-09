@@ -2491,6 +2491,13 @@ pub struct DecryptCommand {
 
 /// Holds a session key as parsed from the command line, with an optional
 /// algorithm specifier.
+///
+/// This struct does not implement [`Display`] to prevent accidental leaking
+/// of key material. If you are sure you want to print a session key, use
+/// [`display_sensitive`].
+///
+/// [`Display`]: std::fmt::Display
+/// [`display_sensitive`]: CliSessionKey::display_sensitive
 #[derive(Debug, Clone)]
 pub struct CliSessionKey {
     pub session_key: SessionKey,
@@ -2522,13 +2529,34 @@ impl std::str::FromStr for CliSessionKey {
     }
 }
 
-impl std::fmt::Display for CliSessionKey {
+impl CliSessionKey {
+
+    /// Returns an object that implements Display for explicitly opting into
+    /// printing a `SessionKey`.
+    pub fn display_sensitive(&self) -> CliSessionKeyDisplay {
+        CliSessionKeyDisplay { csk: self }
+    }
+}
+
+/// Helper struct for intentionally printing session keys with format! and {}.
+///
+/// This struct implements the `Display` trait to print the session key. This
+/// construct requires the user to explicitly call
+/// [`CliSessionKey::display_sensitive`]. By requiring the user to opt-in, this
+/// will hopefully reduce that the chance that the session key is inadvertently
+/// leaked, e.g., in a log that may be publicly posted.
+pub struct CliSessionKeyDisplay<'a> {
+    csk: &'a CliSessionKey,
+}
+
+impl<'a> std::fmt::Display for CliSessionKeyDisplay<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self.symmetric_algo {
+        let sk = self.csk;
+        match sk.symmetric_algo {
             Some(sa) => {
-                write!(f, "{}:{}", <u8>::from(sa), hex::encode(&self.session_key))
+                write!(f, "{}:{}", <u8>::from(sa), hex::encode(&sk.session_key))
             }
-            None => write!(f, "{}", hex::encode(&self.session_key)),
+            None => write!(f, "{}", hex::encode(&sk.session_key)),
         }
     }
 }

@@ -226,7 +226,7 @@ impl<'a> DecryptionHelper for Helper<'a> {
                 })
             };
             if let Some(d) = decrypted_with {
-                eprintln!("Encrypted with Session Key {}", d);
+                eprintln!("Encrypted with Session Key {}", d.display_sensitive());
                 return Ok(None);
             }
         }
