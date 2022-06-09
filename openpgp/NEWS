@@ -6,6 +6,10 @@
 ** New functionality
    - Error::UnsupportedCert2
    - TryFrom<Packet> for Unknown
+   - types::{Curve, SymmetricAlgorithm, AEADAlgorithm,
+     PublicKeyAlgorithm}'s Display implementation now provides short
+     names by default. The long descriptions are provided by the
+     alternate formatter (e.g. =format!("{:#}", ...)=)
 ** Deprecated functionality
    - Error::UnsupportedCert, use Error::UnsupportedCert2 instead
    - DataFormat::MIME, no replacement, see #863 for details

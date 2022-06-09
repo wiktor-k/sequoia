@@ -868,17 +868,48 @@ impl From<AEADAlgorithm> for u8 {
     }
 }
 
+/// Formats the AEAD algorithm name.
+///
+/// There are two ways the AEAD algorithm name can be formatted.  By
+/// default the short name is used.  The alternate format uses the
+/// full algorithm name.
+///
+/// # Examples
+///
+/// ```
+/// use sequoia_openpgp as openpgp;
+/// use openpgp::types::AEADAlgorithm;
+///
+/// // default, short format
+/// assert_eq!("EAX", format!("{}", AEADAlgorithm::EAX));
+///
+/// // alternate, long format
+/// assert_eq!("EAX mode", format!("{:#}", AEADAlgorithm::EAX));
+/// ```
 impl fmt::Display for AEADAlgorithm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            AEADAlgorithm::EAX =>
-                f.write_str("EAX mode"),
-            AEADAlgorithm::OCB =>
-                f.write_str("OCB mode"),
-            AEADAlgorithm::Private(u) =>
-                f.write_fmt(format_args!("Private/Experimental AEAD algorithm {}", u)),
-            AEADAlgorithm::Unknown(u) =>
-                f.write_fmt(format_args!("Unknown AEAD algorithm {}", u)),
+        if f.alternate() {
+            match *self {
+                AEADAlgorithm::EAX =>
+                    f.write_str("EAX mode"),
+                AEADAlgorithm::OCB =>
+                    f.write_str("OCB mode"),
+                AEADAlgorithm::Private(u) =>
+                    f.write_fmt(format_args!("Private/Experimental AEAD algorithm {}", u)),
+                AEADAlgorithm::Unknown(u) =>
+                    f.write_fmt(format_args!("Unknown AEAD algorithm {}", u)),
+            }
+        } else {
+            match *self {
+                AEADAlgorithm::EAX =>
+                    f.write_str("EAX"),
+                AEADAlgorithm::OCB =>
+                    f.write_str("OCB"),
+                AEADAlgorithm::Private(u) =>
+                    f.write_fmt(format_args!("Private AEAD algo {}", u)),
+                AEADAlgorithm::Unknown(u) =>
+                    f.write_fmt(format_args!("Unknown AEAD algo {}", u)),
+            }
         }
     }
 }
