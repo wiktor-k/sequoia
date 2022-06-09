@@ -627,14 +627,18 @@ impl<'a> Reader<'a> {
     /// damaged.  For example, copying data manually from one program
     /// to another might introduce or drop newlines.
     ///
-    /// By default, the reader operates in robust mode.  It will
-    /// extract the first armored OpenPGP data block it can find, even
-    /// if the armor frame is damaged, or missing.
+    /// By default, the reader operates in tolerant mode.  It will
+    /// ignore common formatting errors but the header and footer
+    /// lines must be intact.
     ///
-    /// To select strict mode, specify a kind argument.  In strict
-    /// mode, the reader will match on the armor frame.  The reader
-    /// ignores any data in front of the Armor Header Line, as long as
-    /// the line the header is only prefixed by whitespace.
+    /// To select stricter mode, specify the kind argument for
+    /// tolerant mode.  In this mode only ASCII Armor blocks with the
+    /// appropriate header are recognized.
+    ///
+    /// There is also very tolerant mode that is appropriate when
+    /// reading text that the user cut and pasted into a text area.
+    /// This mode of operation is CPU intense, particularly on large
+    /// text files.
     ///
     ///   [ASCII Armor]: https://tools.ietf.org/html/rfc4880#section-6.2
     ///
