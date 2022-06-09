@@ -530,7 +530,7 @@ impl<'a, T: 'a + BufferedReader<Cookie>> PacketHeaderParser<T> {
             last_path: vec![],
             reader,
             content_was_read: false,
-            encrypted: false,
+            processed: true,
             finished: false,
             map: self.map,
             body_hash: Some(Container::make_body_hash()),
@@ -2571,7 +2571,7 @@ impl CompressedData {
                 // CompressedData packet without pushing a filter, so
                 // that it has an opaque body.
                 t!("Algorithm {} unknown or unsupported.", algo);
-                return Ok(pp.set_encrypted(true));
+                return Ok(pp.set_processed(false));
             },
         }
 
@@ -2827,7 +2827,7 @@ impl SEIP {
         }
 
         php.ok(SEIP1::new().into())
-            .map(|pp| pp.set_encrypted(true))
+            .map(|pp| pp.set_processed(false))
     }
 }
 
@@ -2928,7 +2928,7 @@ impl AED1 {
         let aed = php_try!(Self::new(
             cipher, aead, chunk_size, iv.into_boxed_slice()
         ));
-        php.ok(aed.into()).map(|pp| pp.set_encrypted(true))
+        php.ok(aed.into()).map(|pp| pp.set_processed(false))
     }
 }
 
@@ -3347,8 +3347,8 @@ pub struct PacketParser<'a> {
     // Whether PacketParser::finish has been called.
     finished: bool,
 
-    // Whether the content is encrypted.
-    encrypted: bool,
+    // Whether the content has been processed.
+    processed: bool,
 
     /// A map of this packet.
     map: Option<map::Map>,
@@ -3374,7 +3374,7 @@ impl<'a> std::fmt::Debug for PacketParser<'a> {
             .field("packet", &self.packet)
             .field("path", &self.path)
             .field("last_path", &self.last_path)
-            .field("encrypted", &self.encrypted)
+            .field("processed", &self.processed)
             .field("content_was_read", &self.content_was_read)
             .field("settings", &self.state.settings)
             .field("map", &self.map)
@@ -3853,13 +3853,13 @@ impl <'a> PacketParser<'a> {
         &mut self.reader
     }
 
-    /// Marks the packet's contents as encrypted or not.
-    fn set_encrypted(mut self, v: bool) -> Self {
-        self.encrypted = v;
+    /// Marks the packet's contents as processed or not.
+    fn set_processed(mut self, v: bool) -> Self {
+        self.processed = v;
         self
     }
 
-    /// Returns whether the packet's contents are encrypted.
+    /// Returns whether the packet's contents have been processed.
     ///
     /// This function returns `true` while processing an encryption
     /// container before it is decrypted using
@@ -3884,12 +3884,12 @@ impl <'a> PacketParser<'a> {
     /// let mut ppr = PacketParser::from_bytes(message_data)?;
     /// while let PacketParserResult::Some(mut pp) = ppr {
     ///     if let Packet::SEIP(_) = pp.packet {
-    ///         assert!(pp.encrypted());
+    ///         assert!(!pp.processed());
     ///         pp.decrypt(SymmetricAlgorithm::AES256,
     ///                    &hex::decode("7EF4F08C44F780BEA866961423306166\
     ///                                  B8912C43352F3D9617F745E4E3939710")?
     ///                        .into())?;
-    ///         assert!(! pp.encrypted());
+    ///         assert!(pp.processed());
     ///     }
     ///
     ///     // Start parsing the next packet, recursing.
@@ -3897,8 +3897,17 @@ impl <'a> PacketParser<'a> {
     /// }
     /// # Ok(()) }
     /// ```
+    pub fn processed(&self) -> bool {
+        self.processed
+    }
+
+    /// Returns whether the packet's contents are encrypted.
+    ///
+    /// This function has been obsoleted by the negation of
+    /// [`PacketParser::processed`].
+    #[deprecated(since = "1.10.0", note = "Use !processed()")]
     pub fn encrypted(&self) -> bool {
-        self.encrypted
+        !self.processed()
     }
 
     /// Returns the path of the last packet.
@@ -4650,7 +4659,7 @@ impl <'a> PacketParser<'a> {
         match self.packet {
             // Packets that recurse.
             Packet::CompressedData(_) | Packet::SEIP(_) | Packet::AED(_)
-                if ! self.encrypted =>
+                if self.processed =>
             {
                 if self.recursion_depth() as u8
                     >= self.state.settings.max_recursion_depth
@@ -4806,11 +4815,11 @@ impl <'a> PacketParser<'a> {
             Packet::Literal(p) => set_or_extend(rest, p.container_mut(), false),
             Packet::Unknown(p) => set_or_extend(rest, p.container_mut(), false),
             Packet::CompressedData(p) =>
-                set_or_extend(rest, p.deref_mut(), ! self.encrypted),
+                set_or_extend(rest, p.deref_mut(), self.processed),
             Packet::SEIP(p) =>
-                set_or_extend(rest, p.deref_mut(), ! self.encrypted),
+                set_or_extend(rest, p.deref_mut(), self.processed),
             Packet::AED(p) =>
-                set_or_extend(rest, p.deref_mut(), ! self.encrypted),
+                set_or_extend(rest, p.deref_mut(), self.processed),
             p => {
                 if !rest.is_empty() {
                     Err(Error::MalformedPacket(
@@ -5186,10 +5195,10 @@ impl<'a> PacketParser<'a> {
     /// Tries to decrypt the current packet.
     ///
     /// On success, this function pushes one or more readers onto the
-    /// `PacketParser`'s reader stack, and clears the packet parser's
-    /// `encrypted` flag (see [`PacketParser::encrypted`]).
+    /// `PacketParser`'s reader stack, and sets the packet parser's
+    /// `processed` flag (see [`PacketParser::processed`]).
     ///
-    ///   [`PacketParser::encrypted`]: PacketParser::encrypted()
+    ///   [`PacketParser::processed`]: PacketParser::processed()
     ///
     /// If this function is called on a packet that does not contain
     /// encrypted data, or some of the data was already read, then it
@@ -5259,7 +5268,7 @@ impl<'a> PacketParser<'a> {
             return Err(Error::InvalidOperation(
                 "Packet's content has already been read.".to_string()).into());
         }
-        if ! self.encrypted {
+        if self.processed {
             return Err(Error::InvalidOperation(
                 "Packet not encrypted.".to_string()).into());
         }
@@ -5338,7 +5347,7 @@ impl<'a> PacketParser<'a> {
                 reader.data_consume_hard(bl + 2).unwrap();
 
                 self.reader = Box::new(reader);
-                self.encrypted = false;
+                self.processed = true;
 
                 Ok(())
             },
@@ -5395,7 +5404,7 @@ impl<'a> PacketParser<'a> {
                    reader.cookie_ref().level);
 
                 self.reader = Box::new(reader);
-                self.encrypted = false;
+                self.processed = true;
 
                 Ok(())
             },

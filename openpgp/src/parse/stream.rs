@@ -2402,7 +2402,7 @@ impl<'a, H: VerificationHelper + DecryptionHelper> Decryptor<'a, H> {
                                              sym_algo_hint,
                                              decryption_proxy)?;
                     }
-                    if pp.encrypted() {
+                    if ! pp.processed() {
                         return Err(
                             Error::MissingSessionKey(
                                 "No session key decrypted".into()).into());

@@ -389,7 +389,7 @@ pub fn decrypt_unwrap(config: Config,
                     helper.decrypt(&pkesks[..], &skesks[..], sym_algo_hint,
                                    decrypt)?;
                 }
-                if pp.encrypted() {
+                if ! pp.processed() {
                     return Err(
                         openpgp::Error::MissingSessionKey(
                             "No session key".into()).into());

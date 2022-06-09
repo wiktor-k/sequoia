@@ -126,10 +126,10 @@ pub fn dump<W>(input: &mut (dyn io::Read + Sync + Send),
 
                 let mut fields = Vec::new();
                 fields.push(format!("Session key: {}", hex::encode(sk)));
-                if pp.encrypted() {
-                    fields.push("Decryption failed".into());
-                } else {
+                if pp.processed() {
                     fields.push("Decryption successful".into());
+                } else {
+                    fields.push("Decryption failed".into());
                 }
                 Some(fields)
             },
