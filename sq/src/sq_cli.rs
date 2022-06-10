@@ -466,7 +466,7 @@ pub struct PacketDumpCommand {
         value_name = "SESSION-KEY",
         help = "Decrypts an encrypted message using SESSION-KEY",
     )]
-    pub session_key: Option<String>,
+    pub session_key: Option<CliSessionKey>,
     #[clap(
         long = "mpis",
         help = "Prints cryptographic artifacts",

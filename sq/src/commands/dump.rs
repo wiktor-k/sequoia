@@ -9,8 +9,10 @@ use self::openpgp::packet::prelude::*;
 use self::openpgp::packet::header::CTB;
 use self::openpgp::packet::{Header, header::BodyLength, Signature};
 use self::openpgp::packet::signature::subpacket::{Subpacket, SubpacketValue};
-use self::openpgp::crypto::{SessionKey, S2K};
+use self::openpgp::crypto::S2K;
 use self::openpgp::parse::{map::Map, Parse, PacketParserResult};
+
+use crate::sq_cli::CliSessionKey;
 
 #[derive(Debug)]
 pub enum Kind {
@@ -55,8 +57,8 @@ impl Convert<chrono::DateTime<chrono::offset::Utc>> for Timestamp {
 #[allow(clippy::redundant_pattern_matching)]
 pub fn dump<W>(input: &mut (dyn io::Read + Sync + Send),
                output: &mut dyn io::Write,
-               mpis: bool, hex: bool, sk: Option<&SessionKey>,
-               algo_hint: Option<SymmetricAlgorithm>,
+               mpis: bool, hex: bool,
+               sk: Option<&CliSessionKey>,
                width: W)
                -> Result<Kind>
     where W: Into<Option<usize>>
@@ -85,26 +87,26 @@ pub fn dump<W>(input: &mut (dyn io::Read + Sync + Send),
             }
             Packet::SEIP(_) if sk.is_some() => {
                 message_encrypted = true;
-                let sk = sk.as_ref().unwrap();
-                let decrypted_with = if let Some(algo) = algo_hint {
+                let sk = sk.unwrap();
+                let decrypted_with = if let Some(algo) = sk.symmetric_algo {
                     // We know which algorithm to use, so only try decrypting
                     // with that one.
-                    pp.decrypt(algo, sk).is_ok().then(|| algo)
+                    pp.decrypt(algo, &sk.session_key).is_ok().then(|| algo)
                 } else {
                     // We don't know which algorithm to use,
                     // try to find one that decrypts the message.
                     (1u8..=19)
                         .map(SymmetricAlgorithm::from)
-                        .find(|algo| pp.decrypt(*algo, sk).is_ok())
+                        .find(|algo| pp.decrypt(*algo, &sk.session_key).is_ok())
                 };
 
                 let mut fields = Vec::new();
-                fields.push(format!("Session key: {}", hex::encode(sk)));
+                fields.push(format!("Session key: {}", &sk.display_sensitive()));
                 if let Some(algo) = decrypted_with {
                     fields.push(format!("Symmetric algo: {}", algo));
                     fields.push("Decryption successful".into());
                 } else {
-                    if let Some(algo) = algo_hint {
+                    if let Some(algo) = sk.symmetric_algo {
                         fields.push(format!(
                             "Indicated Symmetric algo: {}", algo
                         ));
@@ -126,10 +128,10 @@ pub fn dump<W>(input: &mut (dyn io::Read + Sync + Send),
                     unreachable!()
                 };
 
-                let _ = pp.decrypt(algo, sk);
+                let _ = pp.decrypt(algo, &sk.session_key);
 
                 let mut fields = Vec::new();
-                fields.push(format!("Session key: {}", hex::encode(sk)));
+                fields.push(format!("Session key: {}", sk.display_sensitive()));
                 if pp.processed() {
                     fields.push("Decryption successful".into());
                 } else {

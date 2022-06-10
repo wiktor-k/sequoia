@@ -15,9 +15,8 @@ use openpgp::{
     Result,
 };
 use crate::openpgp::{armor, Cert};
-use crate::openpgp::crypto::{Password, SessionKey};
-use crate::openpgp::fmt::hex;
-use crate::openpgp::types::{KeyFlags, SymmetricAlgorithm};
+use crate::openpgp::crypto::Password;
+use crate::openpgp::types::KeyFlags;
 use crate::openpgp::packet::prelude::*;
 use crate::openpgp::parse::{Parse, PacketParser, PacketParserResult};
 use crate::openpgp::packet::signature::subpacket::NotationData;
@@ -662,24 +661,19 @@ fn main() -> Result<()> {
 
         Some(("packet", m)) => match m.subcommand() {
             Some(("dump",  m)) => {
-                let mut input = open_or_stdin(m.value_of("input"))?;
-                let mut output =
-                    config.create_or_stdout_unsafe(m.value_of("output"))?;
+                use clap::FromArgMatches;
+                let command = sq_cli::PacketDumpCommand::from_arg_matches(m)?;
 
-                let (session_key, algo_hint) =
-                    if let Some(sk) = m.value_of("session-key") {
-                    decode_session_key(sk)
-                        .with_context(|| format!(
-                            "Bad value passed to --session-key: {:?}",
-                            sk
-                        ))?
-                    } else {
-                        (None, None)
-                    };
+                let mut input = open_or_stdin(command.io.input.as_deref())?;
+                let mut output = config.create_or_stdout_unsafe(
+                    command.io.output.as_deref(),
+                )?;
+
+                let session_key = command.session_key;
                 let width = term_size::dimensions_stdout().map(|(w, _)| w);
                 commands::dump(&mut input, &mut output,
-                               m.is_present("mpis"), m.is_present("hex"),
-                               session_key.as_ref(), algo_hint, width)?;
+                               command.mpis, command.hex,
+                               session_key.as_ref(), width)?;
             },
 
             Some(("decrypt",  m)) => {
@@ -745,21 +739,6 @@ fn main() -> Result<()> {
 
     Ok(())
 }
-
-/// Parses a session key, which may have an algorithm prefix
-fn decode_session_key(
-    sk: &str,
-) -> Result<(Option<SessionKey>, Option<SymmetricAlgorithm>)> {
-    if let Some((algo, sk)) = sk.split_once(':') {
-        let algo = SymmetricAlgorithm::from(algo.parse::<u8>()?);
-        let dsk = hex::decode_pretty(sk)?.into();
-        Ok((Some(dsk), Some(algo)))
-    } else {
-        let dsk = hex::decode_pretty(sk)?.into();
-        Ok((Some(dsk), None))
-    }
-}
-
 
 /// Parses the given string depicting a ISO 8601 timestamp.
 fn parse_iso8601(s: &str, pad_date_with: chrono::NaiveTime)
