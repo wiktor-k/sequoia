@@ -239,11 +239,29 @@ impl From<PublicKeyAlgorithm> for u8 {
     }
 }
 
+/// Formats the public key algorithm name.
+///
+/// There are two ways the public key algorithm name can be formatted.
+/// By default the short name is used.  The alternate format uses the
+/// full public key algorithm name.
+///
+/// # Examples
+///
+/// ```
+/// use sequoia_openpgp as openpgp;
+/// use openpgp::types::PublicKeyAlgorithm;
+///
+/// // default, short format
+/// assert_eq!("ECDH", format!("{}", PublicKeyAlgorithm::ECDH));
+///
+/// // alternate, long format
+/// assert_eq!("ECDH public key algorithm", format!("{:#}", PublicKeyAlgorithm::ECDH));
+/// ```
 impl fmt::Display for PublicKeyAlgorithm {
+    #[allow(deprecated)]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use crate::PublicKeyAlgorithm::*;
         if f.alternate() {
-            #[allow(deprecated)]
             match *self {
                 RSAEncryptSign => f.write_str("RSA (Encrypt or Sign)"),
                 RSAEncrypt => f.write_str("RSA Encrypt-Only"),
@@ -260,7 +278,6 @@ impl fmt::Display for PublicKeyAlgorithm {
                     f.write_fmt(format_args!("Unknown public key algorithm {}", u)),
             }
         } else {
-            #[allow(deprecated)]
             match *self {
                 RSAEncryptSign => f.write_str("RSA"),
                 RSAEncrypt => f.write_str("RSA"),
