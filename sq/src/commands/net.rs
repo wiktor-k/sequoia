@@ -146,8 +146,8 @@ pub fn dispatch_wkd(config: Config, m: &clap::ArgMatches) -> Result<()> {
             let skip = m.is_present("skip");
             let f = open_or_stdin(m.value_of("input"))?;
             let base_path =
-                m.value_of("base_directory").expect("required");
-            let variant = if m.is_present("direct_method") {
+                m.value_of("base-directory").expect("required");
+            let variant = if m.is_present("direct-method") {
                 wkd::Variant::Direct
             } else {
                 wkd::Variant::Advanced
