@@ -109,9 +109,13 @@ pub fn dispatch_wkd(config: Config, m: &clap::ArgMatches) -> Result<()> {
         Some(("url",  m)) => {
             let email_address = m.value_of("input").unwrap();
             let wkd_url = wkd::Url::from(email_address)?;
-            // XXX: Add other subcomand to specify whether it should be
-            // created with the advanced or the direct method.
             let url = wkd_url.to_url(None)?;
+            println!("{}", url);
+        },
+        Some(("direct-url",  m)) => {
+            let email_address = m.value_of("input").unwrap();
+            let wkd_url = wkd::Url::from(email_address)?;
+            let url = wkd_url.to_url(wkd::Variant::Direct)?;
             println!("{}", url);
         },
         Some(("get",  m)) => {

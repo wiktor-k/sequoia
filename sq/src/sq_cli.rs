@@ -2018,15 +2018,28 @@ pub enum WkdNetworkPolicy {
 #[derive(Debug, Subcommand)]
 pub enum WkdSubcommands {
     Url(WkdUrlCommand),
+    DirectUrl(WkdDirectUrlCommand),
     Get(WkdGetCommand),
     Generate(WkdGenerateCommand),
 }
 
 #[derive(Debug, Args)]
 #[clap(
-    about = "Prints the Web Key Directory URL of an email address.",
+    about = "Prints the advanced Web Key Directory URL of an email address.",
 )]
 pub struct WkdUrlCommand {
+    #[clap(
+        value_name = "ADDRESS",
+        help = "Queries for ADDRESS",
+    )]
+    pub input: String,
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    about = "Prints the direct Web Key Directory URL of an email address.",
+)]
+pub struct WkdDirectUrlCommand {
     #[clap(
         value_name = "ADDRESS",
         help = "Queries for ADDRESS",

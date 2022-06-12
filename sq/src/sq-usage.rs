@@ -1204,10 +1204,29 @@
 //!             values: offline, anonymized, encrypted, insecure]
 //!
 //! SUBCOMMANDS:
-//!     generate    Generates a Web Key Directory for the given domain and keys.
-//!     get         Queries for certs using Web Key Directory
-//!     help        Print this message or the help of the given subcommand(s)
-//!     url         Prints the Web Key Directory URL of an email address.
+//!     direct-url    Prints the direct Web Key Directory URL of an email
+//!                       address.
+//!     generate      Generates a Web Key Directory for the given domain and
+//!                       keys.
+//!     get           Queries for certs using Web Key Directory
+//!     help          Print this message or the help of the given subcommand(s)
+//!     url           Prints the advanced Web Key Directory URL of an email
+//!                       address.
+//! ```
+//!
+//! ### Subcommand wkd direct-url
+//!
+//! ```text
+//! Prints the direct Web Key Directory URL of an email address.
+//!
+//! USAGE:
+//!     sq wkd direct-url <ADDRESS>
+//!
+//! ARGS:
+//!     <ADDRESS>    Queries for ADDRESS
+//!
+//! OPTIONS:
+//!     -h, --help    Print help information
 //! ```
 //!
 //! ### Subcommand wkd generate
@@ -1261,7 +1280,7 @@
 //! ### Subcommand wkd url
 //!
 //! ```text
-//! Prints the Web Key Directory URL of an email address.
+//! Prints the advanced Web Key Directory URL of an email address.
 //!
 //! USAGE:
 //!     sq wkd url <ADDRESS>

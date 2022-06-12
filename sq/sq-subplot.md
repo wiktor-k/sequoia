@@ -1396,6 +1396,66 @@ then files hello.txt and hello.out match
 
 
 
+# Web key directory (WKD) support
+
+[Web Key Directory]: https://wiki.gnupg.org/WKD
+[Internet Draft 14 for WKD]: https://www.ietf.org/archive/id/draft-koch-openpgp-webkey-service-14.html
+
+[Web Key Directory][] (WKD) specifies how to locate a certificate for
+a given email address by constructing HTTPS URLs from the email
+address. It is specified in [Internet Draft 14 for WKD][].
+
+The two URLs are called the "advanced" and "direct" URLs. They are the
+same, except the advanced one uses a subdomain, and an a subdirectory
+named after the domain. This allows the web server where the
+certificates are published to be operated separately from any other
+services for the parent domain.
+
+The advanced URL is the preferred URL. That is why `wkd wkd url`
+prints that, and the other URL is a longer command.
+
+## Advanced WKD URL
+
+_Requirement: Output the advanced URL for an email address._
+
+An advanced URL uses the "openpgpkey" subdomain of the domain in the
+email address, and a subdirectory named after the email domain.
+
+~~~scenario
+given an installed sq
+when I run sq wkd url me@example.com
+then stdout contains "https://openpgpkey.example.com/.well-known/openpgpkey/example.com/hu/s8y7oh5xrdpu9psba3i5ntk64ohouhga?l=me"
+~~~
+
+## Direct WKD URL
+
+_Requirement: Output the direct URL for an email address._
+
+The direct URL lacks the subdomain and subdirectory of an advanced one.
+
+~~~scenario
+given an installed sq
+when I run sq wkd direct-url me@example.com
+then stdout contains "https://example.com/.well-known/openpgpkey/hu/s8y7oh5xrdpu9psba3i5ntk64ohouhga?l=me"
+~~~
+
+## Email local part in original form in WKD URL
+
+_Requirement: The WKD URL has the local part of an email address as
+given in the input, just in case it matters to the server._
+
+An advanced URL uses the "openpgpkey" subdomain of the domain in the
+email address, and a subdirectory named after the email domain.
+
+~~~scenario
+given an installed sq
+when I run sq wkd url Joe.Doe@Example.ORG
+then stdout contains "https://openpgpkey.example.org/.well-known/openpgpkey/example.org/hu/iy9q119eutrkn8s1mk4r39qejnbu3n5q?l=Joe.Doe"
+when I run sq wkd direct-url Joe.Doe@Example.ORG
+then stdout contains "https://example.org/.well-known/openpgpkey/hu/iy9q119eutrkn8s1mk4r39qejnbu3n5q?l=Joe.Doe"
+~~~
+
+
 # Test data file
 
 We use this file as an input file in the tests. It is a very short
