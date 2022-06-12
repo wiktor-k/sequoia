@@ -93,11 +93,13 @@ impl EmailAddress {
             return Err(Error::MalformedEmail(email_address.into()).into())
         };
 
-        // Convert to lowercase without tailoring, i.e. without taking any
+        // Convert domain to lowercase without tailoring, i.e. without taking any
         // locale into account. See:
         // https://doc.rust-lang.org/std/primitive.str.html#method.to_lowercase
+        //
+        // Keep the local part as-is as we'll need that to generate WKD URLs.
         let email = EmailAddress {
-            local_part: v[0].to_lowercase(),
+            local_part: v[0].to_string(),
             domain: v[1].to_lowercase()
         };
         Ok(email)
@@ -126,7 +128,7 @@ impl Url {
     /// Returns a [`Url`] from an email address string.
     pub fn from<S: AsRef<str>>(email_address: S) -> Result<Self> {
         let email = EmailAddress::from(email_address)?;
-        let local_encoded = encode_local_part(&email.local_part);
+        let local_encoded = encode_local_part(&email.local_part.to_lowercase());
         let url = Url {
             domain : email.domain,
             local_encoded,
