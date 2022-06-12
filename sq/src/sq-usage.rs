@@ -1236,6 +1236,16 @@
 //! the new keys will be inserted and it is updated and existing ones will be
 //! updated.
 //!
+//! A WKD is per-domain, and can be advanced or direct. For a given domain, the
+//! advanced URL uses a subdomain 'openpgpkey'. The advanced URL is preferred. The
+//! direct URL must only be used if the subdomain doesn't exist. The advanced URL
+//! allows web key directories for several domains on one web server.
+//!
+//! The contentes of the generated WKD must be copied to a web server so that they
+//! are accessible as https://openpgpkey.example.com/.well-known/openpgp/... for the
+//! advanced version, and https://example.com/.well-known/openpgp/... for the direct
+//! version. sq does not copy files to the web server.
+//!
 //! USAGE:
 //!     sq wkd generate [OPTIONS] <WEB-ROOT> <FQDN> [CERT-RING]
 //!
@@ -1245,7 +1255,7 @@
 //!             webserver.
 //!
 //!     <FQDN>
-//!             Generates a WKD for a fully qualified domain name
+//!             Generates a WKD for a fully qualified domain name for email
 //!
 //!     <CERT-RING>
 //!             Adds certificates from CERT-RING to the WKD
@@ -1259,6 +1269,11 @@
 //!
 //!     -s, --skip
 //!             Skips certificates that do not have User IDs for given domain.
+//!
+//! EXAMPLES:
+//!
+//! # Generate a WKD in /tmp/wkdroot from certs.pgp for example.com.
+//! $ sq wkd generate /tmp/wkdroot example.com certs.ppg
 //! ```
 //!
 //! ### Subcommand wkd get
