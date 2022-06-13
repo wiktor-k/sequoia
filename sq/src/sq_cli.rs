@@ -2071,17 +2071,18 @@ pub struct WkdGetCommand {
     long_about = "Generates a Web Key Directory for the given domain and keys.  \
         If the WKD exists, the new keys will be inserted and it \
         is updated and existing ones will be updated. \
-        \n\
-        \n\
-        A WKD is per-domain, and can be advanced or direct. For a given \
-        domain, the advanced URL uses a subdomain 'openpgpkey'. The advanced \
-        URL is preferred. The direct URL must only be used if the subdomain \
-        doesn't exist. The advanced URL allows web key directories for several \
-        domains on one web server. \
-        \n\
-        \n\
-        The contentes of the generated WKD must be copied to a web server so that \
-        they are accessible as https://openpgpkey.example.com/.well-known/openpgp/... \
+        \n
+        \n
+        A WKD is per domain, and can be queried using the advanced or the \
+        direct method. The advanced method uses a URL with a subdomain \
+        'openpgpkey'. As per the specification, the advanced method is to be \
+        preferred. The direct method may only be used if the subdomain \
+        doesn't exist. The advanced method allows web key directories for \
+        several domains on one web server. \
+        \n
+        \n
+        The contents of the generated WKD must be copied to a web server so that \
+        they are accessible under https://openpgpkey.example.com/.well-known/openpgp/... \
         for the advanced version, and https://example.com/.well-known/openpgp/... \
         for the direct version. sq does not copy files to the web server.",
     after_help =
