@@ -2521,7 +2521,7 @@ impl Cert {
     /// function will still consider this as a change to the
     /// certificate.  In other words, it may return that the
     /// certificate has changed even if the serialized representation
-    /// is not changed.
+    /// has not changed.
     ///
     /// # Examples
     ///
