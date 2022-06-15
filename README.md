@@ -203,7 +203,7 @@ see below for OS-specific commands to install the needed libraries:
 ### Debian
 
 ```shell
-$ sudo apt install git rustc cargo clang libclang-dev make pkg-config nettle-dev libssl-dev capnproto libsqlite3-dev
+# apt install cargo clang git nettle-dev pkg-config libssl-dev
 ```
 
 Notes:
@@ -213,20 +213,27 @@ Notes:
     distribution only includes an older Rust version.
   - You need at least Nettle 3.4.1.  Both the versions in Debian 10 (Buster)
     and Debian 11 (Bullseye) are fine.
+  - `libssl-dev` is only required by the `sequoia-net` crate and
+    crates depending on it (`sq`).
 
 [rustup]: https://rustup.rs/
 
 ### Arch Linux
 
 ```shell
-$ sudo pacman -S git cargo clang make pkg-config nettle openssl capnproto sqlite3 --needed
+# pacman -S clang git pkgconf rustup --needed
 ```
 
 ### Fedora
 
 ```shell
-$ sudo dnf install git rustc cargo clang make pkg-config nettle-devel openssl-devel capnproto sqlite-devel
+# dnf install cargo clang git nettle-devel openssl-devel
 ```
+
+Notes:
+
+  - `openssl-devel` is only required by the `sequoia-net` crate and
+    crates depending on it (`sq`).
 
 ### NixOS
 
@@ -247,7 +254,6 @@ pkgs.mkShell {
   buildInputs = [
     nettle
     openssl
-    sqlite
   ];
 
   nativeBuildInputs = [
@@ -257,7 +263,6 @@ pkgs.mkShell {
 
     llvmPackages.clang
     pkgconfig
-    capnproto
 
     # tools
     codespell
@@ -278,19 +283,13 @@ pkgs.mkShell {
 #### MacPorts
 
 ```shell
-$ sudo port install cargo rust capnproto nettle pkgconfig coreutils
+$ sudo port install cargo nettle pkgconfig
 ```
 
 #### Brew
 
 ```shell
-$ brew install rust capnp nettle
-```
-
-If building the transitive dependency `nettle-sys` reports missing `libclang.dylib` file make sure that `DYLD_LIBRARY_PATH` is set correctly:
-
-```shell
-export DYLD_LIBRARY_PATH=/Library/Developer/CommandLineTools/usr/lib/
+$ brew install rust nettle
 ```
 
 ### Windows
@@ -299,25 +298,20 @@ Please make sure to preserve line-endings when cloning the Sequoia
 repository.  The relevant git option is `core.autocrlf` which must be
 set to `false`.
 
-#### MSYS2
-
-You can install the needed libraries with the following command:
-
-```shell
-$ pacboy -S base-devel toolchain:x clang:x bzip2:x nettle:x sqlite3:x capnproto:x
-```
-
-Due to Gitlab's Windows Shared Runners being somewhat slow, we only
-run them automatically for MRs, which contain `windows` in the branch
+Due to Windows Runners being somewhat slow, we only run them
+automatically for MRs, which contain `windows` in the branch
 name. Please name your branch accordingly when contributing a patch
 which might affect Windows.
 
-#### MSVC
+#### CNG
 
-To build Sequoia, you need to have [`capnp`] tool installed.
+On Windows Sequoia PGP can use one of several cryptographic backends.
+The recommended one is Windows Cryptography API (CNG) as it doesn't
+require any additional dependencies.  The standard tooling required to
+build native dependencies ([Visual Studio Build Tools][]) is still
+needed.
 
-Only the native Windows Cryptographic API (CNG) is supported, see
-**Using Sequoia (Cryptography)** section above.
+[Visual Studio Build Tools]: https://visualstudio.microsoft.com/downloads?q=build+tools
 
 When building, make sure to disable default features (to disable
 Nettle) and enable the CNG via `crypto-cng` Cargo feature:
@@ -326,8 +320,31 @@ Nettle) and enable the CNG via `crypto-cng` Cargo feature:
 $ cargo build --no-default-features --features crypto-cng,compression # Only change crypto backend
 ```
 
-[`capnp`]: https://capnproto.org/install.html
+#### Nettle
 
+It is also possible to use Sequoia's default backend (Nettle) on
+Windows through [MSYS2][].
+
+[MSYS2]: https://www.msys2.org
+
+You can install the needed libraries with the following command:
+
+```shell
+$ pacman -S mingw-w64-x86_64-{bzip2,clang,gcc,pkg-config,nettle}
+```
+
+#### Other
+
+MSYS2 can also be used to build Sequoia with the Windows-native CNG
+backend.  The list of packages is the same as for Nettle with the
+exception of `mingw-w64-x86_64-nettle` which is not needed.  Build
+command is the same as for the CNG backend.
+
+Sequoia PGP can also be built for 32-bit Windows.  See
+`.gitlab-ci.yml` for detailed example.
+
+Additionally, the experimental Rust backend can also be used on
+Windows. See the `sequoia-openpgp` crate's documentation for details.
 
 Getting help
 ============
