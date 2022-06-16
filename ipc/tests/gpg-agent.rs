@@ -2,6 +2,7 @@
 
 use std::io::{self, Write};
 
+use anyhow::Context as _;
 use futures::StreamExt;
 
 use sequoia_openpgp as openpgp;
@@ -64,18 +65,37 @@ async fn help() -> openpgp::Result<()>  {
 
 const MESSAGE: &str = "дружба";
 
-fn gpg_import(ctx: &Context, what: &[u8]) {
+fn gpg_import(ctx: &Context, what: &[u8]) -> openpgp::Result<()> {
     use std::process::{Command, Stdio};
 
     let mut gpg = Command::new("gpg")
         .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .arg("--homedir").arg(ctx.homedir().unwrap())
         .arg("--import")
         .spawn()
-        .expect("failed to start gpg");
-    gpg.stdin.as_mut().unwrap().write_all(what).unwrap();
-    let status = gpg.wait().unwrap();
-    assert!(status.success(), "gpg --import failed");
+        .context("failed to start gpg")?;
+    gpg.stdin.as_mut().unwrap().write_all(what)?;
+    let output = gpg.wait_with_output()?;
+
+    // We capture stdout and stderr, and use eprintln! so that the
+    // output will be captured by Rust's test harness.  This way, the
+    // output will be at the right position, instead of out-of-order
+    // and garbled by the concurrent tests.
+    if ! output.stdout.is_empty() {
+        eprintln!("stdout:\n{}", String::from_utf8_lossy(&output.stdout));
+    }
+    if ! output.stderr.is_empty() {
+        eprintln!("stderr:\n{}", String::from_utf8_lossy(&output.stderr));
+    }
+
+    let status = output.status;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(anyhow::anyhow!("gpg --import failed"))
+    }
 }
 
 #[test]
@@ -95,7 +115,7 @@ fn sign() -> openpgp::Result<()> {
 
         let mut buf = Vec::new();
         cert.as_tsk().serialize(&mut buf).unwrap();
-        gpg_import(&ctx, &buf);
+        gpg_import(&ctx, &buf)?;
 
         let keypair = KeyPair::new(
             &ctx,
@@ -204,7 +224,7 @@ fn decrypt() -> openpgp::Result<()> {
 
         let mut buf = Vec::new();
         cert.as_tsk().serialize(&mut buf).unwrap();
-        gpg_import(&ctx, &buf);
+        gpg_import(&ctx, &buf)?;
 
         let mut message = Vec::new();
         {
