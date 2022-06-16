@@ -75,7 +75,7 @@ fn gpg_import(ctx: &Context, what: &[u8]) {
         .expect("failed to start gpg");
     gpg.stdin.as_mut().unwrap().write_all(what).unwrap();
     let status = gpg.wait().unwrap();
-    assert!(status.success());
+    assert!(status.success(), "gpg --import failed");
 }
 
 #[test]
