@@ -61,11 +61,16 @@ pub enum GetKeysOptions {
     AllowRevoked,
 }
 
+enum KeyType {
+    Primary,
+    KeyFlags(KeyFlags),
+}
+
 /// Returns suitable signing keys from a given list of Certs.
 fn get_keys<C>(certs: &[C], p: &dyn Policy,
                private_key_store: Option<&str>,
                timestamp: Option<SystemTime>,
-               flags: KeyFlags,
+               keytype: KeyType,
                options: Option<&[GetKeysOptions]>)
     -> Result<Vec<Box<dyn crypto::Signer + Send + Sync>>>
     where C: Borrow<Cert>
@@ -87,7 +92,21 @@ fn get_keys<C>(certs: &[C], p: &dyn Policy,
             }
         };
 
-        for ka in vc.keys().key_flags(flags.clone()) {
+        let keyiter = match keytype {
+            KeyType::Primary => {
+                Box::new(
+                    std::iter::once(
+                        vc.keys()
+                            .next()
+                            .expect("a valid cert has a primary key")))
+                    as Box<dyn Iterator<Item=ValidErasedKeyAmalgamation<openpgp::packet::key::PublicParts>>>
+            },
+            KeyType::KeyFlags(ref flags) => {
+                Box::new(vc.keys().key_flags(flags.clone()))
+                    as Box<dyn Iterator<Item=_>>
+            },
+        };
+        for ka in keyiter {
             let bad_ = [
                 ! allow_not_alive && matches!(ka.alive(), Err(_)),
                 ! allow_revoked && matches!(ka.revocation_status(),
@@ -180,6 +199,22 @@ fn get_keys<C>(certs: &[C], p: &dyn Policy,
     Ok(keys)
 }
 
+/// Returns the primary keys from a given list of Certs.
+///
+/// This returns one key for each Cert.  If a Cert doesn't have an
+/// appropriate key, then this returns an error.
+#[allow(unused)]
+fn get_primary_keys<C>(certs: &[C], p: &dyn Policy,
+                       private_key_store: Option<&str>,
+                       timestamp: Option<SystemTime>,
+                       options: Option<&[GetKeysOptions]>)
+    -> Result<Vec<Box<dyn crypto::Signer + Send + Sync>>>
+    where C: std::borrow::Borrow<Cert>
+{
+    get_keys(certs, p, private_key_store, timestamp,
+             KeyType::Primary, options)
+}
+
 /// Returns suitable signing keys from a given list of Certs.
 ///
 /// This returns one key for each Cert.  If a Cert doesn't have an
@@ -192,7 +227,8 @@ fn get_signing_keys<C>(certs: &[C], p: &dyn Policy,
     where C: Borrow<Cert>
 {
     get_keys(certs, p, private_key_store, timestamp,
-             KeyFlags::empty().set_signing(), options)
+             KeyType::KeyFlags(KeyFlags::empty().set_signing()),
+             options)
 }
 
 /// Returns suitable certification keys from a given list of Certs.
@@ -207,7 +243,8 @@ fn get_certification_keys<C>(certs: &[C], p: &dyn Policy,
     where C: std::borrow::Borrow<Cert>
 {
     get_keys(certs, p, private_key_store, timestamp,
-             KeyFlags::empty().set_certification(), options)
+             KeyType::KeyFlags(KeyFlags::empty().set_certification()),
+             options)
 }
 
 // Returns the smallest valid certificate.
