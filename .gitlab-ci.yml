@@ -371,7 +371,7 @@ windows-gnu:
   variables:
     CFLAGS: "" # Silence some C warnings when compiling under Windows
 
-windows-msvc:
+windows-msvc-cng:
   tags:
     - win
     - win2019
@@ -395,11 +395,17 @@ windows-msvc:
   variables:
     CFLAGS: "" # Silence some C warnings when compiling with MSVC
 
-windows-msvc-32:
+windows-msvc32-cng:
   tags:
     - win
     - win2019
   stage: build
+  # Depend on the main configuration.  As the jobs have common error
+  # conditions, if one fails it is often not worth trying the other.
+  # Therefore, we can short-circuit here.  Also, this pipelines
+  # Windows jobs, allowing us to test the other toolchain as well.
+  needs:
+    - windows-msvc-cng
   image:
     name: registry.gitlab.com/sequoia-pgp/build-docker-image/windows-msvc
     # Set up a cross compilation environment for building x86 binaries on amd64, line copied from Dockerfile.windows.msvc
