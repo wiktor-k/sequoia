@@ -46,14 +46,14 @@ before_script:
 after_script:
   - *after_script_end
 
-build-bookworm:
+bookworm:
   tags:
     - linux
   stage: build
   image: registry.gitlab.com/sequoia-pgp/build-docker-image/bookworm-prebuild:latest
   script:
     - cargo run --manifest-path openpgp/Cargo.toml --no-default-features --features crypto-nettle,compression --example supported-algorithms
-    - $MAKE_TOP
+    - $MAKE_TOP test
     - if ! git diff --quiet Cargo.lock ; then echo "Cargo.lock changed.  Please add the change to the corresponding commit." ; git diff ; false ; fi
     - if ! git diff --quiet sq ; then echo "Please commit the changes to sq/src/sq-usage.rs." ; false ; fi
     - if ! git diff --quiet ; then echo "The build changed the source.  Please investigate." ; git diff ; fi
@@ -62,7 +62,7 @@ build-bookworm:
     CARGO_HOME: /cargo
   after_script: []
 
-build-bookworm:arm64:
+bookworm:arm64:
   tags:
     - docker-arm64
   stage: build
@@ -73,7 +73,7 @@ build-bookworm:arm64:
       # Forks of this project most likely do not have an arm64 runner
       - $CI_PROJECT_NAMESPACE == "sequoia-pgp"
   script:
-    - $MAKE_TOP
+    - $MAKE_TOP test
     - if ! git diff --quiet Cargo.lock ; then echo "Cargo.lock changed.  Please add the change to the corresponding commit." ; false ; fi
     - if ! git diff --quiet sq ; then echo "Please commit the changes to sq/src/sq-usage.rs." ; false ; fi
     - if ! git diff --quiet ; then echo "The build changed the source.  Please investigate." ; git diff ; fi
@@ -109,18 +109,6 @@ sq-features:
     CARGO_HOME: /cargo
   after_script: []
 
-bookworm:
-  tags:
-    - linux
-  stage: build
-  image: registry.gitlab.com/sequoia-pgp/build-docker-image/bookworm-prebuild:latest
-  script:
-    - SEQUOIA_CTEST_VALGRIND=/usr/bin/valgrind $MAKE_TOP test
-  variables:
-    CARGO_TARGET_DIR: /target
-    CARGO_HOME: /cargo
-  after_script: []
-
 bookworm-crypto-rust:
   tags:
     - linux
@@ -131,31 +119,6 @@ bookworm-crypto-rust:
   script:
     - cargo run --manifest-path openpgp/Cargo.toml --no-default-features --features crypto-rust,compression,allow-experimental-crypto,allow-variable-time-crypto --example supported-algorithms
     - cargo test --release --manifest-path openpgp/Cargo.toml --no-default-features --features crypto-rust,compression,allow-experimental-crypto,allow-variable-time-crypto
-  variables:
-    CARGO_TARGET_DIR: /target
-    CARGO_HOME: /cargo
-  after_script: []
-
-bookworm:arm64:
-  tags:
-    - docker-arm64
-  # This job takes ~50 minutes to run, let's only execute it manually or for
-  # scheduled builds, otherwise this will stall MRs.
-  only:
-    refs:
-      - /arm64/i # refs containing 'arm64' keyword
-      - tags
-      - web
-      - schedules
-    variables:
-      # Forks of this project most likely do not have an arm64 runner
-      - $CI_PROJECT_NAMESPACE == "sequoia-pgp"
-  when: manual
-  stage: build
-  image: registry.gitlab.com/sequoia-pgp/build-docker-image/bookworm-prebuild-arm64:latest
-  script:
-    # valgrind reports a false positive, see !1035. Run the tests without it for now.
-    - $MAKE_TOP test
   variables:
     CARGO_TARGET_DIR: /target
     CARGO_HOME: /cargo
