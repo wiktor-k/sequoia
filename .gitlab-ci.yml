@@ -345,26 +345,41 @@ rust-stable:arm64:
     CARGO_TARGET_DIR: /target
     CARGO_HOME: /cargo
 
-windows-gnu:
+windows-gnu-nettle:
   tags:
     - win
     - win2019
   stage: build
   image: registry.gitlab.com/sequoia-pgp/build-docker-image/windows-gnu
-  # This job takes ~20 minutes to run, let's only execute it manually or for
-  # scheduled builds, otherwise this will stall MRs often not related to Windows
   only:
-    refs:
-      - /windows/i # refs containing 'windows' keyword
-      - tags
-      - web
-      - schedules
     variables:
       # Forks of this project most likely use gitlab's shared windows runners, which
       # do not use the docker executor, so disable the windows jobs for forks.
       - $CI_PROJECT_NAMESPACE == "sequoia-pgp"
   script:
-    - cargo test --workspace
+    - cargo test -p buffered-reader -p sequoia-openpgp
+  after_script: []
+  variables:
+    CFLAGS: "" # Silence some C warnings when compiling under Windows
+
+windows-gnu-cng:
+  tags:
+    - win
+    - win2019
+  stage: build
+  # Depend on the main configuration.  As the jobs have common error
+  # conditions, if one fails it is often not worth trying the other.
+  # Therefore, we can short-circuit here.  Also, this pipelines
+  # Windows jobs, allowing us to test the other toolchain as well.
+  needs:
+    - windows-gnu-nettle
+  image: registry.gitlab.com/sequoia-pgp/build-docker-image/windows-gnu
+  only:
+    variables:
+      # Forks of this project most likely use gitlab's shared windows runners, which
+      # do not use the docker executor, so disable the windows jobs for forks.
+      - $CI_PROJECT_NAMESPACE == "sequoia-pgp"
+  script:
     # https://github.com/rust-lang/cargo/issues/5015
     - cargo test --manifest-path openpgp/Cargo.toml --no-default-features --features crypto-cng,compression
   after_script: []
