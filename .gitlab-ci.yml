@@ -51,8 +51,6 @@ build-bookworm:
     - linux
   stage: build
   image: registry.gitlab.com/sequoia-pgp/build-docker-image/bookworm-prebuild:latest
-  needs:
-    - codespell
   script:
     - cargo run --manifest-path openpgp/Cargo.toml --no-default-features --features crypto-nettle,compression --example supported-algorithms
     - $MAKE_TOP
@@ -69,8 +67,6 @@ build-bookworm:arm64:
     - docker-arm64
   stage: build
   image: registry.gitlab.com/sequoia-pgp/build-docker-image/bookworm-prebuild-arm64:latest
-  needs:
-    - codespell
   when: manual
   only:
     variables:
@@ -106,8 +102,6 @@ sq-features:
         - "autocrypt"
         - "autocrypt,compression-bzip2"
         - "compression-bzip2"
-  needs:
-    - codespell
   script:
     - cargo test --package sequoia-sq --no-default-features --features crypto-nettle --features $FEATURES
   variables:
@@ -120,8 +114,6 @@ bookworm:
     - linux
   stage: build
   image: registry.gitlab.com/sequoia-pgp/build-docker-image/bookworm-prebuild:latest
-  needs:
-    - codespell
   script:
     - SEQUOIA_CTEST_VALGRIND=/usr/bin/valgrind $MAKE_TOP test
   variables:
@@ -161,8 +153,6 @@ bookworm:arm64:
   when: manual
   stage: build
   image: registry.gitlab.com/sequoia-pgp/build-docker-image/bookworm-prebuild-arm64:latest
-  needs:
-    - codespell
   script:
     # valgrind reports a false positive, see !1035. Run the tests without it for now.
     - $MAKE_TOP test
