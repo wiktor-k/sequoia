@@ -1154,12 +1154,23 @@ the file by definition can't be valid anymore.
 ~~~scenario
 given an installed sq
 given file hello.txt
+given file sed-in-place
 when I run sq key generate --export key.pgp
 when I run sq key extract-cert key.pgp -o cert.pgp
 when I run sq sign --signer-key key.pgp hello.txt -o signed.txt
-when I run sed -i 3d signed.txt
+when I run bash sed-in-place 3d signed.txt
 when I try to run sq verify --signer-cert cert.pgp signed.txt
 then command fails
+~~~
+
+~~~{#sed-in-place .file .sh}
+#!/bin/sh
+
+set -eu
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+sed "$1" "$2" > "$tmp"
+cat "$tmp" > "$2"
 ~~~
 
 ## Create cleartext signature
@@ -1190,11 +1201,12 @@ verified._
 ~~~scenario
 given an installed sq
 given file hello.txt
+given file sed-in-place
 when I run sq key generate --export key.pgp
 when I run sq key extract-cert key.pgp -o cert.pgp
 
 when I run sq sign --cleartext-signature --signer-key key.pgp hello.txt -o signed.txt
-when I run sed -i s/hello/HELLO/ signed.txt
+when I run bash sed-in-place s/hello/HELLO/ signed.txt
 when I try to run sq verify --signer-cert cert.pgp signed.txt
 then exit code is 1
 ~~~
@@ -1227,11 +1239,12 @@ modified, the signature can't be verified._
 ~~~scenario
 given an installed sq
 given file hello.txt
+given file sed-in-place
 when I run sq key generate --export key.pgp
 when I run sq key extract-cert key.pgp -o cert.pgp
 
 when I run sq sign --detached --signer-key key.pgp hello.txt -o sig.txt
-when I run sed -i s/hello/HELLO/ hello.txt
+when I run bash sed-in-place s/hello/HELLO/ hello.txt
 when I try to run sq verify --detached=sig.txt --signer-cert=cert.pgp hello.txt
 then exit code is 1
 ~~~
