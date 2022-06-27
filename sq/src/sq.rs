@@ -16,7 +16,6 @@ use openpgp::{
 };
 use crate::openpgp::{armor, Cert};
 use crate::openpgp::crypto::Password;
-use crate::openpgp::types::KeyFlags;
 use crate::openpgp::packet::prelude::*;
 use crate::openpgp::parse::{Parse, PacketParser, PacketParserResult};
 use crate::openpgp::packet::signature::subpacket::NotationData;
@@ -448,27 +447,23 @@ fn main() -> Result<()> {
                               command.dump, command.hex)?;
         },
         Some(("encrypt",  m)) => {
-            let recipients = m.values_of("recipients-cert-file")
-                .map(load_certs)
-                .unwrap_or_else(|| Ok(vec![]))?;
-            let mut input = open_or_stdin(m.value_of("input"))?;
-            let output =
-                config.create_or_stdout_pgp(m.value_of("output"),
-                                            m.is_present("binary"),
-                                            armor::Kind::Message)?;
-            let additional_secrets = m.values_of("signer-key-file")
-                .map(load_certs)
-                .unwrap_or_else(|| Ok(vec![]))?;
-            let mode = match m.value_of("mode").expect("has default") {
-                "rest" => KeyFlags::empty()
-                    .set_storage_encryption(),
-                "transport" => KeyFlags::empty()
-                    .set_transport_encryption(),
-                "all" => KeyFlags::empty()
-                    .set_storage_encryption()
-                    .set_transport_encryption(),
-                _ => unreachable!("uses possible_values"),
-            };
+            use clap::FromArgMatches;
+            let command = sq_cli::EncryptCommand::from_arg_matches(m)?;
+
+            let recipients = load_certs(
+                command.recipients_cert_file.iter().map(|s| s.as_ref()),
+            )?;
+            let mut input = open_or_stdin(command.io.input.as_deref())?;
+
+            let output = config.create_or_stdout_pgp(
+                command.io.output.as_deref(),
+                command.binary,
+                armor::Kind::Message,
+            )?;
+
+            let additional_secrets =
+                load_certs(command.signer_key_file.iter().map(|s| s.as_ref()))?;
+
             let time = if let Some(time) = m.value_of("time") {
                 Some(parse_iso8601(time, chrono::NaiveTime::from_hms(0, 0, 0))
                          .context(format!("Bad value passed to --time: {:?}",
@@ -476,19 +471,19 @@ fn main() -> Result<()> {
             } else {
                 None
             };
-            let private_key_store = m.value_of("private-key-store");
+            let private_key_store = command.private_key_store.as_deref();
             commands::encrypt(commands::EncryptOpts {
                 policy,
                 private_key_store,
                 input: &mut input,
                 message: output,
-                npasswords: m.occurrences_of("symmetric") as usize,
+                npasswords: command.symmetric,
                 recipients: &recipients,
                 signers: additional_secrets,
-                mode,
-                compression: m.value_of("compression").expect("has default"),
+                mode: command.mode,
+                compression: command.compression,
                 time,
-                use_expired_subkey: m.is_present("use-expired-subkey"),
+                use_expired_subkey: command.use_expired_subkey,
             })?;
         },
         Some(("sign",  m)) => {

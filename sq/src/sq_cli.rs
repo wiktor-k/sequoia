@@ -2333,8 +2333,9 @@ pub struct EncryptCommand {
         long_help = "Adds a password to encrypt with.  \
             The message can be decrypted with \
             either one of the recipient's keys, or any password.",
+        parse(from_occurrences)
     )]
-    pub symmetric: bool,
+    pub symmetric: usize,
     #[clap(
         long = "mode",
         value_name = "MODE",

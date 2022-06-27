@@ -37,6 +37,9 @@ use crate::{
     parse_armor_kind,
 };
 
+use crate::sq_cli::EncryptCompressionMode;
+use crate::sq_cli::EncryptEncryptionMode;
+
 #[cfg(feature = "autocrypt")]
 pub mod autocrypt;
 pub mod decrypt;
@@ -311,8 +314,8 @@ pub struct EncryptOpts<'a> {
     pub npasswords: usize,
     pub recipients: &'a [openpgp::Cert],
     pub signers: Vec<openpgp::Cert>,
-    pub mode: openpgp::types::KeyFlags,
-    pub compression: &'a str,
+    pub mode: EncryptEncryptionMode,
+    pub compression: EncryptCompressionMode,
     pub time: Option<SystemTime>,
     pub use_expired_subkey: bool,
 }
@@ -334,6 +337,18 @@ pub fn encrypt(opts: EncryptOpts) -> Result<()> {
             "Neither recipient nor password given"));
     }
 
+    let mode = match opts.mode {
+        EncryptEncryptionMode::Rest => {
+            KeyFlags::empty().set_storage_encryption()
+        }
+        EncryptEncryptionMode::Transport => {
+            KeyFlags::empty().set_transport_encryption()
+        }
+        EncryptEncryptionMode::All => KeyFlags::empty()
+            .set_storage_encryption()
+            .set_transport_encryption(),
+    };
+
     let mut signers = get_signing_keys(
         &opts.signers, opts.policy, opts.private_key_store, opts.time, None)?;
 
@@ -342,7 +357,7 @@ pub fn encrypt(opts: EncryptOpts) -> Result<()> {
     for cert in opts.recipients.iter() {
         let mut count = 0;
         for key in cert.keys().with_policy(opts.policy, None).alive().revoked(false)
-            .key_flags(&opts.mode).supported().map(|ka| ka.key())
+            .key_flags(&mode).supported().map(|ka| ka.key())
         {
             recipient_subkeys.push(key.into());
             count += 1;
@@ -350,7 +365,7 @@ pub fn encrypt(opts: EncryptOpts) -> Result<()> {
         if count == 0 {
             let mut expired_keys = Vec::new();
             for ka in cert.keys().with_policy(opts.policy, None).revoked(false)
-                .key_flags(&opts.mode).supported()
+                .key_flags(&mode).supported()
             {
                 let key = ka.key();
                 expired_keys.push(
@@ -388,15 +403,14 @@ pub fn encrypt(opts: EncryptOpts) -> Result<()> {
         .context("Failed to create encryptor")?;
 
     match opts.compression {
-        "none" => (),
-        "pad" => sink = Padder::new(sink).build()?,
-        "zip" => sink =
+        EncryptCompressionMode::None => (),
+        EncryptCompressionMode::Pad => sink = Padder::new(sink).build()?,
+        EncryptCompressionMode::Zip => sink =
             Compressor::new(sink).algo(CompressionAlgorithm::Zip).build()?,
-        "zlib" => sink =
+        EncryptCompressionMode::Zlib => sink =
             Compressor::new(sink).algo(CompressionAlgorithm::Zlib).build()?,
-        "bzip2" => sink =
+        EncryptCompressionMode::Bzip2 => sink =
             Compressor::new(sink).algo(CompressionAlgorithm::BZip2).build()?,
-        _ => unreachable!("all possible choices are handled")
     }
 
     // Optionally sign message.
