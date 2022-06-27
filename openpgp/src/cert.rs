@@ -2602,7 +2602,7 @@ impl Cert {
         -> Result<(Self, bool)>
         where P: IntoIterator,
               P::Item: Into<Packet>,
-              I: Fn(Option<Packet>, Packet) -> Result<Packet>,
+              I: FnMut(Option<Packet>, Packet) -> Result<Packet>,
     {
         self.insert_packets_(&mut packets.into_iter().map(Into::into),
                              Box::new(merge))
@@ -2615,8 +2615,8 @@ impl Cert {
     /// we avoid the cost of monomorphization.
     fn insert_packets_<'a>(self,
                            packets: &mut dyn Iterator<Item = Packet>,
-                           merge: Box<dyn Fn(Option<Packet>, Packet)
-                                             -> Result<Packet> + 'a>)
+                           mut merge: Box<dyn FnMut(Option<Packet>, Packet)
+                                                    -> Result<Packet> + 'a>)
         -> Result<(Self, bool)>
     {
         let mut changed = false;
