@@ -429,6 +429,18 @@ impl Deref for String_ {
     }
 }
 
+impl From<String_> for Sexp {
+    fn from(v: String_) -> Sexp {
+        Sexp::String(v)
+    }
+}
+
+impl From<Vec<Sexp>> for Sexp {
+    fn from(v: Vec<Sexp>) -> Sexp {
+        Sexp::List(v)
+    }
+}
+
 #[cfg(test)]
 impl Arbitrary for String_ {
     fn arbitrary(g: &mut Gen) -> Self {
