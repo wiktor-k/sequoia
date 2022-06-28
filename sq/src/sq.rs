@@ -452,13 +452,7 @@ fn main() -> Result<()> {
             let additional_secrets =
                 load_certs(command.signer_key_file.iter().map(|s| s.as_ref()))?;
 
-            let time = if let Some(time) = m.value_of("time") {
-                Some(parse_iso8601(time, chrono::NaiveTime::from_hms(0, 0, 0))
-                         .context(format!("Bad value passed to --time: {:?}",
-                                          time))?.into())
-            } else {
-                None
-            };
+            let time = command.time.map(|t| t.time.into());
             let private_key_store = command.private_key_store.as_deref();
             commands::encrypt(commands::EncryptOpts {
                 policy,
@@ -487,13 +481,8 @@ fn main() -> Result<()> {
             let private_key_store = command.private_key_store.as_deref();
             let secrets =
                 load_certs(command.secret_key_file.iter().map(|s| s.as_ref()))?;
-            let time = if let Some(time) = command.time {
-                Some(parse_iso8601(&time, chrono::NaiveTime::from_hms(0, 0, 0))
-                         .context(format!("Bad value passed to --time: {:?}",
-                                          time))?.into())
-            } else {
-                None
-            };
+            let time = command.time.map(|t| t.time.into());
+
             // Each --notation takes two values.  The iterator
             // returns them one at a time, however.
             let mut notations: Vec<(bool, NotationData)> = Vec::new();
@@ -748,6 +737,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+// TODO: Replace all uses with CliTime argument type
 /// Parses the given string depicting a ISO 8601 timestamp.
 fn parse_iso8601(s: &str, pad_date_with: chrono::NaiveTime)
                  -> Result<DateTime<Utc>>

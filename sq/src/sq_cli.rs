@@ -95,6 +95,69 @@ pub enum SqSubcommands {
     Autocrypt(autocrypt::AutocryptCommand),
 }
 
+use chrono::{offset::Utc, DateTime};
+#[derive(Debug)]
+pub struct CliTime {
+    pub time: DateTime<Utc>,
+}
+
+impl std::str::FromStr for CliTime {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> anyhow::Result<CliTime> {
+        let time =
+            CliTime::parse_iso8601(s, chrono::NaiveTime::from_hms(0, 0, 0))?;
+        Ok(CliTime { time })
+    }
+}
+
+impl CliTime {
+    /// Parses the given string depicting a ISO 8601 timestamp.
+    fn parse_iso8601(
+        s: &str,
+        pad_date_with: chrono::NaiveTime,
+    ) -> anyhow::Result<DateTime<Utc>> {
+        // If you modify this function this function, synchronize the
+        // changes with the copy in sqv.rs!
+        for f in &[
+            "%Y-%m-%dT%H:%M:%S%#z",
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%dT%H:%M%#z",
+            "%Y-%m-%dT%H:%M",
+            "%Y-%m-%dT%H%#z",
+            "%Y-%m-%dT%H",
+            "%Y%m%dT%H%M%S%#z",
+            "%Y%m%dT%H%M%S",
+            "%Y%m%dT%H%M%#z",
+            "%Y%m%dT%H%M",
+            "%Y%m%dT%H%#z",
+            "%Y%m%dT%H",
+        ] {
+            if f.ends_with("%#z") {
+                if let Ok(d) = DateTime::parse_from_str(s, *f) {
+                    return Ok(d.into());
+                }
+            } else if let Ok(d) = chrono::NaiveDateTime::parse_from_str(s, *f) {
+                return Ok(DateTime::from_utc(d, Utc));
+            }
+        }
+        for f in &[
+            "%Y-%m-%d",
+            "%Y-%m",
+            "%Y-%j",
+            "%Y%m%d",
+            "%Y%m",
+            "%Y%j",
+            "%Y",
+        ] {
+            if let Ok(d) = chrono::NaiveDate::parse_from_str(s, *f) {
+                return Ok(DateTime::from_utc(d.and_time(pad_date_with), Utc));
+            }
+        }
+        Err(anyhow::anyhow!("Malformed ISO8601 timestamp: {}", s))
+    }
+}
+
 #[derive(Debug, Args)]
 pub struct IoArgs {
     #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
@@ -381,8 +444,7 @@ pub struct SignCommand {
         help = "Chooses keys valid at the specified time and sets the \
             signature's creation time",
     )]
-    //TODO: Fix type & parsing
-    pub time: Option<String>,
+    pub time: Option<CliTime>,
     #[clap(
         long,
         value_names = &["NAME", "VALUE"],
@@ -1728,7 +1790,7 @@ default timezone is UTC):
 $ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
 ",
     )]
-    pub creation_time: Option<String>,
+    pub creation_time: Option<CliTime>,
     #[clap(
         long = "expires",
         value_name = "TIME",
@@ -2396,7 +2458,7 @@ pub struct EncryptCommand {
         help = "Chooses keys valid at the specified time and \
             sets the signature's creation time",
     )]
-    pub time: Option<String>,
+    pub time: Option<CliTime>,
     #[clap(
         long = "use-expired-subkey",
         help = "Falls back to expired encryption subkeys",
@@ -2719,5 +2781,37 @@ $ sq autocrypt encode-sender --prefer-encrypt mutual juliet.pgp
                 PreferEncryptArgs::NoPreference => write!(f, "nopreference"),
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_parse_iso8601() -> anyhow::Result<()> {
+        let z = chrono::NaiveTime::from_hms(0, 0, 0);
+        CliTime::parse_iso8601("2017-03-04T13:25:35Z", z)?;
+        CliTime::parse_iso8601("2017-03-04T13:25:35+08:30", z)?;
+        CliTime::parse_iso8601("2017-03-04T13:25:35", z)?;
+        CliTime::parse_iso8601("2017-03-04T13:25Z", z)?;
+        CliTime::parse_iso8601("2017-03-04T13:25", z)?;
+        // CliTime::parse_iso8601("2017-03-04T13Z", z)?; // XXX: chrono doesn't like
+        // CliTime::parse_iso8601("2017-03-04T13", z)?; // ditto
+        CliTime::parse_iso8601("2017-03-04", z)?;
+        // CliTime::parse_iso8601("2017-03", z)?; // ditto
+        CliTime::parse_iso8601("2017-031", z)?;
+        CliTime::parse_iso8601("20170304T132535Z", z)?;
+        CliTime::parse_iso8601("20170304T132535+0830", z)?;
+        CliTime::parse_iso8601("20170304T132535", z)?;
+        CliTime::parse_iso8601("20170304T1325Z", z)?;
+        CliTime::parse_iso8601("20170304T1325", z)?;
+        // CliTime::parse_iso8601("20170304T13Z", z)?; // ditto
+        // CliTime::parse_iso8601("20170304T13", z)?; // ditto
+        CliTime::parse_iso8601("20170304", z)?;
+        // CliTime::parse_iso8601("201703", z)?; // ditto
+        CliTime::parse_iso8601("2017031", z)?;
+        // CliTime::parse_iso8601("2017", z)?; // ditto
+        Ok(())
     }
 }

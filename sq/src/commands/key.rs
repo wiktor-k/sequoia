@@ -57,9 +57,7 @@ fn generate(config: Config, command: KeyGenerateCommand) -> Result<()> {
 
     // Creation time.
     if let Some(t) = command.creation_time {
-        builder = builder.set_creation_time(SystemTime::from(
-            crate::parse_iso8601(&t, chrono::NaiveTime::from_hms(0, 0, 0))
-                .context(format!("Parsing --creation-time {}", t))?));
+        builder = builder.set_creation_time(SystemTime::from(t.time));
     };
 
     // Expiration.
