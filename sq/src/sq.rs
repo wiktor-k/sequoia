@@ -412,18 +412,20 @@ fn main() -> Result<()> {
 
     match matches.subcommand() {
         Some(("decrypt",  m)) => {
-            let mut input = open_or_stdin(m.value_of("input"))?;
+            use clap::FromArgMatches;
+            let command = sq_cli::DecryptCommand::from_arg_matches(m)?;
+
+            let mut input = open_or_stdin(command.io.input.as_deref())?;
             let mut output =
-                config.create_or_stdout_safe(m.value_of("output"))?;
-            let certs = m.values_of("sender-cert-file")
-                .map(load_certs)
-                .unwrap_or_else(|| Ok(vec![]))?;
+                config.create_or_stdout_safe(command.io.output.as_deref())?;
+
+            let certs = load_certs(
+                command.sender_cert_file.iter().map(|s| s.as_ref()),
+            )?;
             // Fancy default for --signatures.  If you change this,
             // also change the description in the CLI definition.
-            let signatures: usize =
-                if let Some(n) = m.value_of("signatures") {
-                    n.parse()?
-                } else if certs.is_empty() {
+            let signatures = command.signatures.unwrap_or_else(|| {
+                if certs.is_empty() {
                     // No certs are given for verification, use 0 as
                     // threshold so we handle only-encrypted messages
                     // gracefully.
@@ -432,16 +434,17 @@ fn main() -> Result<()> {
                     // At least one cert given, expect at least one
                     // valid signature.
                     1
-                };
-            let secrets = m.values_of("secret-key-file")
-                .map(load_certs)
-                .unwrap_or_else(|| Ok(vec![]))?;
-            let private_key_store = m.value_of("private-key-store");
-            commands::decrypt(config, private_key_store,
+                }
+            });
+            // TODO: should this be load_keys?
+            let secrets =
+                load_certs(command.secret_key_file.iter().map(|s| s.as_ref()))?;
+            let private_key_store = command.private_key_store;
+            commands::decrypt(config, private_key_store.as_deref(),
                               &mut input, &mut output,
                               signatures, certs, secrets,
-                              m.is_present("dump-session-key"),
-                              m.is_present("dump"), m.is_present("hex"))?;
+                              command.dump_session_key,
+                              command.dump, command.hex)?;
         },
         Some(("encrypt",  m)) => {
             let recipients = m.values_of("recipients-cert-file")

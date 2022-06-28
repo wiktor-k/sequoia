@@ -2441,7 +2441,7 @@ pub struct DecryptCommand {
             [default: 1 if at least one signer cert file \
                               is given, 0 otherwise]",
     )]
-    pub signatures: Option<String>,
+    pub signatures: Option<usize>,
     #[clap(
         long = "signer-cert",
         value_name = "CERT",
