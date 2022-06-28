@@ -229,9 +229,9 @@ fn pkcs5_unpad(sk: Protected, target_len: usize) -> Result<Protected> {
 /// See [RFC 3394].
 ///
 ///  [RFC 3394]: https://tools.ietf.org/html/rfc3394
-fn aes_key_wrap(algo: SymmetricAlgorithm, key: &Protected,
-                plaintext: &Protected)
-                -> Result<Vec<u8>> {
+pub fn aes_key_wrap(algo: SymmetricAlgorithm, key: &Protected,
+                    plaintext: &Protected)
+                    -> Result<Vec<u8>> {
     if plaintext.len() % 8 != 0 {
         return Err(Error::InvalidArgument(
             "Plaintext must be a multiple of 8".into()).into());
@@ -299,9 +299,9 @@ fn aes_key_wrap(algo: SymmetricAlgorithm, key: &Protected,
 /// See [RFC 3394].
 ///
 ///  [RFC 3394]: https://tools.ietf.org/html/rfc3394
-fn aes_key_unwrap(algo: SymmetricAlgorithm, key: &Protected,
-                  ciphertext: &[u8])
-                  -> Result<Protected> {
+pub fn aes_key_unwrap(algo: SymmetricAlgorithm, key: &Protected,
+                      ciphertext: &[u8])
+                      -> Result<Protected> {
     if ciphertext.len() % 8 != 0 {
         return Err(Error::InvalidArgument(
             "Ciphertext must be a multiple of 8".into()).into());

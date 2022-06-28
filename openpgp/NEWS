@@ -6,6 +6,8 @@
 ** New functionality
    - Cert::insert_packets2
    - Cert::insert_packets_merge
+   - crypto::ecdh::aes_key_wrap
+   - crypto::ecdh::aes_key_unwrap
    - Error::UnsupportedCert2
    - TryFrom<Packet> for Unknown
    - types::{Curve, SymmetricAlgorithm, AEADAlgorithm,
