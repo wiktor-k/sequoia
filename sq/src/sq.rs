@@ -440,10 +440,12 @@ fn main() -> Result<()> {
             let secrets =
                 load_certs(command.secret_key_file.iter().map(|s| s.as_ref()))?;
             let private_key_store = command.private_key_store;
+            let session_keys = command.session_key;
             commands::decrypt(config, private_key_store.as_deref(),
                               &mut input, &mut output,
                               signatures, certs, secrets,
                               command.dump_session_key,
+                              session_keys,
                               command.dump, command.hex)?;
         },
         Some(("encrypt",  m)) => {
@@ -664,19 +666,6 @@ fn main() -> Result<()> {
                 let mut output =
                     config.create_or_stdout_unsafe(m.value_of("output"))?;
 
-                fn decode_session_key(
-                    sk: &str,
-                ) -> Result<(Option<SessionKey>, Option<SymmetricAlgorithm>)> {
-                    if let Some((algo, sk)) = sk.split_once(':') {
-                        let algo = SymmetricAlgorithm::from(algo.parse::<u8>()?);
-                        let dsk = hex::decode_pretty(sk)?.into();
-                        Ok((Some(dsk), Some(algo)))
-                    } else {
-                        let dsk = hex::decode_pretty(sk)?.into();
-                        Ok((Some(dsk), None))
-                    }
-                }
-
                 let (session_key, algo_hint) =
                     if let Some(sk) = m.value_of("session-key") {
                     decode_session_key(sk)
@@ -749,6 +738,21 @@ fn main() -> Result<()> {
 
     Ok(())
 }
+
+/// Parses a session key, which may have an algorithm prefix
+fn decode_session_key(
+    sk: &str,
+) -> Result<(Option<SessionKey>, Option<SymmetricAlgorithm>)> {
+    if let Some((algo, sk)) = sk.split_once(':') {
+        let algo = SymmetricAlgorithm::from(algo.parse::<u8>()?);
+        let dsk = hex::decode_pretty(sk)?.into();
+        Ok((Some(dsk), Some(algo)))
+    } else {
+        let dsk = hex::decode_pretty(sk)?.into();
+        Ok((Some(dsk), None))
+    }
+}
+
 
 /// Parses the given string depicting a ISO 8601 timestamp.
 fn parse_iso8601(s: &str, pad_date_with: chrono::NaiveTime)

@@ -41,6 +41,7 @@ tokio = { version = "1.13.1" }
 rpassword = "5.0"
 
 [build-dependencies]
+anyhow = "1.0.18"
 clap = "3"
 clap_complete = "3"
 sequoia-openpgp = { path = "../openpgp", version = "1.0.0", default-features = false }

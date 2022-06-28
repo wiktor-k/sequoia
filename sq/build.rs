@@ -4,7 +4,7 @@ use std::io::{self, Write};
 use std::path::Path;
 use clap_complete::Shell;
 
-mod sq_cli {
+pub mod sq_cli {
     include!("src/sq_cli.rs");
 }
 

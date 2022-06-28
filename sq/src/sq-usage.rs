@@ -199,6 +199,9 @@
 //!         --recipient-key <KEY>
 //!             Decrypts with KEY
 //!
+//!         --session-key <SESSION-KEY>
+//!             Decrypts an encrypted message using SESSION-KEY
+//!
 //!         --signer-cert <CERT>
 //!             Verifies signatures with CERT
 //!

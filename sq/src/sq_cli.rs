@@ -2,6 +2,11 @@
 use clap::{Arg, ArgGroup, Command, ArgEnum, Args, Subcommand};
 use clap::{CommandFactory, Parser};
 
+use sequoia_openpgp as openpgp;
+use openpgp::crypto::SessionKey;
+use openpgp::types::SymmetricAlgorithm;
+use openpgp::fmt::hex;
+
 pub fn build() -> Command<'static> {
     configure(Command::new("sq"))
 }
@@ -2466,6 +2471,12 @@ pub struct DecryptCommand {
     )]
     pub dump_session_key: bool,
     #[clap(
+        long = "session-key",
+        value_name = "SESSION-KEY",
+        help = "Decrypts an encrypted message using SESSION-KEY",
+    )]
+    pub session_key: Vec<CliSessionKey>,
+    #[clap(
         long = "dump",
         help = "Prints a packet dump to stderr",
     )]
@@ -2476,6 +2487,50 @@ pub struct DecryptCommand {
         help = "Prints a hexdump (implies --dump)",
     )]
     pub hex: bool,
+}
+
+/// Holds a session key as parsed from the command line, with an optional
+/// algorithm specifier.
+#[derive(Debug, Clone)]
+pub struct CliSessionKey {
+    pub session_key: SessionKey,
+    pub symmetric_algo: Option<SymmetricAlgorithm>,
+}
+
+impl std::str::FromStr for CliSessionKey {
+    type Err = anyhow::Error;
+
+    /// Parse a session key. The format is: an optional prefix specifying the
+    /// symmetric algorithm as a number, followed by a colon, followed by the
+    /// session key in hexadecimal representation.
+    fn from_str(sk: &str) -> anyhow::Result<Self> {
+        let result = if let Some((algo, sk)) = sk.split_once(':') {
+            let algo = SymmetricAlgorithm::from(algo.parse::<u8>()?);
+            let dsk = hex::decode_pretty(sk)?.into();
+            CliSessionKey {
+                session_key: dsk,
+                symmetric_algo: Some(algo),
+            }
+        } else {
+            let dsk = hex::decode_pretty(sk)?.into();
+            CliSessionKey {
+                session_key: dsk,
+                symmetric_algo: None,
+            }
+        };
+        Ok(result)
+    }
+}
+
+impl std::fmt::Display for CliSessionKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self.symmetric_algo {
+            Some(sa) => {
+                write!(f, "{}:{}", <u8>::from(sa), hex::encode(&self.session_key))
+            }
+            None => write!(f, "{}", hex::encode(&self.session_key)),
+        }
+    }
 }
 
 #[cfg(feature = "autocrypt")]

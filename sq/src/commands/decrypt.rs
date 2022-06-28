@@ -25,6 +25,7 @@ use crate::{
         dump::PacketDumper,
         VHelper,
     },
+    sq_cli::CliSessionKey,
 };
 
 trait PrivateKey {
@@ -93,6 +94,7 @@ struct Helper<'a> {
     secret_keys: HashMap<KeyID, Box<dyn PrivateKey>>,
     key_identities: HashMap<KeyID, Fingerprint>,
     key_hints: HashMap<KeyID, String>,
+    session_keys: Vec<CliSessionKey>,
     dump_session_key: bool,
     dumper: Option<PacketDumper>,
 }
@@ -100,6 +102,7 @@ struct Helper<'a> {
 impl<'a> Helper<'a> {
     fn new(config: &Config<'a>, private_key_store: Option<&str>,
            signatures: usize, certs: Vec<Cert>, secrets: Vec<Cert>,
+           session_keys: Vec<CliSessionKey>,
            dump_session_key: bool, dump: bool)
            -> Self
     {
@@ -141,6 +144,7 @@ impl<'a> Helper<'a> {
             secret_keys: keys,
             key_identities: identities,
             key_hints: hints,
+            session_keys,
             dump_session_key,
             dumper: if dump {
                 let width = term_size::dimensions_stdout().map(|(w, _)| w)
@@ -204,6 +208,29 @@ impl<'a> DecryptionHelper for Helper<'a> {
                   mut decrypt: D) -> openpgp::Result<Option<Fingerprint>>
         where D: FnMut(SymmetricAlgorithm, &SessionKey) -> bool
     {
+        // Before anything else, try the session keys
+        for sk in &self.session_keys {
+            let decrypted_with = if let Some(sa) = sk.symmetric_algo {
+                decrypt(sa, &sk.session_key).then(|| sk.clone())
+            } else {
+                // We don't know which algorithm to use,
+                // try to find one that decrypts the message.
+                let sa = (1u8..=19)
+                    .map(SymmetricAlgorithm::from)
+                    .find(|&sa| decrypt(sa, &sk.session_key));
+                sa.map(|sa| {
+                    CliSessionKey {
+                        session_key: sk.session_key.clone(),
+                        symmetric_algo: Some(sa),
+                    }
+                })
+            };
+            if let Some(d) = decrypted_with {
+                eprintln!("Encrypted with Session Key {}", d);
+                return Ok(None);
+            }
+        }
+
         // First, we try those keys that we can use without prompting
         // for a password.
         for pkesk in pkesks {
@@ -335,16 +362,19 @@ impl<'a> DecryptionHelper for Helper<'a> {
     }
 }
 
+// Allow too many arguments now, should be reworked later
+#[allow(clippy::too_many_arguments)]
 pub fn decrypt(config: Config,
                private_key_store: Option<&str>,
                input: &mut (dyn io::Read + Sync + Send),
                output: &mut dyn io::Write,
                signatures: usize, certs: Vec<Cert>, secrets: Vec<Cert>,
                dump_session_key: bool,
+               sk: Vec<CliSessionKey>,
                dump: bool, hex: bool)
                -> Result<()> {
     let helper = Helper::new(&config, private_key_store, signatures, certs,
-                             secrets, dump_session_key, dump || hex);
+                             secrets, sk, dump_session_key, dump || hex);
     let mut decryptor = DecryptorBuilder::from_reader(input)?
         .mapping(hex)
         .with_policy(&config.policy, None, helper)
@@ -367,6 +397,7 @@ pub fn decrypt_unwrap(config: Config,
                       -> Result<()>
 {
     let mut helper = Helper::new(&config, None, 0, Vec::new(), secrets,
+                                 Vec::new(),
                                  dump_session_key, false);
 
     let mut ppr = PacketParser::from_reader(input)?;
