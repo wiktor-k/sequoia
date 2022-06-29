@@ -683,18 +683,23 @@ fn main() -> Result<()> {
             },
 
             Some(("decrypt",  m)) => {
-                let mut input = open_or_stdin(m.value_of("input"))?;
-                let mut output =
-                    config.create_or_stdout_pgp(m.value_of("output"),
-                                                m.is_present("binary"),
-                                                armor::Kind::Message)?;
-                let secrets = m.values_of("secret-key-file")
-                    .map(load_keys)
-                    .unwrap_or_else(|| Ok(vec![]))?;
+                use clap::FromArgMatches;
+                let command = sq_cli::PacketDecryptCommand::from_arg_matches(m)?;
+
+                let mut input = open_or_stdin(command.io.input.as_deref())?;
+                let mut output = config.create_or_stdout_pgp(
+                    command.io.output.as_deref(),
+                    command.binary,
+                    armor::Kind::Message,
+                )?;
+
+                let secrets =
+                    load_keys(command.secret_key_file.iter().map(|s| s.as_ref()))?;
                 commands::decrypt::decrypt_unwrap(
                     config,
                     &mut input, &mut output,
-                    secrets, m.is_present("dump-session-key"))?;
+                    secrets,
+                    command.dump_session_key)?;
                 output.finalize()?;
             },
 
