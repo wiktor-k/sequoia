@@ -1557,6 +1557,9 @@
 //!         --recipient-key <KEY>
 //!             Decrypts the message with KEY
 //!
+//!         --session-key <SESSION-KEY>
+//!             Decrypts an encrypted message using SESSION-KEY
+//!
 //! EXAMPLES:
 //!
 //! # Unwraps the encryption revealing the signed message

@@ -393,11 +393,13 @@ pub fn decrypt(config: Config,
 pub fn decrypt_unwrap(config: Config,
                       input: &mut (dyn io::Read + Sync + Send),
                       output: &mut dyn io::Write,
-                      secrets: Vec<Cert>, dump_session_key: bool)
+                      secrets: Vec<Cert>,
+                      session_keys: Vec<CliSessionKey>,
+                      dump_session_key: bool)
                       -> Result<()>
 {
     let mut helper = Helper::new(&config, None, 0, Vec::new(), secrets,
-                                 Vec::new(),
+                                 session_keys,
                                  dump_session_key, false);
 
     let mut ppr = PacketParser::from_reader(input)?;

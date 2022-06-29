@@ -519,6 +519,12 @@ pub struct PacketDecryptCommand {
     )]
     pub private_key_store: Option<String>,
     #[clap(
+        long = "session-key",
+        value_name = "SESSION-KEY",
+        help = "Decrypts an encrypted message using SESSION-KEY",
+    )]
+    pub session_key: Vec<CliSessionKey>,
+    #[clap(
             long = "dump-session-key",
             help = "Prints the session key to stderr",
     )]

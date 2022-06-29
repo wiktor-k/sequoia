@@ -695,10 +695,12 @@ fn main() -> Result<()> {
 
                 let secrets =
                     load_keys(command.secret_key_file.iter().map(|s| s.as_ref()))?;
+                let session_keys = command.session_key;
                 commands::decrypt::decrypt_unwrap(
                     config,
                     &mut input, &mut output,
                     secrets,
+                    session_keys,
                     command.dump_session_key)?;
                 output.finalize()?;
             },
