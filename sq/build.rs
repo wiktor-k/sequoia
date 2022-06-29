@@ -17,9 +17,7 @@ fn main() {
     subplot_build::codegen(Path::new("sq-subplot.md"))
         .expect("failed to generate code with Subplot");
 
-    let mut sq = sq_cli::configure(
-        clap::Command::new("sq").term_width(80),
-    );
+    let mut sq = sq_cli::build().term_width(80);
     let mut main = fs::File::create("src/sq-usage.rs").unwrap();
     dump_help(&mut main,
               &mut sq,

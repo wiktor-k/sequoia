@@ -1,5 +1,5 @@
 /// Command-line parser for sq.
-use clap::{Arg, ArgGroup, Command, ArgEnum, Args, Subcommand};
+use clap::{ArgGroup, Command, ArgEnum, Args, Subcommand};
 use clap::{CommandFactory, Parser};
 
 use sequoia_openpgp as openpgp;
@@ -8,10 +8,18 @@ use openpgp::types::SymmetricAlgorithm;
 use openpgp::fmt::hex;
 
 pub fn build() -> Command<'static> {
-    configure(Command::new("sq"))
+    let sq_version = Box::leak(
+        format!(
+            "{} (sequoia-openpgp {}, using {})",
+            env!("CARGO_PKG_VERSION"),
+            sequoia_openpgp::VERSION,
+            sequoia_openpgp::crypto::backend()
+        )
+        .into_boxed_str(),
+    ) as &str;
+    SqCommand::command().version(sq_version)
 }
 
-// TODO: use clap_derive for the whole CLI
 /// Defines the CLI.
 ///
 /// The order of top-level subcommands is:
@@ -22,22 +30,11 @@ pub fn build() -> Command<'static> {
 ///   - Key discovery & networking          (4xx)
 ///   - Armor                               (5xx)
 ///   - Inspection & packet manipulation    (6xx)
-pub fn configure(
-    app: Command<'static>
-) -> Command<'static> {
-    let version = Box::leak(
-        format!("{} (sequoia-openpgp {}, using {})",
-                env!("CARGO_PKG_VERSION"),
-                sequoia_openpgp::VERSION,
-                sequoia_openpgp::crypto::backend())
-            .into_boxed_str()) as &str;
-
-    let app = app
-        .version(version)
-        .about("A command-line frontend for Sequoia, \
-                an implementation of OpenPGP")
-        .long_about(
-"A command-line frontend for Sequoia, an implementation of OpenPGP
+#[derive(Parser, Debug)]
+#[clap(
+    name = "sq",
+    about = "A command-line frontend for Sequoia, an implementation of OpenPGP",
+    long_about = "A command-line frontend for Sequoia, an implementation of OpenPGP
 
 Functionality is grouped and available using subcommands.  Currently,
 this interface is completely stateless.  Therefore, you need to supply
@@ -50,42 +47,52 @@ by default.
 We use the term \"certificate\", or cert for short, to refer to OpenPGP
 keys that do not contain secrets.  Conversely, we use the term \"key\"
 to refer to OpenPGP keys that do contain secrets.
-")
-        .subcommand_required(true)
-        .arg_required_else_help(true)
-        .disable_colored_help(true)
-        .arg(Arg::new("force")
-             .short('f').long("force")
-             .help("Overwrites existing files"))
-        .arg(Arg::new("known-notation")
-             .long("known-notation").value_name("NOTATION")
-             .multiple_occurrences(true)
-             .help("Adds NOTATION to the list of known notations")
-             .long_help("Adds NOTATION to the list of known notations. \
-               This is used when validating signatures. \
-               Signatures that have unknown notations with the \
-               critical bit set are considered invalid."));
+",
+    subcommand_required = true,
+    arg_required_else_help = true,
+    disable_colored_help = true,
+)]
+struct SqCommand {
+    #[clap(
+        short = 'f',
+        long = "force",
+        help = "Overwrites existing files",
+    )]
+    pub force: bool,
+    #[clap(
+        long = "known-notation",
+        value_name = "NOTATION",
+        multiple_occurrences = true,
+        help = "Adds NOTATION to the list of known notations",
+        long_help = "Adds NOTATION to the list of known notations. \
+            This is used when validating signatures. \
+            Signatures that have unknown notations with the \
+            critical bit set are considered invalid."
+    )]
+    // TODO is this the right type?
+    pub known_notation: Vec<String>,
+    #[clap(subcommand)]
+    pub subcommand: SqSubcommands,
+}
 
-    cfg_if::cfg_if! {
-        if #[cfg(feature = "autocrypt")] {
-            let app = app.subcommand(autocrypt::AutocryptCommand::command());
-        }
-    };
-
-    app.subcommand(ArmorCommand::command())
-        .subcommand(DearmorCommand::command())
-        .subcommand(SignCommand::command())
-        .subcommand(VerifyCommand::command())
-        .subcommand(WkdCommand::command())
-        .subcommand(KeyserverCommand::command())
-        .subcommand(RevokeCommand::command())
-        .subcommand(PacketCommand::command())
-        .subcommand(CertifyCommand::command())
-        .subcommand(KeyringCommand::command())
-        .subcommand(KeyCommand::command())
-        .subcommand(InspectCommand::command())
-        .subcommand(EncryptCommand::command())
-        .subcommand(DecryptCommand::command())
+#[derive(Debug, Subcommand)]
+pub enum SqSubcommands {
+    Armor(ArmorCommand),
+    Dearmor(DearmorCommand),
+    Sign(SignCommand),
+    Verify(VerifyCommand),
+    Wkd(WkdCommand),
+    Keyserver(KeyserverCommand),
+    Revoke(RevokeCommand),
+    Packet(PacketCommand),
+    Certify(CertifyCommand),
+    Keyring(KeyringCommand),
+    Key(KeyCommand),
+    Inspect(InspectCommand),
+    Encrypt(EncryptCommand),
+    Decrypt(DecryptCommand),
+    #[cfg(feature = "autocrypt")]
+    Autocrypt(autocrypt::AutocryptCommand),
 }
 
 #[derive(Debug, Args)]
@@ -2250,7 +2257,7 @@ $ sq inspect message.pgp
 $ sq inspect message.sig
 ",
 )]
-struct InspectCommand {
+pub struct InspectCommand {
     #[clap(
         value_name = "FILE",
         help = "Reads from FILE or stdin if omitted",
