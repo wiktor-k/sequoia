@@ -210,23 +210,17 @@ impl<'a> DecryptionHelper for Helper<'a> {
     {
         // Before anything else, try the session keys
         for sk in &self.session_keys {
-            let decrypted_with = if let Some(sa) = sk.symmetric_algo {
-                decrypt(sa, &sk.session_key).then(|| sk.clone())
+            let decrypted = if let Some(sa) = sk.symmetric_algo {
+                decrypt(sa, &sk.session_key)
             } else {
                 // We don't know which algorithm to use,
                 // try to find one that decrypts the message.
-                let sa = (1u8..=19)
+                (1u8..=19)
                     .map(SymmetricAlgorithm::from)
-                    .find(|&sa| decrypt(sa, &sk.session_key));
-                sa.map(|sa| {
-                    CliSessionKey {
-                        session_key: sk.session_key.clone(),
-                        symmetric_algo: Some(sa),
-                    }
-                })
+                    .any(|sa| decrypt(sa, &sk.session_key))
             };
-            if let Some(d) = decrypted_with {
-                eprintln!("Encrypted with Session Key {}", d.display_sensitive());
+            if decrypted {
+                eprintln!("Encrypted with Session Key {}", sk.display_sensitive());
                 return Ok(None);
             }
         }

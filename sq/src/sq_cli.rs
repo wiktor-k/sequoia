@@ -2555,15 +2555,11 @@ pub struct CliSessionKeyDisplay<'a> {
     csk: &'a CliSessionKey,
 }
 
+/// Print the session key without prefix in hexadecimal representation.
 impl<'a> std::fmt::Display for CliSessionKeyDisplay<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let sk = self.csk;
-        match sk.symmetric_algo {
-            Some(sa) => {
-                write!(f, "{}:{}", <u8>::from(sa), hex::encode(&sk.session_key))
-            }
-            None => write!(f, "{}", hex::encode(&sk.session_key)),
-        }
+        write!(f, "{}", hex::encode(&sk.session_key))
     }
 }
 
