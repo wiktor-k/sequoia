@@ -24,6 +24,10 @@ use crate::openpgp::serialize::{Serialize, stream::{Message, Armorer}};
 use crate::openpgp::cert::prelude::*;
 use crate::openpgp::policy::StandardPolicy as P;
 
+use clap::FromArgMatches;
+use crate::sq_cli::PacketSubcommands;
+use sq_cli::SqSubcommands;
+
 mod sq_cli;
 mod commands;
 
@@ -381,14 +385,15 @@ impl Config<'_> {
 fn main() -> Result<()> {
     let policy = &mut P::new();
 
-    let matches = sq_cli::build().get_matches();
+    let c = sq_cli::SqCommand::from_arg_matches(&sq_cli::build().get_matches())?;
 
-    let known_notations: Vec<&str> = matches.values_of("known-notation")
-        .unwrap_or_default()
-        .collect();
+    let known_notations = c.known_notation
+        .iter()
+        .map(|n| n.as_str())
+        .collect::<Vec<&str>>();
     policy.good_critical_notations(&known_notations);
 
-    let force = matches.is_present("force");
+    let force = c.force;
 
     let mut config = Config {
         force,
@@ -396,10 +401,8 @@ fn main() -> Result<()> {
         unstable_cli_warning_emitted: false,
     };
 
-    match matches.subcommand() {
-        Some(("decrypt",  m)) => {
-            use clap::FromArgMatches;
-            let command = sq_cli::DecryptCommand::from_arg_matches(m)?;
+    match c.subcommand {
+        SqSubcommands::Decrypt(command) => {
 
             let mut input = open_or_stdin(command.io.input.as_deref())?;
             let mut output =
@@ -434,10 +437,7 @@ fn main() -> Result<()> {
                               session_keys,
                               command.dump, command.hex)?;
         },
-        Some(("encrypt",  m)) => {
-            use clap::FromArgMatches;
-            let command = sq_cli::EncryptCommand::from_arg_matches(m)?;
-
+        SqSubcommands::Encrypt(command) => {
             let recipients = load_certs(
                 command.recipients_cert_file.iter().map(|s| s.as_ref()),
             )?;
@@ -468,10 +468,7 @@ fn main() -> Result<()> {
                 use_expired_subkey: command.use_expired_subkey,
             })?;
         },
-        Some(("sign",  m)) => {
-            use clap::FromArgMatches;
-            let command = sq_cli::SignCommand::from_arg_matches(m)?;
-
+        SqSubcommands::Sign(command) => {
             let mut input = open_or_stdin(command.io.input.as_deref())?;
             let output = command.io.output.as_deref();
             let detached = command.detached;
@@ -510,10 +507,7 @@ fn main() -> Result<()> {
                 })?;
             }
         },
-        Some(("verify",  m)) => {
-            use clap::FromArgMatches;
-            let command = sq_cli::VerifyCommand::from_arg_matches(m)?;
-
+        SqSubcommands::Verify(command) => {
             // TODO: Fix interface of open_or_stdin, create_or_stdout_safe, etc.
             let mut input = open_or_stdin(command.io.input.as_deref())?;
             let mut output =
@@ -532,10 +526,7 @@ fn main() -> Result<()> {
         },
 
         // TODO: Extract body to commands/armor.rs
-        Some(("armor", m)) => {
-            use clap::FromArgMatches;
-            let command = sq_cli::ArmorCommand::from_arg_matches(m)?;
-
+        SqSubcommands::Armor(command) => {
             let input = open_or_stdin(command.input.as_deref())?;
             let mut want_kind: Option<armor::Kind> = command.kind.into();
 
@@ -585,10 +576,7 @@ fn main() -> Result<()> {
             }
             output.finalize()?;
         },
-        Some(("dearmor",  m)) => {
-            use clap::FromArgMatches;
-            let command = sq_cli::DearmorCommand::from_arg_matches(m)?;
-
+        SqSubcommands::Dearmor(command) => {
             let mut input = open_or_stdin(command.io.input.as_deref())?;
             let mut output =
                 config.create_or_stdout_safe(command.io.output.as_deref())?;
@@ -596,31 +584,22 @@ fn main() -> Result<()> {
             io::copy(&mut filter, &mut output)?;
         },
         #[cfg(feature = "autocrypt")]
-        Some(("autocrypt", m)) => {
-            use clap::FromArgMatches;
-            let command = sq_cli::autocrypt::AutocryptCommand::from_arg_matches(m)?;
+        SqSubcommands::Autocrypt(command) => {
             commands::autocrypt::dispatch(config, &command)?;
         },
-        Some(("inspect",  m)) => {
-            use clap::FromArgMatches;
-            let command = sq_cli::InspectCommand::from_arg_matches(m)?;
+        SqSubcommands::Inspect(command) => {
             // sq inspect does not have --output, but commands::inspect does.
             // Work around this mismatch by always creating a stdout output.
             let mut output = config.create_or_stdout_unsafe(None)?;
             commands::inspect(command, policy, &mut output)?;
         },
 
-        Some(("keyring", m)) => {
-            use clap::FromArgMatches;
-            let command = sq_cli::KeyringCommand::from_arg_matches(m)?;
+        SqSubcommands::Keyring(command) => {
             commands::keyring::dispatch(config, command)?
         },
 
-        Some(("packet", m)) => match m.subcommand() {
-            Some(("dump",  m)) => {
-                use clap::FromArgMatches;
-                let command = sq_cli::PacketDumpCommand::from_arg_matches(m)?;
-
+        SqSubcommands::Packet(command) => match command.subcommand {
+            PacketSubcommands::Dump(command) => {
                 let mut input = open_or_stdin(command.io.input.as_deref())?;
                 let mut output = config.create_or_stdout_unsafe(
                     command.io.output.as_deref(),
@@ -633,10 +612,7 @@ fn main() -> Result<()> {
                                session_key.as_ref(), width)?;
             },
 
-            Some(("decrypt",  m)) => {
-                use clap::FromArgMatches;
-                let command = sq_cli::PacketDecryptCommand::from_arg_matches(m)?;
-
+            PacketSubcommands::Decrypt(command) => {
                 let mut input = open_or_stdin(command.io.input.as_deref())?;
                 let mut output = config.create_or_stdout_pgp(
                     command.io.output.as_deref(),
@@ -656,10 +632,7 @@ fn main() -> Result<()> {
                 output.finalize()?;
             },
 
-            Some(("split", m)) => {
-                use clap::FromArgMatches;
-                let command = sq_cli::PacketSplitCommand::from_arg_matches(m)?;
-
+            PacketSubcommands::Split(command) => {
                 let mut input = open_or_stdin(command.input.as_deref())?;
                 let prefix =
                 // The prefix is either specified explicitly...
@@ -676,45 +649,28 @@ fn main() -> Result<()> {
                             + "-");
                 commands::split(&mut input, &prefix)?;
             },
-            Some(("join",  m)) => {
-                use clap::FromArgMatches;
-                let command = sq_cli::PacketJoinCommand::from_arg_matches(m)?;
-                commands::join(config, command)?
-            },
-            _ => unreachable!(),
+            PacketSubcommands::Join(command) => commands::join(config, command)?,
         },
 
-        Some(("keyserver",  m)) => {
-            use clap::FromArgMatches;
-            let command = sq_cli::KeyserverCommand::from_arg_matches(m)?;
+        SqSubcommands::Keyserver(command) => {
             commands::net::dispatch_keyserver(config, command)?
-        },
+        }
 
-        Some(("key", m)) => {
-            use clap::FromArgMatches;
-            let command = sq_cli::KeyCommand::from_arg_matches(m)?;
+        SqSubcommands::Key(command) => {
             commands::key::dispatch(config, command)?
-        },
+        }
 
-        Some(("revoke",  m)) => {
-            use clap::FromArgMatches;
-            let command = sq_cli::RevokeCommand::from_arg_matches(m)?;
+        SqSubcommands::Revoke(command) => {
             commands::revoke::dispatch(config, command)?
-        },
+        }
 
-        Some(("wkd",  m)) => {
-            use clap::FromArgMatches;
-            let command = sq_cli::WkdCommand::from_arg_matches(m)?;
+        SqSubcommands::Wkd(command) => {
             commands::net::dispatch_wkd(config, command)?
-        },
+        }
 
-        Some(("certify",  m)) => {
-            use clap::FromArgMatches;
-            let command = sq_cli::CertifyCommand::from_arg_matches(m)?;
+        SqSubcommands::Certify(command) => {
             commands::certify::certify(config, command)?
-        },
-
-        _ => unreachable!(),
+        }
     }
 
     Ok(())

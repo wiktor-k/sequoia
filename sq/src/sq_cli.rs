@@ -52,7 +52,7 @@ to refer to OpenPGP keys that do contain secrets.
     arg_required_else_help = true,
     disable_colored_help = true,
 )]
-struct SqCommand {
+pub struct SqCommand {
     #[clap(
         short = 'f',
         long = "force",
