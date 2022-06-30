@@ -719,7 +719,11 @@ fn main() -> Result<()> {
         Some(("keyserver",  m)) =>
             commands::net::dispatch_keyserver(config, m)?,
 
-        Some(("key", m)) => commands::key::dispatch(config, m)?,
+        Some(("key", m)) => {
+            use clap::FromArgMatches;
+            let command = sq_cli::KeyCommand::from_arg_matches(m)?;
+            commands::key::dispatch(config, command)?
+        },
 
         Some(("revoke",  m)) => commands::revoke::dispatch(config, m)?,
 

@@ -23,38 +23,22 @@ use crate::SECONDS_IN_YEAR;
 use crate::parse_duration;
 use crate::decrypt_key;
 
+use crate::sq_cli::KeyCommand;
 use crate::sq_cli::KeyGenerateCommand;
 use crate::sq_cli::KeyPasswordCommand;
 use crate::sq_cli::KeyExtractCertCommand;
 use crate::sq_cli::KeyAdoptCommand;
 use crate::sq_cli::KeyAttestCertificationsCommand;
-use clap::FromArgMatches;
+use crate::sq_cli::KeySubcommands::*;
 
-pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
-    match m.subcommand() {
-        Some(("generate", m)) => {
-            let c = KeyGenerateCommand::from_arg_matches(m)?;
-            generate(config, c)?
-        },
-        Some(("password", m)) => {
-            let c = KeyPasswordCommand::from_arg_matches(m)?;
-            password(config, c)?
-        },
-        Some(("extract-cert", m)) => {
-            let c = KeyExtractCertCommand::from_arg_matches(m)?;
-            extract_cert(config, c)?
-        },
-        Some(("adopt", m)) => {
-            let c = KeyAdoptCommand::from_arg_matches(m)?;
-            adopt(config, c)?
-        },
-        Some(("attest-certifications", m)) => {
-            let c = KeyAttestCertificationsCommand::from_arg_matches(m)?;
-            attest_certifications(config, c)?
-        },
-        _ => unreachable!(),
-        }
-
+pub fn dispatch(config: Config, command: KeyCommand) -> Result<()> {
+    match command.subcommand {
+        Generate(c) => generate(config, c)?,
+        Password(c) => password(config, c)?,
+        ExtractCert(c) => extract_cert(config, c)?,
+        Adopt(c) => adopt(config, c)?,
+        AttestCertifications(c) => attest_certifications(config, c)?,
+    }
     Ok(())
 }
 
