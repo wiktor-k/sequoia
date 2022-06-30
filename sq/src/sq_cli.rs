@@ -1828,29 +1828,19 @@ $ sq key password --clear < juliet.encrypted_key.pgp > juliet.decrypted_key.pgp
 ",
 )]
 pub struct KeyPasswordCommand {
+    #[clap(flatten)]
+    pub io: IoArgs,
     #[clap(
         long = "clear",
         help = "Emit a key with unencrypted secrets",
     )]
     pub clear: bool,
     #[clap(
-        short,
-        long,
-        value_name = "FILE",
-        help = "Writes to FILE or stdout if omitted"
-    )]
-    pub output: Option<String>,
-    #[clap(
         short = 'B',
         long,
         help = "Emits binary data",
     )]
     pub binary: bool,
-    #[clap(
-        value_name = "FILE",
-        help = "Reads from FILE or stdin if omitted",
-    )]
-    key: Option<String>
 }
 
 #[derive(Debug, Args)]

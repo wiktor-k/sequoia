@@ -227,7 +227,7 @@ fn generate(config: Config, m: &ArgMatches) -> Result<()> {
 }
 
 fn password(config: Config, m: &ArgMatches) -> Result<()> {
-    let input = open_or_stdin(m.value_of("certificate"))?;
+    let input = open_or_stdin(m.value_of("input"))?;
     let key = Cert::from_reader(input)?;
 
     if ! key.is_tsk() {
