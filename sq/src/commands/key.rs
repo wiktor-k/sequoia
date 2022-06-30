@@ -25,6 +25,7 @@ use crate::parse_duration;
 use crate::decrypt_key;
 
 use crate::sq_cli::KeyGenerateCommand;
+use crate::sq_cli::KeyPasswordCommand;
 use clap::FromArgMatches;
 
 pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
@@ -33,13 +34,17 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
             let c = KeyGenerateCommand::from_arg_matches(m)?;
             generate(config, c)?
         },
-        Some(("password", m)) => password(config, m)?,
+        Some(("password", m)) => {
+            let c = KeyPasswordCommand::from_arg_matches(m)?;
+            password(config, c)?
+        },
         Some(("extract-cert", m)) => extract_cert(config, m)?,
         Some(("adopt", m)) => adopt(config, m)?,
         Some(("attest-certifications", m)) =>
             attest_certifications(config, m)?,
         _ => unreachable!(),
         }
+
     Ok(())
 }
 
@@ -226,8 +231,8 @@ fn generate(config: Config, command: KeyGenerateCommand) -> Result<()> {
     Ok(())
 }
 
-fn password(config: Config, m: &ArgMatches) -> Result<()> {
-    let input = open_or_stdin(m.value_of("input"))?;
+fn password(config: Config, command: KeyPasswordCommand) -> Result<()> {
+    let input = open_or_stdin(command.io.input.as_deref())?;
     let key = Cert::from_reader(input)?;
 
     if ! key.is_tsk() {
@@ -250,7 +255,7 @@ fn password(config: Config, m: &ArgMatches) -> Result<()> {
     assert_eq!(key.keys().secret().count(),
                key.keys().unencrypted_secret().count());
 
-    let new_password = if m.is_present("clear") {
+    let new_password = if command.clear {
         None
     } else {
         let prompt_0 =
@@ -285,8 +290,8 @@ fn password(config: Config, m: &ArgMatches) -> Result<()> {
         key = key.insert_packets(encrypted)?;
     }
 
-    let mut output = config.create_or_stdout_safe(m.value_of("output"))?;
-    if m.is_present("binary") {
+    let mut output = config.create_or_stdout_safe(command.io.output.as_deref())?;
+    if command.binary {
         key.as_tsk().serialize(&mut output)?;
     } else {
         key.as_tsk().armored().serialize(&mut output)?;
