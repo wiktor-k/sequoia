@@ -26,6 +26,7 @@ use crate::decrypt_key;
 
 use crate::sq_cli::KeyGenerateCommand;
 use crate::sq_cli::KeyPasswordCommand;
+use crate::sq_cli::KeyExtractCertCommand;
 use clap::FromArgMatches;
 
 pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
@@ -38,7 +39,10 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
             let c = KeyPasswordCommand::from_arg_matches(m)?;
             password(config, c)?
         },
-        Some(("extract-cert", m)) => extract_cert(config, m)?,
+        Some(("extract-cert", m)) => {
+            let c = KeyExtractCertCommand::from_arg_matches(m)?;
+            extract_cert(config, c)?
+        },
         Some(("adopt", m)) => adopt(config, m)?,
         Some(("attest-certifications", m)) =>
             attest_certifications(config, m)?,
@@ -299,12 +303,12 @@ fn password(config: Config, command: KeyPasswordCommand) -> Result<()> {
     Ok(())
 }
 
-fn extract_cert(config: Config, m: &ArgMatches) -> Result<()> {
-    let input = open_or_stdin(m.value_of("input"))?;
-    let mut output = config.create_or_stdout_safe(m.value_of("output"))?;
+fn extract_cert(config: Config, command: KeyExtractCertCommand) -> Result<()> {
+    let input = open_or_stdin(command.io.input.as_deref())?;
+    let mut output = config.create_or_stdout_safe(command.io.output.as_deref())?;
 
     let cert = Cert::from_reader(input)?;
-    if m.is_present("binary") {
+    if command.binary {
         cert.serialize(&mut output)?;
     } else {
         cert.armored().serialize(&mut output)?;
