@@ -1779,7 +1779,8 @@ $ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
         value_name = "OUTFILE",
         help = "Writes the key to OUTFILE",
     )]
-    pub export: String,
+    // TODO this represents a filename, so it should be a Path
+    pub export: Option<String>,
     #[clap(
         long = "rev-cert",
         value_name = "FILE or -",
@@ -1790,6 +1791,7 @@ $ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
             mandatory if OUTFILE is \"-\". \
             [default: <OUTFILE>.rev]",
     )]
+    // TODO this represents a filename, so it should be a Path
     pub rev_cert: Option<String>
 }
 

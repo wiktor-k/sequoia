@@ -404,7 +404,7 @@
 //! uploading it to a keyserver.
 //!
 //! USAGE:
-//!     sq key generate [OPTIONS] --export <OUTFILE>
+//!     sq key generate [OPTIONS]
 //!
 //! OPTIONS:
 //!     -c, --cipher-suite <CIPHER-SUITE>
