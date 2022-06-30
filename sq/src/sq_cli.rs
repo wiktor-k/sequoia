@@ -1923,6 +1923,7 @@ pub struct KeyAdoptCommand {
         required(true),
         help = "Adds the key or subkey KEY to the TARGET-KEY",
     )]
+    // TODO Type should be KeyHandle, improve help
     pub key: Vec<String>,
     #[clap(
         long = "allow-broken-crypto",
@@ -1996,7 +1997,7 @@ pub struct KeyAttestCertificationsCommand {
         value_name = "KEY",
         help = "Changes attestations on KEY",
     )]
-    key: Option<String>,
+    pub key: Option<String>,
     #[clap(
         short,
         long,

@@ -1,5 +1,4 @@
 use anyhow::Context as _;
-use clap::ArgMatches;
 use itertools::Itertools;
 use std::time::{SystemTime, Duration};
 
@@ -27,6 +26,8 @@ use crate::decrypt_key;
 use crate::sq_cli::KeyGenerateCommand;
 use crate::sq_cli::KeyPasswordCommand;
 use crate::sq_cli::KeyExtractCertCommand;
+use crate::sq_cli::KeyAdoptCommand;
+use crate::sq_cli::KeyAttestCertificationsCommand;
 use clap::FromArgMatches;
 
 pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
@@ -43,9 +44,14 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
             let c = KeyExtractCertCommand::from_arg_matches(m)?;
             extract_cert(config, c)?
         },
-        Some(("adopt", m)) => adopt(config, m)?,
-        Some(("attest-certifications", m)) =>
-            attest_certifications(config, m)?,
+        Some(("adopt", m)) => {
+            let c = KeyAdoptCommand::from_arg_matches(m)?;
+            adopt(config, c)?
+        },
+        Some(("attest-certifications", m)) => {
+            let c = KeyAttestCertificationsCommand::from_arg_matches(m)?;
+            attest_certifications(config, c)?
+        },
         _ => unreachable!(),
         }
 
@@ -316,8 +322,8 @@ fn extract_cert(config: Config, command: KeyExtractCertCommand) -> Result<()> {
     Ok(())
 }
 
-fn adopt(config: Config, m: &ArgMatches) -> Result<()> {
-    let input = open_or_stdin(m.value_of("certificate"))?;
+fn adopt(config: Config, command: KeyAdoptCommand) -> Result<()> {
+    let input = open_or_stdin(command.certificate.as_deref())?;
     let cert = Cert::from_reader(input)?;
     let mut wanted: Vec<(KeyHandle,
                          Option<(Key<key::PublicParts, key::SubordinateRole>,
@@ -325,7 +331,7 @@ fn adopt(config: Config, m: &ArgMatches) -> Result<()> {
         = vec![];
 
     // Gather the Key IDs / Fingerprints and make sure they are valid.
-    for id in m.values_of("key").unwrap_or_default() {
+    for id in command.key {
         let h = id.parse::<KeyHandle>()?;
         if h.is_invalid() {
             return Err(anyhow::anyhow!(
@@ -336,16 +342,16 @@ fn adopt(config: Config, m: &ArgMatches) -> Result<()> {
 
     let null_policy = &crate::openpgp::policy::NullPolicy::new();
     let adoptee_policy: &dyn Policy =
-        if m.values_of("allow-broken-crypto").is_some() {
+        if command.allow_broken_crypto {
             null_policy
         } else {
             &config.policy
         };
 
     // Find the corresponding keys.
-    for keyring in m.values_of("keyring").unwrap_or_default() {
-        for cert in CertParser::from_file(keyring)
-            .context(format!("Parsing: {}", keyring))?
+    for keyring in command.keyring {
+        for cert in CertParser::from_file(&keyring)
+            .context(format!("Parsing: {}", &keyring))?
         {
             let cert = cert.context(format!("Parsing {}", keyring))?;
 
@@ -481,8 +487,8 @@ fn adopt(config: Config, m: &ArgMatches) -> Result<()> {
 
     let cert = cert.clone().insert_packets(packets.clone())?;
 
-    let mut sink = config.create_or_stdout_safe(m.value_of("output"))?;
-    if m.is_present("binary") {
+    let mut sink = config.create_or_stdout_safe(command.output.as_deref())?;
+    if command.binary {
         cert.as_tsk().serialize(&mut sink)?;
     } else {
         cert.as_tsk().armored().serialize(&mut sink)?;
@@ -519,12 +525,12 @@ fn adopt(config: Config, m: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-fn attest_certifications(config: Config, m: &ArgMatches)
+fn attest_certifications(config: Config, command: KeyAttestCertificationsCommand)
                          -> Result<()> {
     // Attest to all certifications?
-    let all = ! m.is_present("none"); // All is the default.
+    let all = !command.none; // All is the default.
 
-    let input = open_or_stdin(m.value_of("key"))?;
+    let input = open_or_stdin(command.key.as_deref())?;
     let key = Cert::from_reader(input)?;
 
     // Get a signer.
@@ -567,8 +573,8 @@ fn attest_certifications(config: Config, m: &ArgMatches)
     // Finally, add the new signatures.
     let key = key.insert_packets(attestation_signatures)?;
 
-    let mut sink = config.create_or_stdout_safe(m.value_of("output"))?;
-    if m.is_present("binary") {
+    let mut sink = config.create_or_stdout_safe(command.output.as_deref())?;
+    if command.binary {
         key.as_tsk().serialize(&mut sink)?;
     } else {
         key.as_tsk().armored().serialize(&mut sink)?;
