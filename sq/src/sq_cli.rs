@@ -2027,21 +2027,13 @@ pub struct WkdCommand {
         short = 'p',
         long = "policy",
         value_name = "NETWORK-POLICY",
-        default_value_t = WkdNetworkPolicy::Encrypted,
+        default_value_t = NetworkPolicy::Encrypted,
         arg_enum,
         help = "Sets the network policy to use",
     )]
-    pub policy: WkdNetworkPolicy,
+    pub policy: NetworkPolicy,
     #[clap(subcommand)]
     pub subcommand: WkdSubcommands,
-}
-
-#[derive(ArgEnum, Clone, Debug)]
-pub enum WkdNetworkPolicy {
-    Offline,
-    Anonymized,
-    Encrypted,
-    Insecure,
 }
 
 #[derive(Debug, Subcommand)]
@@ -2173,11 +2165,11 @@ pub struct KeyserverCommand {
         short,
         long,
         value_name = "NETWORK-POLICY",
-        default_value_t = KeyserverPolicy::Encrypted,
+        default_value_t = NetworkPolicy::Encrypted,
         help = "Sets the network policy to use",
         arg_enum,
     )]
-    pub policy: KeyserverPolicy,
+    pub policy: NetworkPolicy,
     #[clap(
         short,
         long,
@@ -2190,20 +2182,20 @@ pub struct KeyserverCommand {
 }
 
 #[derive(ArgEnum, Clone, Debug)]
-pub enum KeyserverPolicy {
+pub enum NetworkPolicy {
     Offline,
     Anonymized,
     Encrypted,
     Insecure,
 }
 
-impl From<KeyserverPolicy> for sequoia_net::Policy {
-    fn from(kp: KeyserverPolicy) -> Self {
+impl From<NetworkPolicy> for sequoia_net::Policy {
+    fn from(kp: NetworkPolicy) -> Self {
         match kp {
-            KeyserverPolicy::Offline => sequoia_net::Policy::Offline,
-            KeyserverPolicy::Anonymized => sequoia_net::Policy::Anonymized,
-            KeyserverPolicy::Encrypted => sequoia_net::Policy::Encrypted,
-            KeyserverPolicy::Insecure => sequoia_net::Policy::Insecure,
+            NetworkPolicy::Offline => sequoia_net::Policy::Offline,
+            NetworkPolicy::Anonymized => sequoia_net::Policy::Anonymized,
+            NetworkPolicy::Encrypted => sequoia_net::Policy::Encrypted,
+            NetworkPolicy::Insecure => sequoia_net::Policy::Insecure,
         }
     }
 }
