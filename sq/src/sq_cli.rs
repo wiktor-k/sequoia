@@ -2092,6 +2092,13 @@ pub struct WkdGetCommand {
         help = "Emits binary data",
     )]
     pub binary: bool,
+    #[clap(
+        short,
+        long,
+        value_name = "FILE",
+        help = "Writes to FILE or stdout if omitted"
+    )]
+    pub output: Option<String>,
 }
 
 #[derive(Debug, Args)]

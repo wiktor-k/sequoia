@@ -1304,8 +1304,9 @@
 //!     <ADDRESS>    Queries a cert for ADDRESS
 //!
 //! OPTIONS:
-//!     -B, --binary    Emits binary data
-//!     -h, --help      Print help information
+//!     -B, --binary           Emits binary data
+//!     -h, --help             Print help information
+//!     -o, --output <FILE>    Writes to FILE or stdout if omitted
 //! ```
 //!
 //! ### Subcommand wkd url
