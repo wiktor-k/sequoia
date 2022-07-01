@@ -30,16 +30,8 @@ use crate::{
 
 use crate::sq_cli::KeyserverCommand;
 use crate::sq_cli::KeyserverSubcommands;
-
-fn parse_network_policy(m: &clap::ArgMatches) -> net::Policy {
-    match m.value_of("policy").expect("has default value") {
-        "offline" => net::Policy::Offline,
-        "anonymized" => net::Policy::Anonymized,
-        "encrypted" => net::Policy::Encrypted,
-        "insecure" => net::Policy::Insecure,
-        _ => unreachable!(),
-    }
-}
+use crate::sq_cli::WkdCommand;
+use crate::sq_cli::WkdSubcommands;
 
 pub fn dispatch_keyserver(config: Config, c: KeyserverCommand) -> Result<()> {
     let network_policy = c.policy.into();
@@ -97,32 +89,32 @@ pub fn dispatch_keyserver(config: Config, c: KeyserverCommand) -> Result<()> {
     Ok(())
 }
 
-pub fn dispatch_wkd(config: Config, m: &clap::ArgMatches) -> Result<()> {
-    let network_policy = parse_network_policy(m);
+pub fn dispatch_wkd(config: Config, c: WkdCommand) -> Result<()> {
+    let network_policy: net::Policy = c.policy.into();
 
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_io()
         .enable_time()
         .build()?;
 
-    match m.subcommand() {
-        Some(("url",  m)) => {
-            let email_address = m.value_of("input").unwrap();
+    match c.subcommand {
+        WkdSubcommands::Url(c) => {
+            let email_address = c.email_address;
             let wkd_url = wkd::Url::from(email_address)?;
             let url = wkd_url.to_url(None)?;
             println!("{}", url);
         },
-        Some(("direct-url",  m)) => {
-            let email_address = m.value_of("input").unwrap();
+        WkdSubcommands::DirectUrl(c) => {
+            let email_address = c.email_address;
             let wkd_url = wkd::Url::from(email_address)?;
             let url = wkd_url.to_url(wkd::Variant::Direct)?;
             println!("{}", url);
         },
-        Some(("get",  m)) => {
+        WkdSubcommands::Get(c) => {
             // Check that the policy allows https.
             network_policy.assert(net::Policy::Encrypted)?;
 
-            let email_address = m.value_of("input").unwrap();
+            let email_address = c.email_address;
             // XXX: EmailAddress could be created here to
             // check it's a valid email address, print the error to
             // stderr and exit.
@@ -137,17 +129,15 @@ pub fn dispatch_wkd(config: Config, m: &clap::ArgMatches) -> Result<()> {
             // But to keep the parallelism with `store export` and `keyserver get`,
             // The output is armored if not `--binary` option is given.
             let mut output =
-                config.create_or_stdout_safe(m.value_of("output"))?;
-            serialize_keyring(&mut output, &certs,
-                              m.is_present("binary"))?;
+                config.create_or_stdout_safe(c.output.as_deref())?;
+            serialize_keyring(&mut output, &certs, c.binary)?;
         },
-        Some(("generate", m)) => {
-            let domain = m.value_of("domain").unwrap();
-            let skip = m.is_present("skip");
-            let f = open_or_stdin(m.value_of("input"))?;
-            let base_path =
-                m.value_of("base-directory").expect("required");
-            let variant = if m.is_present("direct-method") {
+        WkdSubcommands::Generate(c) => {
+            let domain = c.domain;
+            let skip = c.skip;
+            let f = open_or_stdin(c.input.as_deref())?;
+            let base_path = c.base_directory;
+            let variant = if c.direct_method {
                 wkd::Variant::Direct
             } else {
                 wkd::Variant::Advanced
@@ -162,8 +152,8 @@ pub fn dispatch_wkd(config: Config, m: &clap::ArgMatches) -> Result<()> {
                     e @ Err(_) if !skip => e?,
                     _ => continue,
                 };
-                if wkd::cert_contains_domain_userid(domain, &vc) {
-                    wkd::insert(&base_path, domain, variant, &vc)
+                if wkd::cert_contains_domain_userid(&domain, &vc) {
+                    wkd::insert(&base_path, &domain, variant, &vc)
                         .context(format!("Failed to generate the WKD in \
                         {}.", base_path))?;
                 } else if !skip {
@@ -174,7 +164,6 @@ pub fn dispatch_wkd(config: Config, m: &clap::ArgMatches) -> Result<()> {
                 }
             }
         },
-        _ => unreachable!(),
     }
 
     Ok(())

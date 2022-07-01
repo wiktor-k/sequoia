@@ -2053,7 +2053,7 @@ pub struct WkdUrlCommand {
         value_name = "ADDRESS",
         help = "Queries for ADDRESS",
     )]
-    pub input: String,
+    pub email_address: String,
 }
 
 #[derive(Debug, Args)]
@@ -2065,7 +2065,7 @@ pub struct WkdDirectUrlCommand {
         value_name = "ADDRESS",
         help = "Queries for ADDRESS",
     )]
-    pub input: String,
+    pub email_address: String,
 }
 
 #[derive(Debug, Args)]
@@ -2077,7 +2077,7 @@ pub struct WkdGetCommand {
         value_name = "ADDRESS",
         help = "Queries a cert for ADDRESS",
     )]
-    pub input: String,
+    pub email_address: String,
     #[clap(
         short = 'B',
         long,

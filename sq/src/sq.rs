@@ -730,7 +730,11 @@ fn main() -> Result<()> {
 
         Some(("revoke",  m)) => commands::revoke::dispatch(config, m)?,
 
-        Some(("wkd",  m)) => commands::net::dispatch_wkd(config, m)?,
+        Some(("wkd",  m)) => {
+            use clap::FromArgMatches;
+            let command = sq_cli::WkdCommand::from_arg_matches(m)?;
+            commands::net::dispatch_wkd(config, command)?
+        },
 
         Some(("certify",  m)) => {
             commands::certify::certify(config, m)?;
