@@ -28,6 +28,8 @@ use crate::{
     serialize_keyring,
 };
 
+use crate::sq_cli::KeyserverCommand;
+use crate::sq_cli::KeyserverSubcommands;
 
 fn parse_network_policy(m: &clap::ArgMatches) -> net::Policy {
     match m.value_of("policy").expect("has default value") {
@@ -39,10 +41,10 @@ fn parse_network_policy(m: &clap::ArgMatches) -> net::Policy {
     }
 }
 
-pub fn dispatch_keyserver(config: Config, m: &clap::ArgMatches) -> Result<()> {
-    let network_policy = parse_network_policy(m);
-    let mut ks = if let Some(uri) = m.value_of("server") {
-        KeyServer::new(network_policy, uri)
+pub fn dispatch_keyserver(config: Config, c: KeyserverCommand) -> Result<()> {
+    let network_policy = c.policy.into();
+    let mut ks = if let Some(uri) = c.server {
+        KeyServer::new(network_policy, &uri)
     } else {
         KeyServer::keys_openpgp_org(network_policy)
     }.context("Malformed keyserver URI")?;
@@ -52,9 +54,9 @@ pub fn dispatch_keyserver(config: Config, m: &clap::ArgMatches) -> Result<()> {
         .enable_time()
         .build()?;
 
-    match m.subcommand() {
-        Some(("get",  m)) => {
-            let query = m.value_of("query").unwrap();
+    match c.subcommand {
+         KeyserverSubcommands::Get(c) => {
+            let query = c.query;
 
             let handle = query.parse::<KeyHandle>();
 
@@ -63,35 +65,33 @@ pub fn dispatch_keyserver(config: Config, m: &clap::ArgMatches) -> Result<()> {
                     .context("Failed to retrieve cert")?;
 
                 let mut output =
-                    config.create_or_stdout_safe(m.value_of("output"))?;
-                if ! m.is_present("binary") {
+                    config.create_or_stdout_safe(c.output.as_deref())?;
+                if !c.binary {
                     cert.armored().serialize(&mut output)
                 } else {
                     cert.serialize(&mut output)
                 }.context("Failed to serialize cert")?;
-            } else if let Ok(Some(addr)) = UserID::from(query).email() {
+            } else if let Ok(Some(addr)) = UserID::from(query.as_str()).email() {
                 let certs = rt.block_on(ks.search(addr))
                     .context("Failed to retrieve certs")?;
 
                 let mut output =
-                    config.create_or_stdout_safe(m.value_of("output"))?;
-                serialize_keyring(&mut output, &certs,
-                                  m.is_present("binary"))?;
+                    config.create_or_stdout_safe(c.output.as_deref())?;
+                serialize_keyring(&mut output, &certs, c.binary)?;
             } else {
                 return Err(anyhow::anyhow!(
                     "Query must be a fingerprint, a keyid, \
                      or an email address: {:?}", query));
             }
         },
-        Some(("send",  m)) => {
-            let mut input = open_or_stdin(m.value_of("input"))?;
+        KeyserverSubcommands::Send(c) => {
+            let mut input = open_or_stdin(c.input.as_deref())?;
             let cert = Cert::from_reader(&mut input).
                 context("Malformed key")?;
 
             rt.block_on(ks.send(&cert))
                 .context("Failed to send key to server")?;
         },
-        _ => unreachable!(),
     }
 
     Ok(())

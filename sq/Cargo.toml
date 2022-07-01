@@ -44,6 +44,7 @@ anyhow = "1.0.18"
 clap = { version = "3", features = ["derive", "wrap_help"] }
 clap_complete = "3"
 sequoia-openpgp = { path = "../openpgp", version = "1.0.0", default-features = false }
+sequoia-net = { path = "../net", version = "0.24", default-features = false }
 subplot-build = "0.4.0"
 cfg-if = "1"
 

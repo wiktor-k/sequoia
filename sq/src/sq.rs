@@ -716,8 +716,11 @@ fn main() -> Result<()> {
             _ => unreachable!(),
         },
 
-        Some(("keyserver",  m)) =>
-            commands::net::dispatch_keyserver(config, m)?,
+        Some(("keyserver",  m)) => {
+            use clap::FromArgMatches;
+            let command = sq_cli::KeyserverCommand::from_arg_matches(m)?;
+            commands::net::dispatch_keyserver(config, command)?
+        },
 
         Some(("key", m)) => {
             use clap::FromArgMatches;

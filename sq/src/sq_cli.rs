@@ -2190,6 +2190,17 @@ pub enum KeyserverPolicy {
     Insecure,
 }
 
+impl From<KeyserverPolicy> for sequoia_net::Policy {
+    fn from(kp: KeyserverPolicy) -> Self {
+        match kp {
+            KeyserverPolicy::Offline => sequoia_net::Policy::Offline,
+            KeyserverPolicy::Anonymized => sequoia_net::Policy::Anonymized,
+            KeyserverPolicy::Encrypted => sequoia_net::Policy::Encrypted,
+            KeyserverPolicy::Insecure => sequoia_net::Policy::Insecure,
+        }
+    }
+}
+
 #[derive(Debug, Subcommand)]
 pub enum KeyserverSubcommands {
     Get(KeyserverGetCommand),
