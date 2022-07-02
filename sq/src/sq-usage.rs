@@ -948,8 +948,9 @@
 //!     -a, --amount <TRUST_AMOUNT>
 //!             Sets the amount of trust.  Values between 1 and 120 are meaningful.
 //!             120 means fully trusted.  Values less than 120 indicate the degree
-//!             of trust.  60 is usually used for partially trusted.  The default is
-//!             120.
+//!             of trust.  60 is usually used for partially trusted.
+//! 
+//!             [default: 120]
 //!
 //!         --allow-not-alive-certifier
 //!             Allows the key to make a certification even if the current time is
@@ -966,7 +967,9 @@
 //!             Sets the trust depth (sometimes referred to as the trust level).  0
 //!             means a normal certification of <CERTIFICATE, USERID>.  1 means
 //!             CERTIFICATE is also a trusted introducer, 2 means CERTIFICATE is a
-//!             meta-trusted introducer, etc.  The default is 0.
+//!             meta-trusted introducer, etc.
+//! 
+//!             [default: 0]
 //!
 //!         --expires <TIME>
 //!             Makes the certification expire at TIME (as ISO 8601). Use "never" to

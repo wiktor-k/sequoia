@@ -17,43 +17,42 @@ use crate::SECONDS_IN_YEAR;
 use crate::commands::get_certification_keys;
 use crate::commands::GetKeysOptions;
 
-pub fn certify(config: Config, m: &clap::ArgMatches)
+use crate::sq_cli::CertifyCommand;
+
+pub fn certify(config: Config, c: CertifyCommand)
     -> Result<()>
 {
-    let certifier = m.value_of("certifier").unwrap();
-    let cert = m.value_of("certificate").unwrap();
-    let userid = m.value_of("userid").unwrap();
+    let certifier = c.certifier;
+    let cert = c.certificate;
+    let userid = c.userid;
 
     let certifier = Cert::from_file(certifier)?;
-    let private_key_store = m.value_of("private-key-store");
+    let private_key_store = c.private_key_store;
     let cert = Cert::from_file(cert)?;
 
-    let trust_depth: u8 = m.value_of("depth")
-        .map(|s| s.parse()).unwrap_or(Ok(0))?;
-    let trust_amount: u8 = m.value_of("amount")
-        .map(|s| s.parse()).unwrap_or(Ok(120))?;
-    let regex = m.values_of("regex").map(|v| v.collect::<Vec<_>>())
-        .unwrap_or_default();
+    let trust_depth: u8 = c.depth;
+    let trust_amount: u8 = c.amount;
+    let regex = c.regex;
     if trust_depth == 0 && !regex.is_empty() {
         return Err(
             anyhow::format_err!("A regex only makes sense \
                                  if the trust depth is greater than 0"));
     }
 
-    let local = m.is_present("local");
-    let non_revocable = m.is_present("non-revocable");
+    let local = c.local;
+    let non_revocable = c.non_revocable;
 
-    let time = if let Some(t) = m.value_of("time") {
+    let time = if let Some(t) = c.time {
         let time = SystemTime::from(
-            crate::parse_iso8601(t, chrono::NaiveTime::from_hms(0, 0, 0))
+            crate::parse_iso8601(&t, chrono::NaiveTime::from_hms(0, 0, 0))
                 .context(format!("Parsing --time {}", t))?);
         Some(time)
     } else {
         None
     };
 
-    let expires = m.value_of("expires");
-    let expires_in = m.value_of("expires-in");
+    let expires = c.expires;
+    let expires_in = c.expires_in;
 
     let vc = cert.with_policy(&config.policy, time)?;
 
@@ -122,7 +121,7 @@ pub fn certify(config: Config, m: &clap::ArgMatches)
             let now = builder.signature_creation_time()
                 .unwrap_or_else(std::time::SystemTime::now);
             let expiration = SystemTime::from(
-                crate::parse_iso8601(t, chrono::NaiveTime::from_hms(0, 0, 0))?);
+                crate::parse_iso8601(&t, chrono::NaiveTime::from_hms(0, 0, 0))?);
             let validity = expiration.duration_since(now)?;
             builder = builder.set_signature_creation_time(now)?
                 .set_signature_validity_period(validity)?;
@@ -131,15 +130,17 @@ pub fn certify(config: Config, m: &clap::ArgMatches)
             // The default is no expiration; there is nothing to do.
             (),
         (None, Some(d)) => {
-            let d = parse_duration(d)?;
+            let d = parse_duration(&d)?;
             builder = builder.set_signature_validity_period(d)?;
         },
         (Some(_), Some(_)) => unreachable!("conflicting args"),
     }
 
+    // TODO Extract this function, it is used in sign and some revoke commands, too.
     // Each --notation takes two values.  The iterator returns them
     // one at a time, however.
-    if let Some(mut n) = m.values_of("notation") {
+    if let Some(n) = c.notation {
+        let mut n = n.iter();
         while let Some(name) = n.next() {
             let value = n.next().unwrap();
 
@@ -147,7 +148,7 @@ pub fn certify(config: Config, m: &clap::ArgMatches)
                 if let Some(name) = name.strip_prefix('!') {
                     (true, name)
                 } else {
-                    (false, name)
+                    (false, name.as_str())
                 };
 
             builder = builder.add_notation(
@@ -159,17 +160,17 @@ pub fn certify(config: Config, m: &clap::ArgMatches)
     }
 
     let mut options = Vec::new();
-    if m.is_present("allow-not-alive-certifier") {
+    if c.allow_not_alive_certifier {
         options.push(GetKeysOptions::AllowNotAlive);
     }
-    if m.is_present("allow-revoked-certifier") {
+    if c.allow_revoked_certifier {
         options.push(GetKeysOptions::AllowRevoked);
     }
 
     // Sign it.
     let signers = get_certification_keys(
         &[certifier], &config.policy,
-        private_key_store,
+        private_key_store.as_deref(),
         time,
         Some(&options))?;
     assert_eq!(signers.len(), 1);
@@ -191,8 +192,10 @@ pub fn certify(config: Config, m: &clap::ArgMatches)
 
     // And export it.
     let mut message = config.create_or_stdout_pgp(
-        m.value_of("output"),
-        m.is_present("binary"), sequoia_openpgp::armor::Kind::PublicKey)?;
+        c.output.as_deref(),
+        c.binary,
+        sequoia_openpgp::armor::Kind::PublicKey,
+    )?;
     cert.serialize(&mut message)?;
     message.finalize()?;
 

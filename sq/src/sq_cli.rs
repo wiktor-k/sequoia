@@ -1143,28 +1143,28 @@ $ sq certify --time 20130721T0550+0200 neal.pgp ada.pgp ada
         short = 'd',
         long = "depth",
         value_name = "TRUST_DEPTH",
+        default_value = "0",
         help = "Sets the trust depth",
         long_help =
             "Sets the trust depth (sometimes referred to as the trust level).  \
             0 means a normal certification of <CERTIFICATE, USERID>.  \
             1 means CERTIFICATE is also a trusted introducer, 2 means \
-            CERTIFICATE is a meta-trusted introducer, etc.  The default is 0.",
+            CERTIFICATE is a meta-trusted introducer, etc.",
     )]
-    //TODO: use usize, not String
-    pub depth: Option<String>,
+    pub depth: u8,
     #[clap(
         short = 'a',
         long = "amount",
         value_name = "TRUST_AMOUNT",
+        default_value = "120",
         help = "Sets the amount of trust",
         long_help =
             "Sets the amount of trust.  Values between 1 and 120 are meaningful. \
             120 means fully trusted.  Values less than 120 indicate the degree \
-            of trust.  60 is usually used for partially \
-            trusted.  The default is 120.",
+            of trust.  60 is usually used for partially trusted.",
     )]
     //TODO: use usize, not String
-    pub amount: Option<String>,
+    pub amount: u8,
     #[clap(
         short = 'r',
         long = "regex",
