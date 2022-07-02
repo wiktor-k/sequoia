@@ -695,13 +695,15 @@ fn main() -> Result<()> {
             },
 
             Some(("split", m)) => {
-                let mut input = open_or_stdin(m.value_of("input"))?;
+                use clap::FromArgMatches;
+                let command = sq_cli::PacketSplitCommand::from_arg_matches(m)?;
+
+                let mut input = open_or_stdin(command.input.as_deref())?;
                 let prefix =
                 // The prefix is either specified explicitly...
-                    m.value_of("prefix").map(|p| p.to_owned())
-                    .unwrap_or(
+                    command.prefix.unwrap_or(
                         // ... or we derive it from the input file...
-                        m.value_of("input").and_then(|i| {
+                        command.input.and_then(|i| {
                             let p = PathBuf::from(i);
                             // (but only use the filename)
                             p.file_name().map(|f| String::from(f.to_string_lossy()))
