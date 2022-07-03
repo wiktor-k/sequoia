@@ -34,11 +34,11 @@ use crate::openpgp::types::RevocationStatus;
 
 use crate::{
     Config,
-    parse_armor_kind,
 };
 
 use crate::sq_cli::EncryptCompressionMode;
 use crate::sq_cli::EncryptEncryptionMode;
+use crate::sq_cli::PacketJoinCommand;
 
 #[cfg(feature = "autocrypt")]
 pub mod autocrypt;
@@ -684,20 +684,19 @@ pub fn split(input: &mut (dyn io::Read + Sync + Send), prefix: &str)
 }
 
 /// Joins the given files.
-pub fn join(config: Config, m: &clap::ArgMatches)
-            -> Result<()> {
+pub fn join(config: Config, c: PacketJoinCommand) -> Result<()> {
     // Either we know what kind of armor we want to produce, or we
     // need to detect it using the first packet we see.
-    let kind = parse_armor_kind(m.value_of("kind"));
-    let output = m.value_of("output");
-    let mut sink =
-        if m.is_present("binary") {
+    let kind = c.kind.into();
+    let output = c.output;
+    let mut sink = if c.binary {
+            // TODO: Does this mean kind is silently ignored if binary is given?
             // No need for any auto-detection.
-            Some(config.create_or_stdout_pgp(output,
+            Some(config.create_or_stdout_pgp(output.as_deref(),
                                              true, // Binary.
                                              armor::Kind::File)?)
         } else if let Some(kind) = kind {
-            Some(config.create_or_stdout_pgp(output,
+            Some(config.create_or_stdout_pgp(output.as_deref(),
                                              false, // Armored.
                                              kind)?)
         } else {
@@ -740,18 +739,18 @@ pub fn join(config: Config, m: &clap::ArgMatches)
         Ok(())
     }
 
-    if let Some(inputs) = m.values_of("input") {
-        for name in inputs {
+    if !c.input.is_empty() {
+        for name in c.input {
             let ppr =
                 openpgp::parse::PacketParserBuilder::from_file(name)?
                 .map(true).build()?;
-            copy(&config, ppr, output, &mut sink)?;
+            copy(&config, ppr, output.as_deref(), &mut sink)?;
         }
     } else {
         let ppr =
             openpgp::parse::PacketParserBuilder::from_reader(io::stdin())?
             .map(true).build()?;
-        copy(&config, ppr, output, &mut sink)?;
+        copy(&config, ppr, output.as_deref(), &mut sink)?;
     }
 
     sink.unwrap().finalize()?;

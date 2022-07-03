@@ -629,6 +629,22 @@ pub enum PacketKind {
     File
 }
 
+impl From<PacketKind> for Option<openpgp::armor::Kind> {
+
+    fn from(pk: PacketKind) -> Self {
+        use openpgp::armor::Kind as OpenpgpArmorKind;
+
+        match pk {
+            PacketKind::Auto => None,
+            PacketKind::Message => Some(OpenpgpArmorKind::Message),
+            PacketKind::Cert => Some(OpenpgpArmorKind::PublicKey),
+            PacketKind::Key => Some(OpenpgpArmorKind::SecretKey),
+            PacketKind::Sig => Some(OpenpgpArmorKind::Signature),
+            PacketKind::File => Some(OpenpgpArmorKind::File),
+        }
+    }
+}
+
 #[derive(Parser, Debug)]
 #[clap(
     name = "revoke",

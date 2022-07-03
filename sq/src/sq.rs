@@ -198,18 +198,6 @@ fn serialize_keyring(mut output: &mut dyn io::Write, certs: &[Cert], binary: boo
     Ok(())
 }
 
-fn parse_armor_kind(kind: Option<&str>) -> Option<armor::Kind> {
-    match kind.expect("has default value") {
-        "auto" =>    None,
-        "message" => Some(armor::Kind::Message),
-        "cert" =>    Some(armor::Kind::PublicKey),
-        "key" =>     Some(armor::Kind::SecretKey),
-        "sig" =>     Some(armor::Kind::Signature),
-        "file" =>    Some(armor::Kind::File),
-        _ => unreachable!(),
-    }
-}
-
 /// How much data to look at when detecting armor kinds.
 const ARMOR_DETECTION_LIMIT: u64 = 1 << 24;
 
@@ -714,7 +702,11 @@ fn main() -> Result<()> {
                             + "-");
                 commands::split(&mut input, &prefix)?;
             },
-            Some(("join",  m)) => commands::join(config, m)?,
+            Some(("join",  m)) => {
+                use clap::FromArgMatches;
+                let command = sq_cli::PacketJoinCommand::from_arg_matches(m)?;
+                commands::join(config, command)?
+            },
             _ => unreachable!(),
         },
 
