@@ -31,42 +31,45 @@ use crate::{
     open_or_stdin,
 };
 
-pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
-    match m.subcommand() {
-        Some(("filter",  m)) => {
+use crate::sq_cli::KeyringCommand;
+use crate::sq_cli::KeyringSubcommands::*;
+
+pub fn dispatch(config: Config, c: KeyringCommand) -> Result<()> {
+    match c.subcommand {
+        Filter(command) => {
             let any_uid_predicates =
-                m.is_present("userid")
-                || m.is_present("name")
-                || m.is_present("email")
-                || m.is_present("domain");
+                command.userid.is_some()
+                || command.name.is_some()
+                || command.email.is_some()
+                || command.domain.is_some();
             let uid_predicate = |uid: &UserID| {
                 let mut keep = false;
 
-                if let Some(userids) = m.values_of("userid") {
+                if let Some(userids) = &command.userid {
                     for userid in userids {
                         keep |= uid.value() == userid.as_bytes();
                     }
                 }
 
-                if let Some(names) = m.values_of("name") {
+                if let Some(names) = &command.name {
                     for name in names {
                         keep |= uid
                             .name().unwrap_or(None)
-                            .map(|n| n == name)
+                            .map(|n| &n == name)
                             .unwrap_or(false);
                     }
                 }
 
-                if let Some(emails) = m.values_of("email") {
+                if let Some(emails) = &command.email {
                     for email in emails {
                         keep |= uid
                             .email().unwrap_or(None)
-                            .map(|n| n == email)
+                            .map(|n| &n == email)
                             .unwrap_or(false);
                     }
                 }
 
-                if let Some(domains) = m.values_of("domain") {
+                if let Some(domains) = &command.domain {
                     for domain in domains {
                         keep |= uid
                             .email().unwrap_or(None)
@@ -81,11 +84,11 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
             let any_ua_predicates = false;
             let ua_predicate = |_ua: &UserAttribute| false;
 
-            let any_key_predicates = m.is_present("handle");
+            let any_key_predicates = command.handle.is_some();
             let handles: Vec<KeyHandle> =
-                if let Some(handles) = m.values_of("handle") {
+                if let Some(handles) = &command.handle {
                     use std::str::FromStr;
-                    handles.into_iter().map(KeyHandle::from_str)
+                    handles.iter().map(|h| KeyHandle::from_str(h))
                         .collect::<Result<_>>()?
                 } else {
                     Vec::with_capacity(0)
@@ -110,7 +113,7 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
                              || c.user_attributes().any(|c| ua_predicate(&c))
                              || c.keys().any(|c| key_predicate(c.key()))) {
                     None
-                } else if m.is_present("prune-certs") {
+                } else if command.prune_certs {
                     let c = c
                         .retain_userids(|c| {
                             ! any_uid_predicates || uid_predicate(&c)
@@ -136,7 +139,7 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
                 }
             };
 
-            let to_certificate = m.is_present("to-certificate");
+            let to_certificate = command.to_certificate;
 
             // XXX: Armor type selection is a bit problematic.  If any
             // of the certificates contain a secret key, it would be
@@ -144,46 +147,44 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
             // requires buffering all certs, which has its own
             // problems.
             let mut output =
-                config.create_or_stdout_pgp(m.value_of("output"),
-                                            m.is_present("binary"),
+                config.create_or_stdout_pgp(command.output.as_deref(),
+                                            command.binary,
                                             armor::Kind::PublicKey)?;
-            filter(m.values_of("input"), &mut output, filter_fn,
-                   to_certificate)?;
+            filter(&command.input, &mut output, filter_fn, to_certificate)?;
             output.finalize()
         },
-        Some(("join",  m)) => {
+        Join(c) => {
             // XXX: Armor type selection is a bit problematic.  If any
             // of the certificates contain a secret key, it would be
             // better to use Kind::SecretKey here.  However, this
             // requires buffering all certs, which has its own
             // problems.
             let mut output =
-                config.create_or_stdout_pgp(m.value_of("output"),
-                                            m.is_present("binary"),
+                config.create_or_stdout_pgp(c.output.as_deref(),
+                                            c.binary,
                                             armor::Kind::PublicKey)?;
-            filter(m.values_of("input"), &mut output, Some, false)?;
+            filter(&c.input, &mut output, Some, false)?;
             output.finalize()
         },
-        Some(("merge",  m)) => {
+        Merge(c) => {
             let mut output =
-                config.create_or_stdout_pgp(m.value_of("output"),
-                                            m.is_present("binary"),
+                config.create_or_stdout_pgp(c.output.as_deref(),
+                                            c.binary,
                                             armor::Kind::PublicKey)?;
-            merge(m.values_of("input"), &mut output)?;
+            merge(c.input, &mut output)?;
             output.finalize()
         },
-        Some(("list",  m)) => {
-            let mut input = open_or_stdin(m.value_of("input"))?;
-            list(config, &mut input, m.is_present("all-userids"))
+        List(c) => {
+            let mut input = open_or_stdin(c.input.as_deref())?;
+            list(config, &mut input, c.all_userids)
         },
-        Some(("split",  m)) => {
-            let mut input = open_or_stdin(m.value_of("input"))?;
+        Split(c) => {
+            let mut input = open_or_stdin(c.input.as_deref())?;
             let prefix =
             // The prefix is either specified explicitly...
-                m.value_of("prefix").map(|p| p.to_owned())
-                .unwrap_or(
+                c.prefix.unwrap_or(
                     // ... or we derive it from the input file...
-                    m.value_of("input").and_then(|i| {
+                    c.input.and_then(|i| {
                         let p = PathBuf::from(i);
                         // (but only use the filename)
                         p.file_name().map(|f| String::from(f.to_string_lossy()))
@@ -192,20 +193,18 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
                         .unwrap_or_else(|| String::from("output"))
                     // ... finally, add a hyphen to the derived prefix.
                         + "-");
-            split(&mut input, &prefix, m.is_present("binary"))
+            split(&mut input, &prefix, c.binary)
         },
-
-        _ => unreachable!(),
     }
 }
 
 /// Joins certificates and keyrings into a keyring, applying a filter.
-fn filter<F>(inputs: Option<clap::Values>, output: &mut dyn io::Write,
+fn filter<F>(inputs: &[String], output: &mut dyn io::Write,
              mut filter: F, to_certificate: bool)
              -> Result<()>
     where F: FnMut(Cert) -> Option<Cert>,
 {
-    if let Some(inputs) = inputs {
+    if !inputs.is_empty() {
         for name in inputs {
             for cert in CertParser::from_file(name)? {
                 let cert = cert.context(
@@ -384,14 +383,14 @@ fn split(input: &mut (dyn io::Read + Sync + Send), prefix: &str, binary: bool)
 }
 
 /// Merge multiple keyrings.
-fn merge(inputs: Option<clap::Values>, output: &mut dyn io::Write)
+fn merge(inputs: Vec<String>, output: &mut dyn io::Write)
              -> Result<()>
 {
     let mut certs: HashMap<Fingerprint, Option<Cert>> = HashMap::new();
 
-    if let Some(inputs) = inputs {
+    if !inputs.is_empty() {
         for name in inputs {
-            for cert in CertParser::from_file(name)? {
+            for cert in CertParser::from_file(&name)? {
                 let cert = cert.context(
                     format!("Malformed certificate in keyring {:?}", name))?;
                 match certs.entry(cert.fingerprint()) {

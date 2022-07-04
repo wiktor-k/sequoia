@@ -642,7 +642,11 @@ fn main() -> Result<()> {
             commands::inspect(command, policy, &mut output)?;
         },
 
-        Some(("keyring", m)) => commands::keyring::dispatch(config, m)?,
+        Some(("keyring", m)) => {
+            use clap::FromArgMatches;
+            let command = sq_cli::KeyringCommand::from_arg_matches(m)?;
+            commands::keyring::dispatch(config, command)?
+        },
 
         Some(("packet", m)) => match m.subcommand() {
             Some(("dump",  m)) => {
