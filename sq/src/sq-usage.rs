@@ -540,7 +540,7 @@
 //! ```text
 //! Manages User IDs
 //!
-//! Add User IDs to a key.
+//! Add User IDs to, or strip User IDs from a key.
 //!
 //! USAGE:
 //!     sq key userid <SUBCOMMAND>
@@ -552,6 +552,8 @@
 //! SUBCOMMANDS:
 //!     add
 //!             Adds a User ID
+//!     strip
+//!             Strips a User ID
 //!     help
 //!             Print this message or the help of the given subcommand(s)
 //! ```
@@ -612,6 +614,61 @@
 //! # Then, this adds a User ID
 //! $ sq key userid add --userid "Juliet" juliet.key.pgp \
 //!   --output juliet-new.key.pgp
+//! ```
+//!
+//! #### Subcommand key userid strip
+//!
+//! ```text
+//! Strips a User ID
+//!
+//! Note that this operation does not reliably remove User IDs from a
+//! certificate that has already been disseminated! (OpenPGP software
+//! typically appends new information it receives about a certificate
+//! to its local copy of that certificate.  Systems that have obtained
+//! a copy of your certificate with the User ID that you are trying to
+//! strip will not drop that User ID from their copy.)
+//!
+//! In most cases, you will want to use the 'sq revoke userid' operation
+//! instead.  That issues a revocation for a User ID, which can be used to mark
+//! the User ID as invalidated.
+//!
+//! However, this operation can be useful in very specific cases, in particular:
+//! to remove a mistakenly added User ID before it has been uploaded to key
+//! servers or otherwise shared.
+//!
+//! Stripping a User ID may change how a certificate is interpreted.  This
+//! is because information about the certificate like algorithm preferences,
+//! the primary key's key flags, etc. is stored in the User ID's binding
+//! signature.
+//!
+//! USAGE:
+//!     sq key userid strip [OPTIONS] [FILE]
+//!
+//! ARGS:
+//!     <FILE>
+//!             Reads from FILE or stdin if omitted
+//!
+//! OPTIONS:
+//!     -B, --binary
+//!             Emits binary data
+//!
+//!     -h, --help
+//!             Print help information
+//!
+//!     -o, --output <FILE>
+//!             Writes to FILE or stdout if omitted
+//!
+//!     -u, --userid <USERID>
+//!             The User IDs to strip.  Values must exactly match a User ID.
+//!
+//! EXAMPLES:
+//!
+//! # First, this generates a key
+//! $ sq key generate --userid "<juliet@example.org>" --export juliet.key.pgp
+//!
+//! # Then, this strips a User ID
+//! $ sq key userid strip --userid "<juliet@example.org>" \
+//!   --output juliet-new.key.pgp juliet.key.pgp
 //! ```
 //!
 //! ### Subcommand key extract-cert

@@ -486,6 +486,18 @@ when I run sq inspect new.pgp
 then stdout contains "UserID: Juliet"
 ~~~
 
+### Update a key by removing a User ID
+
+_Requirement: We must be able to generate a key with a User ID, and then strip the User ID._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --userid "<juliet@example.org>" --export key.pgp
+when I run sq key userid strip --userid "<juliet@example.org>" --output new.pgp key.pgp
+when I run sq inspect new.pgp
+then stdout doesn't contain "UserID:"
+~~~
+
 
 ## Certificate extraction: `sq key extract-cert`
 

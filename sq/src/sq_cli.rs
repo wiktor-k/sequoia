@@ -1988,13 +1988,14 @@ pub struct KeyExtractCertCommand {
     long_about =
 "Manages User IDs
 
-Add User IDs to a key.
+Add User IDs to, or strip User IDs from a key.
 ",
     subcommand_required = true,
     arg_required_else_help = true,
 )]
 pub enum KeyUseridCommand {
     Add(KeyUseridAddCommand),
+    Strip(KeyUseridStripCommand),
 }
 
 #[derive(Debug, Args)]
@@ -2055,6 +2056,65 @@ $ sq key userid add --userid \"Juliet\" --creation-time 20210628T1137+0200 \\
         help = "Provides parameters for private key store",
     )]
     pub private_key_store: Option<String>,
+    #[clap(
+        short = 'B',
+        long,
+        help = "Emits binary data",
+    )]
+    pub binary: bool,
+}
+
+
+#[derive(Debug, Args)]
+#[clap(
+    display_order = 20,
+    about = "Strips a User ID",
+    long_about =
+"Strips a User ID
+
+Note that this operation does not reliably remove User IDs from a
+certificate that has already been disseminated! (OpenPGP software
+typically appends new information it receives about a certificate
+to its local copy of that certificate.  Systems that have obtained
+a copy of your certificate with the User ID that you are trying to
+strip will not drop that User ID from their copy.)
+
+In most cases, you will want to use the 'sq revoke userid' operation
+instead.  That issues a revocation for a User ID, which can be used to mark
+the User ID as invalidated.
+
+However, this operation can be useful in very specific cases, in particular:
+to remove a mistakenly added User ID before it has been uploaded to key
+servers or otherwise shared.
+
+Stripping a User ID may change how a certificate is interpreted.  This
+is because information about the certificate like algorithm preferences,
+the primary key's key flags, etc. is stored in the User ID's binding
+signature.
+",
+    after_help =
+"EXAMPLES:
+
+# First, this generates a key
+$ sq key generate --userid \"<juliet@example.org>\" --export juliet.key.pgp
+
+# Then, this strips a User ID
+$ sq key userid strip --userid \"<juliet@example.org>\" \\
+  --output juliet-new.key.pgp juliet.key.pgp
+",
+)]
+pub struct KeyUseridStripCommand {
+    #[clap(flatten)]
+    pub io: IoArgs,
+    #[clap(
+        value_name = "USERID",
+        short,
+        long,
+        help = "User IDs to strip",
+        long_help = "The User IDs to strip.  Values must exactly match a \
+User ID."
+    )]
+    pub userid: Vec<String>,
     #[clap(
         short = 'B',
         long,

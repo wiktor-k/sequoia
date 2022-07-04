@@ -29,6 +29,7 @@ use crate::sq_cli::KeyGenerateCommand;
 use crate::sq_cli::KeyPasswordCommand;
 use crate::sq_cli::KeyUseridCommand;
 use crate::sq_cli::KeyUseridAddCommand;
+use crate::sq_cli::KeyUseridStripCommand;
 use crate::sq_cli::KeyExtractCertCommand;
 use crate::sq_cli::KeyAdoptCommand;
 use crate::sq_cli::KeyAttestCertificationsCommand;
@@ -311,6 +312,7 @@ fn extract_cert(config: Config, command: KeyExtractCertCommand) -> Result<()> {
 fn userid(config: Config, command: KeyUseridCommand) -> Result<()> {
     match command {
         KeyUseridCommand::Add(c) => userid_add(config, c)?,
+        KeyUseridCommand::Strip(c) => userid_strip(config, c)?,
     }
 
     Ok(())
@@ -450,6 +452,55 @@ fn userid_add(config: Config, command: KeyUseridAddCommand) -> Result<()> {
 
     // Merge additional User IDs into key
     let cert = key.insert_packets(add)?;
+
+    let mut sink = config.create_or_stdout_safe(command.io.output.as_deref())?;
+    if command.binary {
+        cert.as_tsk().serialize(&mut sink)?;
+    } else {
+        cert.as_tsk().armored().serialize(&mut sink)?;
+    }
+    Ok(())
+}
+
+fn userid_strip(config: Config, command: KeyUseridStripCommand) -> Result<()> {
+    let input = open_or_stdin(command.io.input.as_deref())?;
+    let key = Cert::from_reader(input)?;
+
+    let orig_cert_valid = key.with_policy(&config.policy, None).is_ok();
+
+    let strip: Vec<_> = command.userid;
+
+    // Make sure that each User ID that the user requested to remove exists in
+    // `key`, and *can* be removed.
+    let key_userids: Vec<_> =
+        key.userids().map(|u| u.userid().value()).collect();
+
+    let missing: Vec<_> = strip.iter()
+        .filter(|s| !key_userids.contains(&s.as_bytes()))
+        .collect();
+    if ! missing.is_empty() {
+        return Err(anyhow::anyhow!(
+            "The certificate doesn't contain the User ID(s) {}.",
+            missing.iter().map(|s| format!("{:?}", s)).join(", ")));
+    }
+
+    let cert = key.retain_userids(|uid| {
+        // Don't keep User IDs that were selected for removal
+        ! strip.iter().any(|rm| rm.as_bytes() == uid.userid().value())
+    });
+
+    if orig_cert_valid {
+        if let Err(err) = cert.with_policy(&config.policy, None) {
+            eprintln!(
+"Removing the User ID(s) has resulted in a invalid key:
+{}
+
+You could create a direct key signature or update the self
+signatures on other User IDs to make the key valid again.",
+                err
+            );
+        }
+    }
 
     let mut sink = config.create_or_stdout_safe(command.io.output.as_deref())?;
     if command.binary {
