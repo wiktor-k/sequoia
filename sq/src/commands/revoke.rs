@@ -7,7 +7,6 @@ use openpgp::cert::prelude::*;
 use openpgp::KeyHandle;
 use openpgp::Packet;
 use openpgp::packet::signature::subpacket::NotationData;
-use openpgp::packet::signature::subpacket::NotationDataFlags;
 use openpgp::packet::UserID;
 use openpgp::parse::Parse;
 use openpgp::policy::NullPolicy;
@@ -20,6 +19,7 @@ use crate::{
     Config,
     load_certs,
     open_or_stdin,
+    parse_notations,
 };
 
 const NP: &NullPolicy = &NullPolicy::new();
@@ -68,29 +68,7 @@ pub fn revoke_certificate(config: Config, c: RevokeCertificateCommand) -> Result
 
     let time = c.time.map(|t| t.time.into());
 
-
-    // Each --notation takes two values.  The iterator
-    // returns them one at a time, however.
-    let mut notations: Vec<(bool, NotationData)> = Vec::new();
-    if let Some(n) = c.notation {
-        let mut n = n.iter();
-        while let Some(name) = n.next() {
-            let value = n.next().unwrap();
-
-            let (critical, name) =
-                if let Some(name) = name.strip_prefix('!') {
-                    (true, name)
-                } else {
-                    (false, name.as_ref())
-                };
-
-            notations.push(
-                (critical,
-                 NotationData::new(
-                     name, value,
-                     NotationDataFlags::empty().set_human_readable())));
-        }
-    }
+    let notations = parse_notations(c.notation.unwrap_or_default())?;
 
     revoke(
         config,
@@ -125,28 +103,7 @@ pub fn revoke_subkey(config: Config, c: RevokeSubkeyCommand) -> Result<()> {
 
     let time = c.time.map(|t| t.time.into());
 
-    // Each --notation takes two values.  The iterator
-    // returns them one at a time, however.
-    let mut notations: Vec<(bool, NotationData)> = Vec::new();
-    if let Some(n) = c.notation {
-        let mut n = n.iter();
-        while let Some(name) = n.next() {
-            let value = n.next().unwrap();
-
-            let (critical, name) =
-                if let Some(name) = name.strip_prefix('!') {
-                    (true, name)
-                } else {
-                    (false, name.as_ref())
-                };
-
-            notations.push(
-                (critical,
-                 NotationData::new(
-                     name, value,
-                     NotationDataFlags::empty().set_human_readable())));
-        }
-    }
+    let notations = parse_notations(c.notation.unwrap_or_default())?;
 
     revoke(
         config,
@@ -173,28 +130,7 @@ pub fn revoke_userid(config: Config, c: RevokeUseridCommand) -> Result<()> {
 
     let time = c.time.map(|t| t.time.into());
 
-    // Each --notation takes two values.  The iterator
-    // returns them one at a time, however.
-    let mut notations: Vec<(bool, NotationData)> = Vec::new();
-    if let Some(n) = c.notation {
-        let mut n = n.iter();
-        while let Some(name) = n.next() {
-            let value = n.next().unwrap();
-
-            let (critical, name) =
-                if let Some(name) = name.strip_prefix('!') {
-                    (true, name)
-                } else {
-                    (false, name.as_ref())
-                };
-
-            notations.push(
-                (critical,
-                 NotationData::new(
-                     name, value,
-                     NotationDataFlags::empty().set_human_readable())));
-        }
-    }
+    let notations = parse_notations(c.notation.unwrap_or_default())?;
 
     revoke(
         config,

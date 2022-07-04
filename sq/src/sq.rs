@@ -483,28 +483,7 @@ fn main() -> Result<()> {
                 load_certs(command.secret_key_file.iter().map(|s| s.as_ref()))?;
             let time = command.time.map(|t| t.time.into());
 
-            // Each --notation takes two values.  The iterator
-            // returns them one at a time, however.
-            let mut notations: Vec<(bool, NotationData)> = Vec::new();
-            if let Some(n) = command.notation {
-                let mut n = n.iter();
-                while let Some(name) = n.next() {
-                    let value = n.next().unwrap();
-
-                    let (critical, name) =
-                        if let Some(name) = name.strip_prefix('!') {
-                            (true, name)
-                        } else {
-                            (false, name.as_str())
-                        };
-
-                    notations.push(
-                        (critical,
-                         NotationData::new(
-                             name, value,
-                             NotationDataFlags::empty().set_human_readable())));
-                }
-            }
+            let notations = parse_notations(command.notation.unwrap_or_default())?;
 
             if let Some(merge) = command.merge {
                 let output = config.create_or_stdout_pgp(output, binary,
@@ -739,6 +718,37 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn parse_notations(n: Vec<String>) -> Result<Vec<(bool, NotationData)>> {
+
+    assert_eq!(n.len() % 2, 0);
+
+    // Each --notation takes two values.  The iterator
+    // returns them one at a time, however.
+    let mut notations: Vec<(bool, NotationData)> = Vec::new();
+
+    let mut n = n.iter();
+    while let Some(name) = n.next() {
+        let value = n.next().unwrap();
+
+        let (critical, name) =
+            if let Some(name) = name.strip_prefix('!') {
+                (true, name)
+            } else {
+                (false, name.as_str())
+            };
+
+        notations.push((
+            critical,
+            NotationData::new(
+                name,
+                value,
+                NotationDataFlags::empty().set_human_readable(),
+            ),
+        ));
+    }
+    Ok(notations)
 }
 
 // TODO: Replace all uses with CliTime argument type

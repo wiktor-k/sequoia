@@ -13,6 +13,7 @@ use openpgp::types::SignatureType;
 
 use crate::Config;
 use crate::parse_duration;
+use crate::parse_notations;
 use crate::SECONDS_IN_YEAR;
 use crate::commands::get_certification_keys;
 use crate::commands::GetKeysOptions;
@@ -136,28 +137,14 @@ pub fn certify(config: Config, c: CertifyCommand)
         (Some(_), Some(_)) => unreachable!("conflicting args"),
     }
 
-    // TODO Extract this function, it is used in sign and some revoke commands, too.
-    // Each --notation takes two values.  The iterator returns them
-    // one at a time, however.
-    if let Some(n) = c.notation {
-        let mut n = n.iter();
-        while let Some(name) = n.next() {
-            let value = n.next().unwrap();
-
-            let (critical, name) =
-                if let Some(name) = name.strip_prefix('!') {
-                    (true, name)
-                } else {
-                    (false, name.as_str())
-                };
-
-            builder = builder.add_notation(
-                name,
-                value,
-                NotationDataFlags::empty().set_human_readable(),
-                critical)?;
-        }
-    }
+    let notations = parse_notations(c.notation.unwrap_or_default())?;
+    for (critical, n) in notations {
+        builder = builder.add_notation(
+            n.name(),
+            n.value(),
+            NotationDataFlags::empty().set_human_readable(),
+            critical)?;
+    };
 
     let mut options = Vec::new();
     if c.allow_not_alive_certifier {
