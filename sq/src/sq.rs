@@ -722,32 +722,32 @@ fn main() -> Result<()> {
 
 fn parse_notations(n: Vec<String>) -> Result<Vec<(bool, NotationData)>> {
 
+    // TODO I'm not sure what to do about this requirement.  Setting
+    // number_of_values = 2 for the argument already makes clap bail if the
+    // length of the vec is odd.
     assert_eq!(n.len() % 2, 0);
 
-    // Each --notation takes two values.  The iterator
-    // returns them one at a time, however.
-    let mut notations: Vec<(bool, NotationData)> = Vec::new();
+    // Each --notation takes two values.  Iterate over them in chunks of 2.
+    let notations: Vec<(bool, NotationData)> = n
+        .chunks(2)
+        .map(|arg_pair| {
+            let name = &arg_pair[0];
+            let value = &arg_pair[1];
 
-    let mut n = n.iter();
-    while let Some(name) = n.next() {
-        let value = n.next().unwrap();
-
-        let (critical, name) =
-            if let Some(name) = name.strip_prefix('!') {
-                (true, name)
-            } else {
-                (false, name.as_str())
+            let (critical, name) = match name.strip_prefix('!') {
+                Some(name) => (true, name),
+                None => (false, name.as_str()),
             };
 
-        notations.push((
-            critical,
-            NotationData::new(
+            let notation_data = NotationData::new(
                 name,
                 value,
                 NotationDataFlags::empty().set_human_readable(),
-            ),
-        ));
-    }
+            );
+            (critical, notation_data)
+        })
+        .collect();
+
     Ok(notations)
 }
 
