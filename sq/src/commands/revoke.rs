@@ -20,7 +20,6 @@ use crate::{
     Config,
     load_certs,
     open_or_stdin,
-    parse_iso8601,
 };
 
 const NP: &NullPolicy = &NullPolicy::new();
@@ -80,14 +79,7 @@ pub fn revoke_certificate(config: Config, c: RevokeCertificateCommand) -> Result
     }
     let secret = secret.into_iter().next();
 
-    // TODO use CliTime
-    let time = if let Some(time) = c.time {
-        Some(parse_iso8601(&time, chrono::NaiveTime::from_hms(0, 0, 0))
-             .context(format!("Bad value passed to --time: {:?}",
-                              time))?.into())
-    } else {
-        None
-    };
+    let time = c.time.map(|t| t.time.into());
 
 
     // Each --notation takes two values.  The iterator
@@ -156,13 +148,7 @@ pub fn revoke_subkey(config: Config, c: RevokeSubkeyCommand) -> Result<()> {
     }
     let secret = secret.into_iter().next();
 
-    let time = if let Some(time) = c.time {
-        Some(parse_iso8601(&time, chrono::NaiveTime::from_hms(0, 0, 0))
-             .context(format!("Bad value passed to --time: {:?}",
-                              time))?.into())
-    } else {
-        None
-    };
+    let time = c.time.map(|t| t.time.into());
 
     // Each --notation takes two values.  The iterator
     // returns them one at a time, however.
@@ -222,13 +208,7 @@ pub fn revoke_userid(config: Config, c: RevokeUseridCommand) -> Result<()> {
     }
     let secret = secret.into_iter().next();
 
-    let time = if let Some(time) = c.time {
-        Some(parse_iso8601(&time, chrono::NaiveTime::from_hms(0, 0, 0))
-             .context(format!("Bad value passed to --time: {:?}",
-                              time))?.into())
-    } else {
-        None
-    };
+    let time = c.time.map(|t| t.time.into());
 
     // Each --notation takes two values.  The iterator
     // returns them one at a time, however.

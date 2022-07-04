@@ -865,7 +865,7 @@ that in the future.\"",
 "Chooses keys valid at the specified time and sets the revocation \
 certificate's creation time",
     )]
-    pub time: Option<String>,
+    pub time: Option<CliTime>,
     #[clap(
         long,
         value_names = &["NAME", "VALUE"],
@@ -1019,7 +1019,7 @@ the message \"I've created a new subkey, please refresh the certificate."
 "Chooses keys valid at the specified time and sets the revocation \
 certificate's creation time",
     )]
-    pub time: Option<String>,
+    pub time: Option<CliTime>,
     #[clap(
         long,
         value_names = &["NAME", "VALUE"],
@@ -1141,7 +1141,7 @@ that in the future.\"",
 "Chooses keys valid at the specified time and sets the revocation \
 certificate's creation time",
     )]
-    pub time: Option<String>,
+    pub time: Option<CliTime>,
     #[clap(
         long,
         value_names = &["NAME", "VALUE"],
