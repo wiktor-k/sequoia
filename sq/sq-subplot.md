@@ -474,6 +474,18 @@ when I run sq inspect key.pgp
 then stdout contains "Secret key: Encrypted"
 ~~~
 
+### Update a key by adding a User ID
+
+_Requirement: We must be able to generate a key and add a User ID to it._
+
+~~~scenario
+given an installed sq
+when I run sq key generate --export key.pgp
+when I run sq key userid add --userid "Juliet" --output new.pgp key.pgp
+when I run sq inspect new.pgp
+then stdout contains "UserID: Juliet"
+~~~
+
 
 ## Certificate extraction: `sq key extract-cert`
 

@@ -206,7 +206,6 @@ fn get_keys<C>(certs: &[C], p: &dyn Policy,
 ///
 /// This returns one key for each Cert.  If a Cert doesn't have an
 /// appropriate key, then this returns an error.
-#[allow(unused)]
 fn get_primary_keys<C>(certs: &[C], p: &dyn Policy,
                        private_key_store: Option<&str>,
                        timestamp: Option<SystemTime>,

@@ -1720,6 +1720,8 @@ pub struct KeyCommand {
 pub enum KeySubcommands {
     Generate(KeyGenerateCommand),
     Password(KeyPasswordCommand),
+    #[clap(subcommand)]
+    Userid(KeyUseridCommand),
     ExtractCert(KeyExtractCertCommand),
     Adopt(KeyAdoptCommand),
     AttestCertifications(KeyAttestCertificationsCommand),
@@ -1970,6 +1972,89 @@ $ sq key extract-cert --output juliet.cert.pgp juliet.key.pgp
 pub struct KeyExtractCertCommand {
     #[clap(flatten)]
     pub io: IoArgs,
+    #[clap(
+        short = 'B',
+        long,
+        help = "Emits binary data",
+    )]
+    pub binary: bool,
+}
+
+#[derive(Debug, Subcommand)]
+#[clap(
+    name = "userid",
+    display_order = 105,
+    about = "Manages User IDs",
+    long_about =
+"Manages User IDs
+
+Add User IDs to a key.
+",
+    subcommand_required = true,
+    arg_required_else_help = true,
+)]
+pub enum KeyUseridCommand {
+    Add(KeyUseridAddCommand),
+}
+
+#[derive(Debug, Args)]
+#[clap(
+    display_order = 10,
+    about = "Adds a User ID",
+    long_about =
+"Adds a User ID
+
+A User ID can contain a name, like \"Juliet\" or an email address, like
+\"<juliet@example.org>\".  Historically, a name and email address were often
+combined as a single User ID, like \"Juliet <juliet@example.org>\".
+",
+    after_help =
+"EXAMPLES:
+
+# First, this generates a key
+$ sq key generate --userid \"<juliet@example.org>\" --export juliet.key.pgp
+
+# Then, this adds a User ID
+$ sq key userid add --userid \"Juliet\" juliet.key.pgp \\
+  --output juliet-new.key.pgp
+",
+)]
+pub struct KeyUseridAddCommand {
+    #[clap(flatten)]
+    pub io: IoArgs,
+    #[clap(
+        value_name = "USERID",
+        short,
+        long,
+        help = "User ID to add",
+    )]
+    pub userid: Vec<String>,
+    #[clap(
+        long = "creation-time",
+        value_name = "CREATION_TIME",
+        help = "Sets the binding signature creation time to TIME (as ISO 8601)",
+        long_help = "\
+Sets the creation time of this User ID's binding signature to TIME.
+TIME is interpreted as an ISO 8601 timestamp.  To set the creation
+time to June 28, 2022 at midnight UTC, you can do:
+
+$ sq key userid add --userid \"Juliet\" --creation-time 20210628 \\
+   juliet.key.pgp --output juliet-new.key.pgp
+
+To include a time, add a T, the time and optionally the timezone (the
+default timezone is UTC):
+
+$ sq key userid add --userid \"Juliet\" --creation-time 20210628T1137+0200 \\
+   juliet.key.pgp --output juliet-new.key.pgp
+",
+    )]
+    pub creation_time: Option<CliTime>,
+    #[clap(
+        long = "private-key-store",
+        value_name = "KEY_STORE",
+        help = "Provides parameters for private key store",
+    )]
+    pub private_key_store: Option<String>,
     #[clap(
         short = 'B',
         long,
