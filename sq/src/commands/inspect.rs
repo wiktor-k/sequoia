@@ -17,11 +17,13 @@ use super::dump::Convert;
 use crate::SECONDS_IN_YEAR;
 use crate::SECONDS_IN_DAY;
 
-pub fn inspect(m: &clap::ArgMatches, policy: &dyn Policy, output: &mut dyn io::Write)
-               -> Result<()> {
-    let print_certifications = m.is_present("certifications");
+use crate::sq_cli::InspectCommand;
 
-    let input = m.value_of("input");
+pub fn inspect(c: InspectCommand, policy: &dyn Policy, output: &mut dyn io::Write)
+               -> Result<()> {
+    let print_certifications = c.certifications;
+
+    let input = c.input.as_deref();
     let input_name = input.unwrap_or("-");
     write!(output, "{}: ", input_name)?;
 

@@ -634,10 +634,12 @@ fn main() -> Result<()> {
             commands::autocrypt::dispatch(config, &command)?;
         },
         Some(("inspect",  m)) => {
+            use clap::FromArgMatches;
+            let command = sq_cli::InspectCommand::from_arg_matches(m)?;
             // sq inspect does not have --output, but commands::inspect does.
             // Work around this mismatch by always creating a stdout output.
             let mut output = config.create_or_stdout_unsafe(None)?;
-            commands::inspect(m, policy, &mut output)?;
+            commands::inspect(command, policy, &mut output)?;
         },
 
         Some(("keyring", m)) => commands::keyring::dispatch(config, m)?,
