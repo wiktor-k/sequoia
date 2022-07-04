@@ -1721,6 +1721,7 @@ $ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
             "Makes the key expire at TIME (as ISO 8601). \
             Use \"never\" to create keys that do not expire.",
     )]
+    // TODO: Use a wrapper type for CliTime
     pub expires: Option<String>,
     #[clap(
         long = "expires-in",

@@ -24,9 +24,15 @@ use crate::SECONDS_IN_YEAR;
 use crate::parse_duration;
 use crate::decrypt_key;
 
+use crate::sq_cli::KeyGenerateCommand;
+use clap::FromArgMatches;
+
 pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
     match m.subcommand() {
-        Some(("generate", m)) => generate(config, m)?,
+        Some(("generate", m)) => {
+            let c = KeyGenerateCommand::from_arg_matches(m)?;
+            generate(config, c)?
+        },
         Some(("password", m)) => password(config, m)?,
         Some(("extract-cert", m)) => extract_cert(config, m)?,
         Some(("adopt", m)) => adopt(config, m)?,
@@ -37,11 +43,11 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
     Ok(())
 }
 
-fn generate(config: Config, m: &ArgMatches) -> Result<()> {
+fn generate(config: Config, command: KeyGenerateCommand) -> Result<()> {
     let mut builder = CertBuilder::new();
 
     // User ID
-    match m.values_of("userid") {
+    match command.userid {
         Some(uids) => for uid in uids {
             builder = builder.add_userid(uid);
         },
@@ -51,14 +57,14 @@ fn generate(config: Config, m: &ArgMatches) -> Result<()> {
     }
 
     // Creation time.
-    if let Some(t) = m.value_of("creation-time") {
+    if let Some(t) = command.creation_time {
         builder = builder.set_creation_time(SystemTime::from(
-            crate::parse_iso8601(t, chrono::NaiveTime::from_hms(0, 0, 0))
+            crate::parse_iso8601(&t, chrono::NaiveTime::from_hms(0, 0, 0))
                 .context(format!("Parsing --creation-time {}", t))?));
     };
 
     // Expiration.
-    match (m.value_of("expires"), m.value_of("expires-in")) {
+    match (command.expires, command.expires_in) {
         (None, None) => // Default expiration.
             builder = builder.set_validity_period(
                 Some(Duration::new(3 * SECONDS_IN_YEAR, 0))),
@@ -68,7 +74,7 @@ fn generate(config: Config, m: &ArgMatches) -> Result<()> {
             let now = builder.creation_time()
                 .unwrap_or_else(std::time::SystemTime::now);
             let expiration = SystemTime::from(
-                crate::parse_iso8601(t, chrono::NaiveTime::from_hms(0, 0, 0))?);
+                crate::parse_iso8601(&t, chrono::NaiveTime::from_hms(0, 0, 0))?);
             let validity = expiration.duration_since(now)?;
             builder = builder.set_creation_time(now)
                 .set_validity_period(validity);
@@ -76,31 +82,28 @@ fn generate(config: Config, m: &ArgMatches) -> Result<()> {
         (None, Some(d)) if d == "never" =>
             builder = builder.set_validity_period(None),
         (None, Some(d)) => {
-            let d = parse_duration(d)?;
+            let d = parse_duration(&d)?;
             builder = builder.set_validity_period(Some(d));
         },
         (Some(_), Some(_)) => unreachable!("conflicting args"),
     }
 
     // Cipher Suite
-    match m.value_of("cipher-suite") {
-        Some("rsa3k") => {
+    use crate::sq_cli::KeyCipherSuite::*;
+    match command.cipher_suite {
+        Rsa3k => {
             builder = builder.set_cipher_suite(CipherSuite::RSA3k);
         }
-        Some("rsa4k") => {
+        Rsa4k => {
             builder = builder.set_cipher_suite(CipherSuite::RSA4k);
         }
-        Some("cv25519") => {
+        Cv25519 => {
             builder = builder.set_cipher_suite(CipherSuite::Cv25519);
         }
-        Some(ref cs) => {
-            return Err(anyhow::anyhow!("Unknown cipher suite '{}'", cs));
-        }
-        None => panic!("argument has a default value"),
     }
 
     // Signing Capability
-    match (m.is_present("can-sign"), m.is_present("cannot-sign")) {
+    match (command.can_sign, command.cannot_sign) {
         (false, false) | (true, false) => {
             builder = builder.add_signing_subkey();
         }
@@ -112,7 +115,7 @@ fn generate(config: Config, m: &ArgMatches) -> Result<()> {
     }
 
     // Authentication Capability
-    match (m.is_present("can-authenticate"), m.is_present("cannot-authenticate")) {
+    match (command.can_authenticate, command.cannot_authenticate) {
         (false, false) | (true, false) => {
             builder = builder.add_authentication_subkey()
         }
@@ -125,18 +128,19 @@ fn generate(config: Config, m: &ArgMatches) -> Result<()> {
     }
 
     // Encryption Capability
-    match (m.value_of("can-encrypt"), m.is_present("cannot-encrypt")) {
-        (Some("universal"), false) | (None, false) => {
+    use crate::sq_cli::KeyEncryptPurpose::*;
+    match (command.can_encrypt, command.cannot_encrypt) {
+        (Some(Universal), false) | (None, false) => {
             builder = builder.add_subkey(KeyFlags::empty()
                                          .set_transport_encryption()
                                          .set_storage_encryption(),
                                          None,
                                          None);
         }
-        (Some("storage"), false) => {
+        (Some(Storage), false) => {
             builder = builder.add_storage_encryption_subkey();
         }
-        (Some("transport"), false) => {
+        (Some(Transport), false) => {
             builder = builder.add_transport_encryption_subkey();
         }
         (None, true) => { /* no encryption subkey */ }
@@ -145,13 +149,9 @@ fn generate(config: Config, m: &ArgMatches) -> Result<()> {
                 anyhow::anyhow!("Conflicting arguments --can-encrypt and \
                              --cannot-encrypt"));
         }
-        (Some(ref cap), false) => {
-            return Err(
-                anyhow::anyhow!("Unknown encryption capability '{}'", cap));
-        }
     }
 
-    if m.is_present("with-password") {
+    if command.with_password {
         let p0 = rpassword::read_password_from_tty(Some(
             "Enter password to protect the key: "))?.into();
         let p1 = rpassword::read_password_from_tty(Some(
@@ -168,9 +168,9 @@ fn generate(config: Config, m: &ArgMatches) -> Result<()> {
     let (cert, rev) = builder.generate()?;
 
     // Export
-    if m.is_present("export") {
+    if command.export.is_some() {
         let (key_path, rev_path) =
-            match (m.value_of("export"), m.value_of("rev-cert")) {
+            match (command.export.as_deref(), command.rev_cert.as_deref()) {
                 (Some("-"), Some("-")) =>
                     ("-".to_string(), "-".to_string()),
                 (Some("-"), Some(ref rp)) =>
