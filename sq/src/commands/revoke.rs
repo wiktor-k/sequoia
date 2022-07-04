@@ -62,22 +62,9 @@ pub fn dispatch(config: Config, c: RevokeCommand) -> Result<()> {
 pub fn revoke_certificate(config: Config, c: RevokeCertificateCommand) -> Result<()> {
     let revocation_target = RevocationTarget::Certificate;
 
-    let input = open_or_stdin(c.input.as_deref())?;
+    let cert = read_cert(c.input.as_deref())?;
 
-    let cert = CertParser::from_reader(input)?.collect::<Vec<_>>();
-    let cert = match cert.len() {
-        0 => Err(anyhow::anyhow!("No certificates provided."))?,
-        1 => cert.into_iter().next().expect("have one")?,
-        _ => Err(
-            anyhow::anyhow!("Multiple certificates provided."))?,
-    };
-
-    let secret = c.secret_key_file;
-    let secret = load_certs(secret.as_deref().into_iter())?;
-    if secret.len() > 1 {
-        Err(anyhow::anyhow!("Multiple secret keys provided."))?;
-    }
-    let secret = secret.into_iter().next();
+    let secret = read_secret(c.secret_key_file.as_deref())?;
 
     let time = c.time.map(|t| t.time.into());
 
@@ -115,7 +102,8 @@ pub fn revoke_certificate(config: Config, c: RevokeCertificateCommand) -> Result
         time,
         c.reason.into(),
         &c.message,
-        &notations)?;
+        &notations
+    )?;
 
     Ok(())
 }
@@ -131,22 +119,9 @@ pub fn revoke_subkey(config: Config, c: RevokeSubkeyCommand) -> Result<()> {
         RevocationTarget::Subkey(kh)
     };
 
-    let input = open_or_stdin(c.input.as_deref())?;
+    let cert = read_cert(c.input.as_deref())?;
 
-    let cert = CertParser::from_reader(input)?.collect::<Vec<_>>();
-    let cert = match cert.len() {
-        0 => Err(anyhow::anyhow!("No certificates provided."))?,
-        1 => cert.into_iter().next().expect("have one")?,
-        _ => Err(
-            anyhow::anyhow!("Multiple certificates provided."))?,
-    };
-
-    let secret = c.secret_key_file;
-    let secret = load_certs(secret.as_deref().into_iter())?;
-    if secret.len() > 1 {
-        Err(anyhow::anyhow!("Multiple secret keys provided."))?;
-    }
-    let secret = secret.into_iter().next();
+    let secret = read_secret(c.secret_key_file.as_deref())?;
 
     let time = c.time.map(|t| t.time.into());
 
@@ -183,7 +158,8 @@ pub fn revoke_subkey(config: Config, c: RevokeSubkeyCommand) -> Result<()> {
         time,
         c.reason.into(),
         &c.message,
-        &notations)?;
+        &notations
+    )?;
 
     Ok(())
 }
@@ -191,22 +167,9 @@ pub fn revoke_subkey(config: Config, c: RevokeSubkeyCommand) -> Result<()> {
 pub fn revoke_userid(config: Config, c: RevokeUseridCommand) -> Result<()> {
     let revocation_target = RevocationTarget::UserID(c.userid);
 
-    let input = open_or_stdin(c.input.as_deref())?;
+    let cert = read_cert(c.input.as_deref())?;
 
-    let cert = CertParser::from_reader(input)?.collect::<Vec<_>>();
-    let cert = match cert.len() {
-        0 => Err(anyhow::anyhow!("No certificates provided."))?,
-        1 => cert.into_iter().next().expect("have one")?,
-        _ => Err(
-            anyhow::anyhow!("Multiple certificates provided."))?,
-    };
-
-    let secret = c.secret_key_file;
-    let secret = load_certs(secret.as_deref().into_iter())?;
-    if secret.len() > 1 {
-        Err(anyhow::anyhow!("Multiple secret keys provided."))?;
-    }
-    let secret = secret.into_iter().next();
+    let secret = read_secret(c.secret_key_file.as_deref())?;
 
     let time = c.time.map(|t| t.time.into());
 
@@ -243,10 +206,36 @@ pub fn revoke_userid(config: Config, c: RevokeUseridCommand) -> Result<()> {
         time,
         c.reason.into(),
         &c.message,
-        &notations)?;
+        &notations
+    )?;
 
     Ok(())
 }
+
+/// Parse the cert from input and ensure it is only one cert.
+fn read_cert(input: Option<&str>) -> Result<Cert> {
+    let input = open_or_stdin(input)?;
+
+    let cert = CertParser::from_reader(input)?.collect::<Vec<_>>();
+    let cert = match cert.len() {
+        0 => Err(anyhow::anyhow!("No certificates provided."))?,
+        1 => cert.into_iter().next().expect("have one")?,
+        _ => Err(
+            anyhow::anyhow!("Multiple certificates provided."))?,
+    };
+    Ok(cert)
+}
+
+/// Parse the secret key and ensure it is at most one.
+fn read_secret(skf: Option<&str>) -> Result<Option<Cert>> {
+    let secret = load_certs(skf.into_iter())?;
+    if secret.len() > 1 {
+        Err(anyhow::anyhow!("Multiple secret keys provided."))?;
+    }
+    let secret = secret.into_iter().next();
+    Ok(secret)
+}
+
 
 fn revoke(config: Config,
           private_key_store: Option<&str>,
