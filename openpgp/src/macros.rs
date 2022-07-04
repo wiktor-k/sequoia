@@ -83,7 +83,7 @@ macro_rules! time_it {
         // using break 'label) still works.
         struct Timer {
             start: SystemTime,
-        };
+        }
         impl Drop for Timer {
             fn drop(&mut self) {
                 let elapsed = self.start.elapsed();
