@@ -25,19 +25,19 @@ use crate::{
 
 const NP: &NullPolicy = &NullPolicy::new();
 
-enum Subcommand {
+enum RevocationTarget {
     Certificate,
     Subkey(KeyHandle),
     UserID(String),
 }
 
-impl Subcommand {
+impl RevocationTarget {
     fn is_certificate(&self) -> bool {
-        matches!(self, Subcommand::Certificate)
+        matches!(self, RevocationTarget::Certificate)
     }
 
     fn userid(&self) -> Option<&str> {
-        if let Subcommand::UserID(userid) = self {
+        if let RevocationTarget::UserID(userid) = self {
             Some(userid)
         } else {
             None
@@ -45,29 +45,26 @@ impl Subcommand {
     }
 }
 
-pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
-    let (subcommand, m) = match m.subcommand() {
-        Some(("certificate", m)) => (Subcommand::Certificate, m),
-        Some(("subkey", m)) => {
-            let subkey = m.value_of("subkey").expect("required");
-            let kh: KeyHandle = subkey
-                .parse()
-                .context(
-                    format!("Parsing {:?} as an OpenPGP fingerprint or Key ID",
-                            subkey))?;
+use crate::sq_cli::RevokeCommand;
+use crate::sq_cli::RevokeSubcommands;
+use crate::sq_cli::RevokeCertificateCommand;
+use crate::sq_cli::RevokeSubkeyCommand;
+use crate::sq_cli::RevokeUseridCommand;
 
-            (Subcommand::Subkey(kh), m)
-        }
-        Some(("userid", m)) => {
-            let userid = m.value_of("userid").expect("required");
+pub fn dispatch(config: Config, c: RevokeCommand) -> Result<()> {
 
-            (Subcommand::UserID(userid.into()), m)
-        }
-        _ => unreachable!(),
-    };
+    match c.subcommand {
+        RevokeSubcommands::Certificate(c) => revoke_certificate(config, c),
+        RevokeSubcommands::Subkey(c) => revoke_subkey(config, c),
+        RevokeSubcommands::Userid(c) => revoke_userid(config, c),
+    }
+}
 
-    let input = m.value_of("input");
-    let input = open_or_stdin(input)?;
+pub fn revoke_certificate(config: Config, c: RevokeCertificateCommand) -> Result<()> {
+    let revocation_target = RevocationTarget::Certificate;
+
+    let input = open_or_stdin(c.input.as_deref())?;
+
     let cert = CertParser::from_reader(input)?.collect::<Vec<_>>();
     let cert = match cert.len() {
         0 => Err(anyhow::anyhow!("No certificates provided."))?,
@@ -76,51 +73,28 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
             anyhow::anyhow!("Multiple certificates provided."))?,
     };
 
-    let secret: Option<&str> = m.value_of("secret-key-file");
-    let secret = load_certs(secret.into_iter())?;
+    let secret = c.secret_key_file;
+    let secret = load_certs(secret.as_deref().into_iter())?;
     if secret.len() > 1 {
         Err(anyhow::anyhow!("Multiple secret keys provided."))?;
     }
     let secret = secret.into_iter().next();
 
-    let private_key_store = m.value_of("private-key-store");
-
-    let binary = m.is_present("binary");
-
-    let time = if let Some(time) = m.value_of("time") {
-        Some(parse_iso8601(time, chrono::NaiveTime::from_hms(0, 0, 0))
+    // TODO use CliTime
+    let time = if let Some(time) = c.time {
+        Some(parse_iso8601(&time, chrono::NaiveTime::from_hms(0, 0, 0))
              .context(format!("Bad value passed to --time: {:?}",
                               time))?.into())
     } else {
         None
     };
 
-    let reason = m.value_of("reason").expect("required");
-    let reason = match subcommand {
-        Subcommand::Certificate | Subcommand::Subkey(_) => {
-            match &*reason {
-                "compromised" => ReasonForRevocation::KeyCompromised,
-                "superseded" => ReasonForRevocation::KeySuperseded,
-                "retired" => ReasonForRevocation::KeyRetired,
-                "unspecified" => ReasonForRevocation::Unspecified,
-                _ => panic!("invalid values should be caught by clap"),
-            }
-        }
-        Subcommand::UserID(_) => {
-            match &*reason {
-                "retired" => ReasonForRevocation::UIDRetired,
-                "unspecified" => ReasonForRevocation::Unspecified,
-                _ => panic!("invalid values should be caught by clap"),
-            }
-        }
-    };
-
-    let message: &str = m.value_of("message").expect("required");
 
     // Each --notation takes two values.  The iterator
     // returns them one at a time, however.
     let mut notations: Vec<(bool, NotationData)> = Vec::new();
-    if let Some(mut n) = m.values_of("notation") {
+    if let Some(n) = c.notation {
+        let mut n = n.iter();
         while let Some(name) = n.next() {
             let value = n.next().unwrap();
 
@@ -128,7 +102,7 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
                 if let Some(name) = name.strip_prefix('!') {
                     (true, name)
                 } else {
-                    (false, name)
+                    (false, name.as_ref())
                 };
 
             notations.push(
@@ -141,14 +115,154 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
 
     revoke(
         config,
-        private_key_store,
+        c.private_key_store.as_deref(),
         cert,
-        subcommand,
+        revocation_target,
         secret,
-        binary,
+        c.binary,
         time,
-        reason,
-        message,
+        c.reason.into(),
+        &c.message,
+        &notations)?;
+
+    Ok(())
+}
+
+pub fn revoke_subkey(config: Config, c: RevokeSubkeyCommand) -> Result<()> {
+    let revocation_target = {
+        let kh: KeyHandle = c.subkey
+            .parse()
+            .context(
+                format!("Parsing {:?} as an OpenPGP fingerprint or Key ID",
+                        c.subkey))?;
+
+        RevocationTarget::Subkey(kh)
+    };
+
+    let input = open_or_stdin(c.input.as_deref())?;
+
+    let cert = CertParser::from_reader(input)?.collect::<Vec<_>>();
+    let cert = match cert.len() {
+        0 => Err(anyhow::anyhow!("No certificates provided."))?,
+        1 => cert.into_iter().next().expect("have one")?,
+        _ => Err(
+            anyhow::anyhow!("Multiple certificates provided."))?,
+    };
+
+    let secret = c.secret_key_file;
+    let secret = load_certs(secret.as_deref().into_iter())?;
+    if secret.len() > 1 {
+        Err(anyhow::anyhow!("Multiple secret keys provided."))?;
+    }
+    let secret = secret.into_iter().next();
+
+    let time = if let Some(time) = c.time {
+        Some(parse_iso8601(&time, chrono::NaiveTime::from_hms(0, 0, 0))
+             .context(format!("Bad value passed to --time: {:?}",
+                              time))?.into())
+    } else {
+        None
+    };
+
+    // Each --notation takes two values.  The iterator
+    // returns them one at a time, however.
+    let mut notations: Vec<(bool, NotationData)> = Vec::new();
+    if let Some(n) = c.notation {
+        let mut n = n.iter();
+        while let Some(name) = n.next() {
+            let value = n.next().unwrap();
+
+            let (critical, name) =
+                if let Some(name) = name.strip_prefix('!') {
+                    (true, name)
+                } else {
+                    (false, name.as_ref())
+                };
+
+            notations.push(
+                (critical,
+                 NotationData::new(
+                     name, value,
+                     NotationDataFlags::empty().set_human_readable())));
+        }
+    }
+
+    revoke(
+        config,
+        c.private_key_store.as_deref(),
+        cert,
+        revocation_target,
+        secret,
+        c.binary,
+        time,
+        c.reason.into(),
+        &c.message,
+        &notations)?;
+
+    Ok(())
+}
+
+pub fn revoke_userid(config: Config, c: RevokeUseridCommand) -> Result<()> {
+    let revocation_target = RevocationTarget::UserID(c.userid);
+
+    let input = open_or_stdin(c.input.as_deref())?;
+
+    let cert = CertParser::from_reader(input)?.collect::<Vec<_>>();
+    let cert = match cert.len() {
+        0 => Err(anyhow::anyhow!("No certificates provided."))?,
+        1 => cert.into_iter().next().expect("have one")?,
+        _ => Err(
+            anyhow::anyhow!("Multiple certificates provided."))?,
+    };
+
+    let secret = c.secret_key_file;
+    let secret = load_certs(secret.as_deref().into_iter())?;
+    if secret.len() > 1 {
+        Err(anyhow::anyhow!("Multiple secret keys provided."))?;
+    }
+    let secret = secret.into_iter().next();
+
+    let time = if let Some(time) = c.time {
+        Some(parse_iso8601(&time, chrono::NaiveTime::from_hms(0, 0, 0))
+             .context(format!("Bad value passed to --time: {:?}",
+                              time))?.into())
+    } else {
+        None
+    };
+
+    // Each --notation takes two values.  The iterator
+    // returns them one at a time, however.
+    let mut notations: Vec<(bool, NotationData)> = Vec::new();
+    if let Some(n) = c.notation {
+        let mut n = n.iter();
+        while let Some(name) = n.next() {
+            let value = n.next().unwrap();
+
+            let (critical, name) =
+                if let Some(name) = name.strip_prefix('!') {
+                    (true, name)
+                } else {
+                    (false, name.as_ref())
+                };
+
+            notations.push(
+                (critical,
+                 NotationData::new(
+                     name, value,
+                     NotationDataFlags::empty().set_human_readable())));
+        }
+    }
+
+    revoke(
+        config,
+        c.private_key_store.as_deref(),
+        cert,
+        revocation_target,
+        secret,
+        c.binary,
+        time,
+        c.reason.into(),
+        &c.message,
         &notations)?;
 
     Ok(())
@@ -157,7 +271,7 @@ pub fn dispatch(config: Config, m: &clap::ArgMatches) -> Result<()> {
 fn revoke(config: Config,
           private_key_store: Option<&str>,
           cert: openpgp::Cert,
-          subcommand: Subcommand,
+          revocation_target: RevocationTarget,
           secret: Option<openpgp::Cert>,
           binary: bool,
           time: Option<SystemTime>,
@@ -214,8 +328,8 @@ key material"));
     let first_party = secret.fingerprint() == cert.fingerprint();
     let mut subkey = None;
 
-    let rev: Packet = match subcommand {
-        Subcommand::UserID(ref userid) => {
+    let rev: Packet = match revocation_target {
+        RevocationTarget::UserID(ref userid) => {
             // Create a revocation for a User ID.
 
             // Unless force is specified, we require the User ID to
@@ -264,7 +378,7 @@ a revocation certificate for that User ID anyways, specify '--force'"));
                 &mut signer, &cert, &UserID::from(userid.as_str()), None)?;
             Packet::Signature(rev)
         }
-        Subcommand::Subkey(ref subkey_fpr) => {
+        RevocationTarget::Subkey(ref subkey_fpr) => {
             let vc = cert.with_policy(NP, None)?;
 
             for k in vc.keys().subkeys() {
@@ -309,7 +423,7 @@ a revocation certificate for that User ID anyways, specify '--force'"));
 The certificate does not contain the specified subkey."));
             }
         }
-        Subcommand::Certificate => {
+        RevocationTarget::Certificate => {
             // Create a revocation for the certificate.
             let mut rev = CertRevocationBuilder::new()
                 .set_reason_for_revocation(reason, message.as_bytes())?;
@@ -328,12 +442,12 @@ The certificate does not contain the specified subkey."));
     };
 
     let mut stub = None;
-    let packets: Vec<Packet> = if first_party && subcommand.is_certificate() {
+    let packets: Vec<Packet> = if first_party && revocation_target.is_certificate() {
         vec![ rev ]
     } else {
         let mut s = match cert_stub(
             cert.clone(), &config.policy, time,
-            subcommand.userid().map(UserID::from).as_ref())
+            revocation_target.userid().map(UserID::from).as_ref())
         {
             Ok(stub) => stub,
             // We failed to create a stub.  Just use the original
@@ -367,17 +481,17 @@ The certificate does not contain the specified subkey."));
         let mut more: Vec<String> = Vec::new();
 
         // First, the thing that is being revoked.
-        match subcommand {
-            Subcommand::Certificate => {
+        match revocation_target {
+            RevocationTarget::Certificate => {
                 more.push(
                     "including a revocation for the certificate".to_string());
             }
-            Subcommand::Subkey(_) => {
+            RevocationTarget::Subkey(_) => {
                 more.push(
                     "including a revocation to revoke the subkey".to_string());
                 more.push(subkey.unwrap().fingerprint().to_spaced_hex());
             }
-            Subcommand::UserID(raw) => {
+            RevocationTarget::UserID(raw) => {
                 more.push(
                     "including a revocation to revoke the User ID".to_string());
                 more.push(format!("{:?}", raw));

@@ -717,7 +717,11 @@ fn main() -> Result<()> {
             commands::key::dispatch(config, command)?
         },
 
-        Some(("revoke",  m)) => commands::revoke::dispatch(config, m)?,
+        Some(("revoke",  m)) => {
+            use clap::FromArgMatches;
+            let command = sq_cli::RevokeCommand::from_arg_matches(m)?;
+            commands::revoke::dispatch(config, command)?
+        },
 
         Some(("wkd",  m)) => {
             use clap::FromArgMatches;

@@ -896,6 +896,18 @@ pub enum RevocationReason {
     Unspecified
 }
 
+use openpgp::types::ReasonForRevocation as OpenPGPRevocationReason;
+impl From<RevocationReason> for OpenPGPRevocationReason {
+    fn from(rr: RevocationReason) -> Self {
+        match rr {
+            RevocationReason::Compromised => OpenPGPRevocationReason::KeyCompromised,
+            RevocationReason::Superseded => OpenPGPRevocationReason::KeySuperseded,
+            RevocationReason::Retired => OpenPGPRevocationReason::KeyRetired,
+            RevocationReason::Unspecified => OpenPGPRevocationReason::Unspecified,
+        }
+    }
+}
+
 #[derive(Debug, Args)]
 #[clap(
     display_order = 105,
@@ -1156,6 +1168,15 @@ certificate's creation time",
 pub enum UseridRevocationReason {
     Retired,
     Unspecified
+}
+
+impl From<UseridRevocationReason> for OpenPGPRevocationReason {
+    fn from(rr: UseridRevocationReason) -> Self {
+        match rr {
+            UseridRevocationReason::Retired => OpenPGPRevocationReason::UIDRetired,
+            UseridRevocationReason::Unspecified => OpenPGPRevocationReason::Unspecified,
+        }
+    }
 }
 
 #[derive(Parser, Debug)]
