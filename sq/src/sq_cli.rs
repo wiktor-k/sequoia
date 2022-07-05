@@ -200,15 +200,8 @@ $ sq armor binary-message.pgp
 "
     )]
 pub struct ArmorCommand {
-    #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
-    pub input: Option<String>,
-    #[clap(
-        short,
-        long,
-        value_name = "FILE",
-        help = "Writes to FILE or stdout if omitted"
-    )]
-    pub output: Option<String>,
+    #[clap(flatten)]
+    pub io: IoArgs,
     #[clap(
         long = "label",
         value_name = "LABEL",

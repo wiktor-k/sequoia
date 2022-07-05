@@ -527,7 +527,7 @@ fn main() -> Result<()> {
 
         // TODO: Extract body to commands/armor.rs
         SqSubcommands::Armor(command) => {
-            let input = open_or_stdin(command.input.as_deref())?;
+            let input = open_or_stdin(command.io.input.as_deref())?;
             let mut want_kind: Option<armor::Kind> = command.kind.into();
 
             // Peek at the data.  If it looks like it is armored
@@ -547,7 +547,7 @@ fn main() -> Result<()> {
             {
                 // It is already armored and has the correct kind.
                 let mut output =
-                    config.create_or_stdout_safe(command.output.as_deref())?;
+                    config.create_or_stdout_safe(command.io.output.as_deref())?;
                 io::copy(&mut input, &mut output)?;
                 return Ok(());
             }
@@ -562,7 +562,7 @@ fn main() -> Result<()> {
             let want_kind = want_kind.expect("given or detected");
 
             let mut output =
-                config.create_or_stdout_pgp(command.output.as_deref(),
+                config.create_or_stdout_pgp(command.io.output.as_deref(),
                                             false, want_kind)?;
 
             if already_armored {
