@@ -32,6 +32,15 @@
 //!             validating signatures. Signatures that have unknown notations with
 //!             the critical bit set are considered invalid.
 //!
+//!         --output-format <FORMAT>
+//!             Produces output in FORMAT, if possible
+//! 
+//!             [default: human-readable]
+//!             [possible values: human-readable, json]
+//!
+//!         --output-version <VERSION>
+//!             Produces output variant VERSION
+//!
 //!     -V, --version
 //!             Print version information
 //!

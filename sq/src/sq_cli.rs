@@ -60,6 +60,20 @@ pub struct SqCommand {
     )]
     pub force: bool,
     #[clap(
+        long = "output-format",
+        value_name = "FORMAT",
+        possible_values = ["human-readable", "json"],
+        default_value = "human-readable",
+        help = "Produces output in FORMAT, if possible",
+    )]
+    pub output_format: String,
+    #[clap(
+        long = "output-version",
+        value_name = "VERSION",
+        help = "Produces output variant VERSION",
+    )]
+    pub output_version: Option<String>,
+    #[clap(
         long = "known-notation",
         value_name = "NOTATION",
         multiple_occurrences = true,
