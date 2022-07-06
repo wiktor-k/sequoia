@@ -1213,7 +1213,7 @@
 //!     -h, --help
 //!             Print help information
 //!
-//!     -p, --policy <NETWORK-POLICY>
+//!     -n, --network-policy <NETWORK-POLICY>
 //!             Sets the network policy to use [default: encrypted] [possible
 //!             values: offline, anonymized, encrypted, insecure]
 //!

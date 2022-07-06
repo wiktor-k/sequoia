@@ -34,7 +34,7 @@ use crate::sq_cli::WkdCommand;
 use crate::sq_cli::WkdSubcommands;
 
 pub fn dispatch_keyserver(config: Config, c: KeyserverCommand) -> Result<()> {
-    let network_policy = c.policy.into();
+    let network_policy = c.network_policy.into();
     let mut ks = if let Some(uri) = c.server {
         KeyServer::new(network_policy, &uri)
     } else {
@@ -90,7 +90,7 @@ pub fn dispatch_keyserver(config: Config, c: KeyserverCommand) -> Result<()> {
 }
 
 pub fn dispatch_wkd(config: Config, c: WkdCommand) -> Result<()> {
-    let network_policy: net::Policy = c.policy.into();
+    let network_policy: net::Policy = c.network_policy.into();
 
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_io()

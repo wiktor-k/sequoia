@@ -2116,14 +2116,14 @@ pub struct KeyAttestCertificationsCommand {
 )]
 pub struct WkdCommand {
     #[clap(
-        short = 'p',
-        long = "policy",
+        short,
+        long,
         value_name = "NETWORK-POLICY",
         default_value_t = NetworkPolicy::Encrypted,
         arg_enum,
         help = "Sets the network policy to use",
     )]
-    pub policy: NetworkPolicy,
+    pub network_policy: NetworkPolicy,
     #[clap(subcommand)]
     pub subcommand: WkdSubcommands,
 }
@@ -2254,14 +2254,14 @@ pub struct WkdGenerateCommand {
 )]
 pub struct KeyserverCommand {
     #[clap(
-        short,
-        long,
+        short = 'p',
+        long = "policy",
         value_name = "NETWORK-POLICY",
         default_value_t = NetworkPolicy::Encrypted,
         help = "Sets the network policy to use",
         arg_enum,
     )]
-    pub policy: NetworkPolicy,
+    pub network_policy: NetworkPolicy,
     #[clap(
         short,
         long,
