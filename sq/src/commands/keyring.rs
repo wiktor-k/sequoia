@@ -28,6 +28,8 @@ use openpgp::{
 
 use crate::{
     Config,
+    OutputFormat,
+    OutputVersion,
     open_or_stdin,
 };
 
@@ -239,68 +241,21 @@ fn list(config: Config,
         list_all_uids: bool)
         -> Result<()>
 {
-    for (i, cert) in CertParser::from_reader(input)?.enumerate() {
-        let cert = match cert {
-            Ok(cert) => cert,
-            Err(e) => {
-                println!("{}. {}", i, e);
-                continue;
-            },
-        };
-        let line = format!("{}. {:X}", i, cert.fingerprint());
-        let indent = line.chars().map(|_| ' ').collect::<String>();
-        print!("{}", line);
-
-        // Try to be more helpful by including a User ID in the
-        // listing.  We'd like it to be the primary one.  Use
-        // decreasingly strict policies.
-        let mut primary_uid = None;
-
-        // First, apply our policy.
-        if let Ok(vcert) = cert.with_policy(&config.policy, None) {
-            if let Ok(primary) = vcert.primary_userid() {
-                println!(" {}", String::from_utf8_lossy(primary.value()));
-                primary_uid = Some(primary.value().to_vec());
+    let mut list = keyring_output::List::new(config.output_version)?;
+    let iter = CertParser::from_reader(input)?
+        .map(|item| keyring_output::ListItem::from_cert_with_config(item, &config));
+    for item in iter {
+        list.push(item);
+    }
+    match config.output_format {
+        OutputFormat::HumanReadable => {
+            for (i, item) in list.items().iter().enumerate() {
+                item.write(i, list_all_uids);
             }
         }
-
-        // Second, apply the null policy.
-        if primary_uid.is_none() {
-            let null = openpgp::policy::NullPolicy::new();
-            if let Ok(vcert) = cert.with_policy(&null, None) {
-                if let Ok(primary) = vcert.primary_userid() {
-                    println!(" {}", String::from_utf8_lossy(primary.value()));
-                    primary_uid = Some(primary.value().to_vec());
-                }
-            }
-        }
-
-        // As a last resort, pick the first user id.
-        if primary_uid.is_none() {
-            if let Some(primary) = cert.userids().next() {
-                println!(" {}", String::from_utf8_lossy(primary.value()));
-                primary_uid = Some(primary.value().to_vec());
-            }
-        }
-
-        if primary_uid.is_none() {
-            // No dice.
+        OutputFormat::Json => {
+            serde_json::to_writer_pretty(std::io::stdout(), &list)?;
             println!();
-        }
-
-        if list_all_uids {
-            // List all user ids independently of their validity.
-            for u in cert.userids() {
-                if primary_uid.as_ref()
-                    .map(|p| &p[..] == u.value()).unwrap_or(false)
-                {
-                    // Skip the user id we already printed.
-                    continue;
-                }
-
-                println!("{} {}", indent,
-                         String::from_utf8_lossy(u.value()));
-            }
         }
     }
     Ok(())
@@ -450,5 +405,168 @@ fn to_filename_fragment<S: AsRef<str>>(s: S) -> Option<String> {
         Some(r)
     } else {
         None
+    }
+}
+
+// Model output as a data type that can be serialized.
+mod keyring_output {
+    use super::{openpgp, Cert, Config, OutputVersion, Result};
+    use anyhow::anyhow;
+    use serde::Serialize;
+
+    #[derive(Debug, Serialize)]
+    #[serde(untagged)]
+    pub(super) enum List {
+        V0(ListV0),
+    }
+
+    impl List {
+        const DEFAULT_VERSION: OutputVersion = OutputVersion::new(0, 0, 0);
+
+        pub(super) fn new(wanted: Option<OutputVersion>) -> Result<Self> {
+            match wanted {
+                None => Self::new(Some(Self::DEFAULT_VERSION)),
+                Some(wanted) if ListV0::V.is_acceptable_for(wanted) => Ok(Self::V0(ListV0::new())),
+                Some(wanted) => Err(anyhow!("version not supported: {}", wanted)),
+            }
+        }
+
+        pub(super) fn push(&mut self, item: ListItem) {
+            match self {
+                Self::V0(list) => list.push(item),
+            }
+        }
+
+        pub(super) fn items(&mut self) -> &[ListItem] {
+            match self {
+                Self::V0(list) => list.items(),
+            }
+        }
+    }
+
+    #[derive(Debug, Serialize)]
+    pub(super) struct ListV0 {
+        sq_output_version: OutputVersion,
+        keys: Vec<ListItem>,
+    }
+
+    impl ListV0 {
+        const V: OutputVersion = OutputVersion::new(0, 0, 0);
+
+        fn new() -> Self {
+            Self {
+                sq_output_version: Self::V,
+                keys: vec![],
+            }
+        }
+
+        pub(super) fn push(&mut self, item: ListItem) {
+            self.keys.push(item);
+        }
+
+        pub(super) fn items(&self) -> &[ListItem] {
+            &self.keys
+        }
+    }
+
+    #[derive(Debug, Serialize)]
+    #[serde(untagged)]
+    pub(super) enum ListItem {
+        Error(String),
+        Cert(OutputCert),
+    }
+
+    impl ListItem {
+        pub(super) fn write(&self, i: usize, list_all_userids: bool) {
+            match self {
+                ListItem::Error(e) => {
+                    println!("{}. {}", i, e);
+                },
+                ListItem::Cert(cert) => {
+                    let line = format!("{}. {}", i, cert.fingerprint);
+                    let indent = line.chars().map(|_| ' ').collect::<String>();
+                    print!("{}", line);
+                    match &cert.primary_userid {
+                        Some(uid) => println!(" {}", uid),
+                        None => println!(),
+                    }
+                    if list_all_userids {
+                        for uid in &cert.userids {
+                            println!("{} {}", indent, uid);
+                        }
+                    }
+                }
+            }
+        }
+
+        pub(super) fn from_cert_with_config(item: Result<Cert>, config: &Config) -> Self {
+            match item {
+                Ok(cert) => ListItem::Cert(OutputCert::from_cert_with_config(cert, config)),
+                Err(e) => ListItem::Error(format!("{}", e)),
+            }
+        }
+    }
+
+    #[derive(Debug, Serialize)]
+    pub(super) struct OutputCert {
+        fingerprint: String,
+        primary_userid: Option<String>,
+        userids: Vec<String>,
+    }
+
+    impl OutputCert {
+        fn from_cert_with_config(cert: Cert, config: &Config) -> Self {
+            // Try to be more helpful by including a User ID in the
+            // listing.  We'd like it to be the primary one.  Use
+            // decreasingly strict policies.
+            let mut primary_uid: Option<Vec<u8>> = None;
+
+            // First, apply our policy.
+            if let Ok(vcert) = cert.with_policy(&config.policy, None) {
+                if let Ok(primary) = vcert.primary_userid() {
+                    primary_uid = Some(primary.value().to_vec());
+                }
+            }
+
+            // Second, apply the null policy.
+            if primary_uid.is_none() {
+                let null = openpgp::policy::NullPolicy::new();
+                if let Ok(vcert) = cert.with_policy(&null, None) {
+                    if let Ok(primary) = vcert.primary_userid() {
+                        primary_uid = Some(primary.value().to_vec());
+                    }
+                }
+            }
+
+            // As a last resort, pick the first user id.
+            if primary_uid.is_none() {
+                if let Some(primary) = cert.userids().next() {
+                    primary_uid = Some(primary.value().to_vec());
+                }
+            }
+
+            // List all user ids independently of their validity.
+            let mut userids = vec![];
+            for u in cert.userids() {
+                if primary_uid.as_ref()
+                    .map(|p| &p[..] == u.value()).unwrap_or(false)
+                {
+                    // Skip the user id we already handled.
+                    continue;
+                }
+
+                userids.push(Self::userid(u.value()));
+            }
+
+            Self {
+                fingerprint: format!("{:X}", cert.fingerprint()),
+                primary_userid: primary_uid.map(|id| Self::userid(&id)),
+                userids,
+            }
+        }
+
+        fn userid(bytes: &[u8]) -> String {
+            String::from_utf8_lossy(bytes).into()
+        }
     }
 }
