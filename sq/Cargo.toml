@@ -38,6 +38,8 @@ tempfile = "3.1"
 term_size = "0.3"
 tokio = { version = "1.13.1" }
 rpassword = "5.0"
+serde_json = "1.0.81"
+serde = { version = "1.0.137", features = ["derive"] }
 
 [build-dependencies]
 anyhow = "1.0.18"
