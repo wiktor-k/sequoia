@@ -30,6 +30,8 @@ use sq_cli::SqSubcommands;
 
 mod sq_cli;
 mod commands;
+mod output;
+use output::{OutputFormat, OutputVersion};
 
 fn open_or_stdin(f: Option<&str>)
                  -> Result<Box<dyn BufferedReader<()>>> {
