@@ -1986,6 +1986,24 @@ mod tests {
             (true, "c"),
         ]);
 
+        // Make sure - is recognized as an atom when it is not part of
+        // a range.  That is: a-z matches a or - or z, but it doesn't
+        // match b (it's not a range).
+        a("a-z", &[
+            (true, "a-z"),
+            (false, "a"),
+            (false, "-"),
+            (false, "z"),
+            (false, "c"),
+        ]);
+
+        a("a|-|z", &[
+            (true, "a"),
+            (true, "-"),
+            (true, "z"),
+            (false, "c"),
+        ]);
+
         Ok(())
     }
 
@@ -2034,6 +2052,24 @@ mod tests {
         assert!(re.is_match("cd]"));
         assert!(re.is_match("x"));
 
+        Ok(())
+    }
+
+    #[test]
+    fn regex_set_sequoia() -> Result<()> {
+        let re = RegexSet::new(&["<[^>]+[@.]sequoia-pgp\\.org>$"])?;
+        dbg!(&re);
+        assert!(re.is_match("<justus@sequoia-pgp.org>"));
+        assert!(!re.is_match("<justus@gnupg.org>"));
+        Ok(())
+    }
+
+    #[test]
+    fn regex_set_sequoia_nodash() -> Result<()> {
+        let re = RegexSet::new(&["<[^>]+[@.]sequoiapgp\\.org>$"])?;
+        dbg!(&re);
+        assert!(re.is_match("<justus@sequoiapgp.org>"));
+        assert!(!re.is_match("<justus@gnupg.org>"));
         Ok(())
     }
 }

@@ -129,6 +129,10 @@ Atom : Hir = {
         hir::Hir::literal(hir::Literal::Unicode(t.to_char()))
     },
 
+    DASH => {
+        hir::Hir::literal(hir::Literal::Unicode('-'))
+    },
+
     <t:OTHER> => {
         hir::Hir::literal(hir::Literal::Unicode(t.to_char()))
     },
