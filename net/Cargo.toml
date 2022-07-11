@@ -37,6 +37,8 @@ url = "2.1"
 zbase32 = "0.1.2"
 tokio = { version = "1.13.1", features = [ "macros" ] }
 base64 = ">=0.12"
+trust-dns-client = "0.22"
+trust-dns-resolver = { version = "0.22", features = ["dnssec-ring"] }
 
 [dev-dependencies]
 rand = { version = "0.8", default-features = false, features = [ "getrandom" ] }
@@ -52,4 +54,3 @@ crypto-cng = ["sequoia-openpgp/crypto-cng"]
 compression = ["sequoia-openpgp/compression"]
 compression-deflate = ["sequoia-openpgp/compression-deflate"]
 compression-bzip2 = ["sequoia-openpgp/compression-bzip2"]
-

@@ -61,6 +61,8 @@ use openpgp::{
 };
 
 #[macro_use] mod macros;
+pub mod dane;
+mod email;
 pub mod pks;
 pub mod updates;
 pub mod wkd;
