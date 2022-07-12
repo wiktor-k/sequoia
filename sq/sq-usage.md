@@ -71,6 +71,8 @@ SUBCOMMANDS:
             Interacts with keyservers
     wkd
             Interacts with Web Key Directories
+    dane
+            Interacts with DANE
     armor
             Converts binary to ASCII
     dearmor
@@ -1496,6 +1498,55 @@ ARGS:
 OPTIONS:
     -h, --help
             Print help information
+```
+
+## Subcommand sq dane
+
+```text
+DNS-Based Authentication of Named Entities (DANE) is a method for publishing
+public keys in DNS as specified in RFC 7929.
+
+USAGE:
+    sq dane [OPTIONS] <SUBCOMMAND>
+
+OPTIONS:
+    -n, --network-policy <NETWORK-POLICY>
+            Sets the network policy to use
+
+            [default: encrypted]
+            [possible values: offline, anonymized, encrypted, insecure]
+
+    -h, --help
+            Print help information
+
+SUBCOMMANDS:
+    get
+            Queries for certs using DANE
+    help
+            Print this message or the help of the given subcommand(s)
+```
+
+### Subcommand sq dane get
+
+```text
+Queries for certs using DANE
+
+USAGE:
+    sq dane get [OPTIONS] <ADDRESS>
+
+ARGS:
+    <ADDRESS>
+            Queries a cert for ADDRESS
+
+OPTIONS:
+    -B, --binary
+            Emits binary data
+
+    -h, --help
+            Print help information
+
+    -o, --output <FILE>
+            Writes to FILE or stdout if omitted
 ```
 
 ## Subcommand sq armor

@@ -6,6 +6,7 @@ pub mod autocrypt;
 
 pub mod armor;
 pub mod certify;
+pub mod dane;
 mod dearmor;
 mod decrypt;
 pub mod encrypt;
@@ -129,6 +130,7 @@ pub enum SqSubcommands {
     Autocrypt(autocrypt::Command),
     Keyserver(keyserver::Command),
     Wkd(wkd::Command),
+    Dane(dane::Command),
 
     Armor(armor::Command),
     Dearmor(dearmor::Command),

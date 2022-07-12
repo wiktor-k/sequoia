@@ -691,6 +691,10 @@ fn main() -> Result<()> {
             commands::net::dispatch_wkd(config, command)?
         }
 
+        SqSubcommands::Dane(command) => {
+            commands::net::dispatch_dane(config, command)?
+        }
+
         SqSubcommands::Certify(command) => {
             commands::certify::certify(config, command)?
         }

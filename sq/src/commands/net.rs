@@ -20,6 +20,7 @@ use sequoia_net as net;
 use net::{
     KeyServer,
     wkd,
+    dane,
 };
 
 use crate::{
@@ -168,6 +169,36 @@ pub fn dispatch_wkd(config: Config, c: sq_cli::wkd::Command) -> Result<()> {
                     ).into());
                 }
             }
+        },
+    }
+
+    Ok(())
+}
+
+pub fn dispatch_dane(config: Config, c: sq_cli::dane::Command) -> Result<()> {
+    let network_policy: net::Policy = c.network_policy.into();
+
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .enable_time()
+        .build()?;
+
+    use crate::sq_cli::dane::Subcommands::*;
+    match c.subcommand {
+        Get(c) => {
+            // Check that the policy allows https.
+            network_policy.assert(net::Policy::Encrypted)?;
+
+            let email_address = c.email_address;
+            // XXX: EmailAddress could be created here to
+            // check it's a valid email address, print the error to
+            // stderr and exit.
+            // Because it might be created a WkdServer struct, not
+            // doing it for now.
+            let certs = rt.block_on(dane::get(&email_address))?;
+            let mut output =
+                config.create_or_stdout_safe(c.output.as_deref())?;
+            serialize_keyring(&mut output, &certs, c.binary)?;
         },
     }
 
