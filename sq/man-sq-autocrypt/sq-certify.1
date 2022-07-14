@@ -1,98 +1,111 @@
-.TH SQ-CERTIFY "1" "MARCH 2021" "0.24.0 (SEQUOIA-OPENPGP 1.0.0)" "USER COMMANDS" 5
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH certify 1 "July 2022" "sq 0.26.0" "Sequoia Manual"
 .SH NAME
-sq\-certify \- 
+certify \- Certifies a User ID for a Certificate
+.SH SYNOPSIS
+\fBcertify\fR [\fB\-o\fR|\fB\-\-output\fR] [\fB\-B\fR|\fB\-\-binary\fR] [\fB\-\-time\fR] [\fB\-d\fR|\fB\-\-depth\fR] [\fB\-a\fR|\fB\-\-amount\fR] [\fB\-r\fR|\fB\-\-regex\fR] [\fB\-l\fR|\fB\-\-local\fR] [\fB\-\-non\-revocable\fR] [\fB\-\-notation\fR] [\fB\-\-expires\fR] [\fB\-\-expires\-in\fR] [\fB\-\-allow\-not\-alive\-certifier\fR] [\fB\-\-allow\-revoked\-certifier\fR] [\fB\-\-private\-key\-store\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fICERTIFIER\-KEY\fR> <\fICERTIFICATE\fR> <\fIUSERID\fR> 
+.SH DESCRIPTION
 Certifies a User ID for a Certificate
-
+.PP
 Using a certification a keyholder may vouch for the fact that another
 certificate legitimately belongs to a user id.  In the context of
 emails this means that the same entity controls the key and the email
 address.  These kind of certifications form the basis for the Web Of
 Trust.
-
+.PP
 This command emits the certificate with the new certification.  The
 updated certificate has to be distributed, preferably by sending it to
 the certificate holder for attestation.  See also "sq key
 attest\-certification".
-
-.SH SYNOPSIS
-\fBsq certify\fR [FLAGS] [OPTIONS] <CERTIFIER\-KEY> <CERTIFICATE> <USERID>
-.SH FLAGS
+.SH OPTIONS
 .TP
-\fB\-h\fR, \fB\-\-help\fR
-Prints help information
-
+\fB\-o\fR, \fB\-\-output\fR=\fIFILE\fR
+Writes to FILE or stdout if omitted
 .TP
 \fB\-B\fR, \fB\-\-binary\fR
 Emits binary data
+.TP
+\fB\-\-time\fR=\fITIME\fR
+Sets the certification time to TIME.  TIME is interpreted as an ISO 8601
+timestamp.  To set the certification time to June 9, 2011 at midnight UTC,
+you can do:
 
+$ sq certify \-\-time 20130721 neal.pgp ada.pgp ada
+
+To include a time, add a T, the time and optionally the timezone (the
+default timezone is UTC):
+
+$ sq certify \-\-time 20130721T0550+0200 neal.pgp ada.pgp ada
+
+.TP
+\fB\-d\fR, \fB\-\-depth\fR=\fITRUST_DEPTH\fR [default: 0]
+Sets the trust depth (sometimes referred to as the trust level).  0 means a normal certification of <CERTIFICATE, USERID>.  1 means CERTIFICATE is also a trusted introducer, 2 means CERTIFICATE is a meta\-trusted introducer, etc.
+.TP
+\fB\-a\fR, \fB\-\-amount\fR=\fITRUST_AMOUNT\fR [default: 120]
+Sets the amount of trust.  Values between 1 and 120 are meaningful. 120 means fully trusted.  Values less than 120 indicate the degree of trust.  60 is usually used for partially trusted.
+.TP
+\fB\-r\fR, \fB\-\-regex\fR=\fIREGEX\fR
+Adds a regular expression to constrain what a trusted introducer can certify.  The regular expression must match the certified User ID in all intermediate introducers, and the certified certificate. Multiple regular expressions may be specified.  In that case, at least one must match.
 .TP
 \fB\-l\fR, \fB\-\-local\fR
 Makes the certification a local certification.  Normally, local certifications are not exported.
-
 .TP
 \fB\-\-non\-revocable\fR
 Marks the certification as being non\-revocable. That is, you cannot later revoke this certification.  This should normally only be used with an expiration.
-.SH OPTIONS
 .TP
-\fB\-o\fR, \fB\-\-output\fR FILE
-Writes to FILE or stdout if omitted
-
+\fB\-\-notation\fR=\fINAME VALUE\fR
+Adds a notation to the certification.  A user\-defined notation\*(Aqs name must be of the form "name@a.domain.you.control.org". If the notation\*(Aqs name starts with a !, then the notation is marked as being critical.  If a consumer of a signature doesn\*(Aqt understand a critical notation, then it will ignore the signature.  The notation is marked as being human readable.
 .TP
-\fB\-d\fR, \fB\-\-depth\fR TRUST_DEPTH
-Sets the trust depth (sometimes referred to as the trust level).  0 means a normal certification of <CERTIFICATE, USERID>.  1 means CERTIFICATE is also a trusted introducer, 2 means CERTIFICATE is a meta\-trusted introducer, etc.  The default is 0.
-
-.TP
-\fB\-a\fR, \fB\-\-amount\fR TRUST_AMOUNT
-Sets the amount of trust.  Values between 1 and 120 are meaningful. 120 means fully trusted.  Values less than 120 indicate the degree of trust.  60 is usually used for partially trusted.  The default is 120.
-
-.TP
-\fB\-r\fR, \fB\-\-regex\fR REGEX
-Adds a regular expression to constrain what a trusted introducer can certify.  The regular expression must match the certified User ID in all intermediate introducers, and the certified certificate. Multiple regular expressions may be specified.  In that case, at least one must match.
-
-.TP
-\fB\-\-notation\fR NAME
-Adds a notation to the certification.  A user\-defined notation's name must be of the form "name@a.domain.you.control.org". If the notation's name starts with a !, then the notation is marked as being critical.  If a consumer of a signature doesn't understand a critical notation, then it will ignore the signature.  The notation is marked as being human readable.
-
-.TP
-\fB\-\-expires\fR TIME
+\fB\-\-expires\fR=\fITIME\fR
 Makes the certification expire at TIME (as ISO 8601). Use "never" to create certifications that do not expire.
-
 .TP
-\fB\-\-expires\-in\fR DURATION
-Makes the certification expire after DURATION. Either "N[ymwd]", for N years, months, weeks, or days, or "never".  [default: 5y]
-.SH ARGS
+\fB\-\-expires\-in\fR=\fIDURATION\fR
+Makes the certification expire after DURATION. Either "N[ymwds]", for N years, months, weeks, days, seconds, or "never".  [default: 5y]
 .TP
-CERTIFIER\-KEY
-Creates the certificate using CERTIFIER\-KEY.
-
+\fB\-\-allow\-not\-alive\-certifier\fR
+Allows the key to make a certification even if the current time is prior to its creation time or the current time is at or after its expiration time.
 .TP
-CERTIFICATE
+\fB\-\-allow\-revoked\-certifier\fR
+Don\*(Aqt fail if the certificate making the certification is revoked.
+.TP
+\fB\-\-private\-key\-store\fR=\fIKEY_STORE\fR
+Provides parameters for private key store
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help information
+.TP
+<\fICERTIFIER\-KEY\fR>
+Creates the certification using CERTIFIER\-KEY.
+.TP
+<\fICERTIFICATE\fR>
 Certifies CERTIFICATE.
-
 .TP
-USERID
+<\fIUSERID\fR>
 Certifies USERID for CERTIFICATE.
 .SH EXAMPLES
-.TP
-# Juliet certifies that Romeo controls romeo.pgp and romeo@example.org
-\fB$ sq certify juliet.pgp romeo.pgp "<romeo@example.org>"\fR
-
-.SH SEE ALSO
-For the full documentation see <https://docs.sequoia\-pgp.org/sq/>.
-
-.ad l
-.nh
-sq(1), sq\-armor(1), sq\-autocrypt(1), sq\-certify(1), sq\-dearmor(1), sq\-decrypt(1), sq\-encrypt(1), sq\-inspect(1), sq\-key(1), sq\-keyring(1), sq\-packet(1), sq\-sign(1), sq\-verify(1)
-
-
-.SH AUTHORS
-.P
-.RS 2
+ Juliet certifies that Romeo controls romeo.pgp and romeo@example.org
+.PP
 .nf
-Azul <azul@sequoia\-pgp.org>
-Igor Matuszewski <igor@sequoia\-pgp.org>
-Justus Winter <justus@sequoia\-pgp.org>
-Kai Michaelis <kai@sequoia\-pgp.org>
-Neal H. Walfield <neal@sequoia\-pgp.org>
-Nora Widdecke <nora@sequoia\-pgp.org>
-Wiktor Kwapisiewicz <wiktor@sequoia\-pgp.org>
+.RS
+ sq certify juliet.pgp romeo.pgp "<romeo@example.org>"
+.RE
+.fi
+.SH "SEE ALSO"
+For the full documentation see <https://docs.sequoia\-pgp.org/sq/>.
+.PP
+sq(1)
+sq\-armor(1)
+sq\-autocrypt(1)
+sq\-dearmor(1)
+sq\-decrypt(1)
+sq\-encrypt(1)
+sq\-inspect(1)
+sq\-key(1)
+sq\-keyring(1)
+sq\-keyserver(1)
+sq\-packet(1)
+sq\-revoke(1)
+sq\-sign(1)
+sq\-verify(1)
+sq\-wkd(1)

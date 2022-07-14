@@ -1,0 +1,89 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH add 1 "July 2022" "sq 0.26.0" "Sequoia Manual"
+.SH NAME
+add \- Adds a User ID
+.SH SYNOPSIS
+\fBadd\fR [\fB\-o\fR|\fB\-\-output\fR] [\fB\-u\fR|\fB\-\-userid\fR] [\fB\-\-creation\-time\fR] [\fB\-\-private\-key\-store\fR] [\fB\-B\fR|\fB\-\-binary\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fIFILE\fR] 
+.SH DESCRIPTION
+Adds a User ID
+.PP
+A User ID can contain a name, like "Juliet" or an email address, like
+"<juliet@example.org>".  Historically, a name and email address were often
+combined as a single User ID, like "Juliet <juliet@example.org>".
+.SH OPTIONS
+.TP
+\fB\-o\fR, \fB\-\-output\fR=\fIFILE\fR
+Writes to FILE or stdout if omitted
+.TP
+\fB\-u\fR, \fB\-\-userid\fR=\fIUSERID\fR
+User ID to add
+.TP
+\fB\-\-creation\-time\fR=\fICREATION_TIME\fR
+Sets the creation time of this User ID\*(Aqs binding signature to TIME.
+TIME is interpreted as an ISO 8601 timestamp.  To set the creation
+time to June 28, 2022 at midnight UTC, you can do:
+
+$ sq key userid add \-\-userid "Juliet" \-\-creation\-time 20210628 \\
+   juliet.key.pgp \-\-output juliet\-new.key.pgp
+
+To include a time, add a T, the time and optionally the timezone (the
+default timezone is UTC):
+
+$ sq key userid add \-\-userid "Juliet" \-\-creation\-time 20210628T1137+0200 \\
+   juliet.key.pgp \-\-output juliet\-new.key.pgp
+
+.TP
+\fB\-\-private\-key\-store\fR=\fIKEY_STORE\fR
+Provides parameters for private key store
+.TP
+\fB\-B\fR, \fB\-\-binary\fR
+Emits binary data
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help information
+.TP
+[\fIFILE\fR]
+Reads from FILE or stdin if omitted
+.SH EXAMPLES
+ First, this generates a key
+.PP
+.nf
+.RS
+ sq key generate \-\-userid "<juliet@example.org>" \-\-export juliet.key.pgp
+.RE
+.fi
+.PP
+ Then, this adds a User ID
+.PP
+.nf
+.RS
+ sq key userid add \-\-userid "Juliet" juliet.key.pgp \\
+.RE
+.fi
+  \-\-output juliet\-new.key.pgp
+.SH "SEE ALSO"
+For the full documentation see <https://docs.sequoia\-pgp.org/sq/>.
+.PP
+sq(1)
+sq\-armor(1)
+sq\-certify(1)
+sq\-dearmor(1)
+sq\-decrypt(1)
+sq\-encrypt(1)
+sq\-inspect(1)
+sq\-key(1)
+sq\-key\-adopt(1)
+sq\-key\-attest\-certifications(1)
+sq\-key\-extract\-cert(1)
+sq\-key\-generate(1)
+sq\-key\-password(1)
+sq\-key\-userid(1)
+sq\-key\-userid\-strip(1)
+sq\-keyring(1)
+sq\-keyserver(1)
+sq\-packet(1)
+sq\-revoke(1)
+sq\-sign(1)
+sq\-verify(1)
+sq\-wkd(1)

@@ -1,0 +1,43 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH get 1 "July 2022" "sq 0.26.0" "Sequoia Manual"
+.SH NAME
+get \- Queries for certs using Web Key Directory
+.SH SYNOPSIS
+\fBget\fR [\fB\-B\fR|\fB\-\-binary\fR] [\fB\-o\fR|\fB\-\-output\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIADDRESS\fR> 
+.SH DESCRIPTION
+Queries for certs using Web Key Directory
+.SH OPTIONS
+.TP
+\fB\-B\fR, \fB\-\-binary\fR
+Emits binary data
+.TP
+\fB\-o\fR, \fB\-\-output\fR=\fIFILE\fR
+Writes to FILE or stdout if omitted
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help information
+.TP
+<\fIADDRESS\fR>
+Queries a cert for ADDRESS
+.SH "SEE ALSO"
+For the full documentation see <https://docs.sequoia\-pgp.org/sq/>.
+.PP
+sq(1)
+sq\-armor(1)
+sq\-certify(1)
+sq\-dearmor(1)
+sq\-decrypt(1)
+sq\-encrypt(1)
+sq\-inspect(1)
+sq\-key(1)
+sq\-keyring(1)
+sq\-keyserver(1)
+sq\-packet(1)
+sq\-revoke(1)
+sq\-sign(1)
+sq\-verify(1)
+sq\-wkd(1)
+sq\-wkd\-direct\-url(1)
+sq\-wkd\-generate(1)
+sq\-wkd\-url(1)

@@ -1,0 +1,66 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH generate 1 "July 2022" "sq 0.26.0" "Sequoia Manual"
+.SH NAME
+generate \- Generates a Web Key Directory for the given domain and keys.
+.SH SYNOPSIS
+\fBgenerate\fR [\fB\-d\fR|\fB\-\-direct\-method\fR] [\fB\-s\fR|\fB\-\-skip\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIWEB\-ROOT\fR> <\fIFQDN\fR> [\fICERT\-RING\fR] 
+.SH DESCRIPTION
+Generates a Web Key Directory for the given domain and keys.  If the WKD exists, the new keys will be inserted and it is updated and existing ones will be updated. 
+.PP
+.PP
+.PP
+        A WKD is per domain, and can be queried using the advanced or the direct method. The advanced method uses a URL with a subdomain \*(Aqopenpgpkey\*(Aq. As per the specification, the advanced method is to be preferred. The direct method may only be used if the subdomain doesn\*(Aqt exist. The advanced method allows web key directories for several domains on one web server. 
+.PP
+.PP
+.PP
+        The contents of the generated WKD must be copied to a web server so that they are accessible under https://openpgpkey.example.com/.well\-known/openpgp/... for the advanced version, and https://example.com/.well\-known/openpgp/... for the direct version. sq does not copy files to the web server.
+.SH OPTIONS
+.TP
+\fB\-d\fR, \fB\-\-direct\-method\fR
+Uses the direct method [default: advanced method]
+.TP
+\fB\-s\fR, \fB\-\-skip\fR
+Skips certificates that do not have User IDs for given domain.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help information
+.TP
+<\fIWEB\-ROOT\fR>
+Writes the WKD to WEB\-ROOT. Transfer this directory to the webserver.
+.TP
+<\fIFQDN\fR>
+Generates a WKD for a fully qualified domain name for email
+.TP
+[\fICERT\-RING\fR]
+Adds certificates from CERT\-RING to the WKD
+.SH EXAMPLES
+ Generate a WKD in /tmp/wkdroot from certs.pgp for example.com.
+.PP
+.nf
+.RS
+ sq wkd generate /tmp/wkdroot example.com certs.ppg
+.RE
+.fi
+.SH "SEE ALSO"
+For the full documentation see <https://docs.sequoia\-pgp.org/sq/>.
+.PP
+sq(1)
+sq\-armor(1)
+sq\-autocrypt(1)
+sq\-certify(1)
+sq\-dearmor(1)
+sq\-decrypt(1)
+sq\-encrypt(1)
+sq\-inspect(1)
+sq\-key(1)
+sq\-keyring(1)
+sq\-keyserver(1)
+sq\-packet(1)
+sq\-revoke(1)
+sq\-sign(1)
+sq\-verify(1)
+sq\-wkd(1)
+sq\-wkd\-direct\-url(1)
+sq\-wkd\-get(1)
+sq\-wkd\-url(1)

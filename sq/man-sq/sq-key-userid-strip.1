@@ -1,0 +1,87 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH strip 1 "July 2022" "sq 0.26.0" "Sequoia Manual"
+.SH NAME
+strip \- Strips a User ID
+.SH SYNOPSIS
+\fBstrip\fR [\fB\-o\fR|\fB\-\-output\fR] [\fB\-u\fR|\fB\-\-userid\fR] [\fB\-B\fR|\fB\-\-binary\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fIFILE\fR] 
+.SH DESCRIPTION
+Strips a User ID
+.PP
+Note that this operation does not reliably remove User IDs from a
+certificate that has already been disseminated! (OpenPGP software
+typically appends new information it receives about a certificate
+to its local copy of that certificate.  Systems that have obtained
+a copy of your certificate with the User ID that you are trying to
+strip will not drop that User ID from their copy.)
+.PP
+In most cases, you will want to use the \*(Aqsq revoke userid\*(Aq operation
+instead.  That issues a revocation for a User ID, which can be used to mark
+the User ID as invalidated.
+.PP
+However, this operation can be useful in very specific cases, in particular:
+to remove a mistakenly added User ID before it has been uploaded to key
+servers or otherwise shared.
+.PP
+Stripping a User ID may change how a certificate is interpreted.  This
+is because information about the certificate like algorithm preferences,
+the primary key\*(Aqs key flags, etc. is stored in the User ID\*(Aqs binding
+signature.
+.SH OPTIONS
+.TP
+\fB\-o\fR, \fB\-\-output\fR=\fIFILE\fR
+Writes to FILE or stdout if omitted
+.TP
+\fB\-u\fR, \fB\-\-userid\fR=\fIUSERID\fR
+The User IDs to strip.  Values must exactly match a User ID.
+.TP
+\fB\-B\fR, \fB\-\-binary\fR
+Emits binary data
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help information
+.TP
+[\fIFILE\fR]
+Reads from FILE or stdin if omitted
+.SH EXAMPLES
+ First, this generates a key
+.PP
+.nf
+.RS
+ sq key generate \-\-userid "<juliet@example.org>" \-\-export juliet.key.pgp
+.RE
+.fi
+.PP
+ Then, this strips a User ID
+.PP
+.nf
+.RS
+ sq key userid strip \-\-userid "<juliet@example.org>" \\
+.RE
+.fi
+  \-\-output juliet\-new.key.pgp juliet.key.pgp
+.SH "SEE ALSO"
+For the full documentation see <https://docs.sequoia\-pgp.org/sq/>.
+.PP
+sq(1)
+sq\-armor(1)
+sq\-certify(1)
+sq\-dearmor(1)
+sq\-decrypt(1)
+sq\-encrypt(1)
+sq\-inspect(1)
+sq\-key(1)
+sq\-key\-adopt(1)
+sq\-key\-attest\-certifications(1)
+sq\-key\-extract\-cert(1)
+sq\-key\-generate(1)
+sq\-key\-password(1)
+sq\-key\-userid(1)
+sq\-key\-userid\-add(1)
+sq\-keyring(1)
+sq\-keyserver(1)
+sq\-packet(1)
+sq\-revoke(1)
+sq\-sign(1)
+sq\-verify(1)
+sq\-wkd(1)

@@ -1,54 +1,65 @@
-.TH SQ-KEYRING-SPLIT "1" "MARCH 2021" "0.24.0 (SEQUOIA-OPENPGP 1.0.0)" "USER COMMANDS" 5
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH split 1 "July 2022" "sq 0.26.0" "Sequoia Manual"
 .SH NAME
-sq\-keyring\-split \- Splits a keyring into individual keys
-
+split \- Splits a keyring into individual keys
+.SH SYNOPSIS
+\fBsplit\fR [\fB\-p\fR|\fB\-\-prefix\fR] [\fB\-B\fR|\fB\-\-binary\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fIFILE\fR] 
+.SH DESCRIPTION
+Splits a keyring into individual keys
+.PP
 Splitting up a keyring into individual keys helps with curating a
 keyring.
-
+.PP
 The converse operation is "sq keyring join".
-
-.SH SYNOPSIS
-\fBsq keyring split\fR [FLAGS] [OPTIONS] [\-\-] [FILE]
-.SH FLAGS
+.SH OPTIONS
 .TP
-\fB\-h\fR, \fB\-\-help\fR
-Prints help information
-
+\fB\-p\fR, \fB\-\-prefix\fR=\fIPREFIX\fR
+Writes to files with PREFIX [defaults: "FILE\-" if FILE is set, or "output\-" if read from stdin]
 .TP
 \fB\-B\fR, \fB\-\-binary\fR
 Emits binary data
-.SH OPTIONS
 .TP
-\fB\-p\fR, \fB\-\-prefix\fR FILE
-Writes to files with prefix FILE [defaults to the input filename with a dash, or "output" if keyring is read from stdin]
-.SH ARGS
+\fB\-h\fR, \fB\-\-help\fR
+Print help information
 .TP
-FILE
+[\fIFILE\fR]
 Reads from FILE or stdin if omitted
 .SH EXAMPLES
-.TP
-# Split all certs
-\fB$ sq keyring split certs.pgp\fR
-.TP
-# Split all certs, merging them first to avoid duplicates
-\fB$ sq keyring merge certs.pgp | sq keyring split\fR
-
-.SH SEE ALSO
-For the full documentation see <https://docs.sequoia\-pgp.org/sq/>.
-
-.ad l
-.nh
-sq(1), sq\-armor(1), sq\-certify(1), sq\-dearmor(1), sq\-decrypt(1), sq\-encrypt(1), sq\-inspect(1), sq\-key(1), sq\-key\-adopt(1), sq\-key\-attest\-certifications(1), sq\-key\-extract\-cert(1), sq\-key\-generate(1), sq\-keyring(1), sq\-keyring\-filter(1), sq\-keyring\-join(1), sq\-keyring\-list(1), sq\-keyring\-merge(1), sq\-keyring\-split(1), sq\-packet(1), sq\-sign(1), sq\-verify(1)
-
-
-.SH AUTHORS
-.P
-.RS 2
+ Split all certs
+.PP
 .nf
-Azul <azul@sequoia\-pgp.org>
-Igor Matuszewski <igor@sequoia\-pgp.org>
-Justus Winter <justus@sequoia\-pgp.org>
-Kai Michaelis <kai@sequoia\-pgp.org>
-Neal H. Walfield <neal@sequoia\-pgp.org>
-Nora Widdecke <nora@sequoia\-pgp.org>
-Wiktor Kwapisiewicz <wiktor@sequoia\-pgp.org>
+.RS
+ sq keyring split certs.pgp
+.RE
+.fi
+.PP
+ Split all certs, merging them first to avoid duplicates
+.PP
+.nf
+.RS
+ sq keyring merge certs.pgp | sq keyring split
+.RE
+.fi
+.SH "SEE ALSO"
+For the full documentation see <https://docs.sequoia\-pgp.org/sq/>.
+.PP
+sq(1)
+sq\-armor(1)
+sq\-certify(1)
+sq\-dearmor(1)
+sq\-decrypt(1)
+sq\-encrypt(1)
+sq\-inspect(1)
+sq\-key(1)
+sq\-keyring(1)
+sq\-keyring\-filter(1)
+sq\-keyring\-join(1)
+sq\-keyring\-list(1)
+sq\-keyring\-merge(1)
+sq\-keyserver(1)
+sq\-packet(1)
+sq\-revoke(1)
+sq\-sign(1)
+sq\-verify(1)
+sq\-wkd(1)

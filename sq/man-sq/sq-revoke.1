@@ -1,0 +1,81 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH revoke 1 "July 2022" "sq 0.26.0" "Sequoia Manual"
+.SH NAME
+revoke \- Generates revocation certificates
+.SH SYNOPSIS
+\fBrevoke\fR [\fB\-h\fR|\fB\-\-help\fR] <\fIsubcommands\fR>
+.SH DESCRIPTION
+Generates revocation certificates.
+.PP
+A revocation certificate indicates that a certificate, a subkey, a
+User ID, or a signature should not be used anymore.
+.PP
+A revocation certificate includes two fields, a type and a
+human\-readable explanation, which allows the issuer to indicate why
+the revocation certificate was issued.  It is important to set the
+type field accurately as this allows an OpenPGP implementation to
+better reason about artifacts whose validity relies on the revoked
+object.  For instance, if a certificate is retired, it is reasonable
+to consider signatures that it made prior to its retirement as still
+being valid.  However, if a certificate\*(Aqs secret key material is
+compromised, any signatures that it made should be considered
+potentially forged, as they could have been made by an attacker and
+backdated.
+.PP
+As the intent of a revocation certificate is to stop others from using
+a certificate, it is necessary to distribute the revocation
+certificate.  One effective way to do this is to upload the revocation
+certificate to a keyserver.
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help information
+.SH SUBCOMMANDS
+.TP
+revoke\-certificate(1)
+Revoke a certificate
+.TP
+revoke\-subkey(1)
+Revoke a subkey
+.TP
+revoke\-userid(1)
+Revoke a User ID
+.SH EXAMPLES
+ Revoke a certificate.
+.PP
+.nf
+.RS
+ sq revoke certificate \-\-time 20220101 \-\-certificate juliet.pgp \\
+.RE
+.fi
+  compromised "My parents went through my things, and found my backup."
+.PP
+ Revoke a User ID.
+.PP
+.nf
+.RS
+ sq revoke userid \-\-time 20220101 \-\-certificate juliet.pgp \\
+.RE
+.fi
+  "Juliet <juliet@capuleti.it>" retired "I\*(Aqve left the family."
+.SH "SEE ALSO"
+For the full documentation see <https://docs.sequoia\-pgp.org/sq/>.
+.PP
+sq(1)
+sq\-armor(1)
+sq\-certify(1)
+sq\-dearmor(1)
+sq\-decrypt(1)
+sq\-encrypt(1)
+sq\-inspect(1)
+sq\-key(1)
+sq\-keyring(1)
+sq\-keyserver(1)
+sq\-packet(1)
+sq\-revoke\-certificate(1)
+sq\-revoke\-subkey(1)
+sq\-revoke\-userid(1)
+sq\-sign(1)
+sq\-verify(1)
+sq\-wkd(1)

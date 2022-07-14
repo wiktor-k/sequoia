@@ -1,0 +1,50 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH wkd 1 "July 2022" "sq 0.26.0" "Sequoia Manual"
+.SH NAME
+wkd \- Interacts with Web Key Directories
+.SH SYNOPSIS
+\fBwkd\fR [\fB\-n\fR|\fB\-\-network\-policy\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIsubcommands\fR>
+.SH DESCRIPTION
+Interacts with Web Key Directories
+.SH OPTIONS
+.TP
+\fB\-n\fR, \fB\-\-network\-policy\fR=\fINETWORK\-POLICY\fR [default: encrypted] [possible values: offline, anonymized, encrypted, insecure]
+Sets the network policy to use
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help information
+.SH SUBCOMMANDS
+.TP
+wkd\-url(1)
+Prints the advanced Web Key Directory URL of an email address.
+.TP
+wkd\-direct\-url(1)
+Prints the direct Web Key Directory URL of an email address.
+.TP
+wkd\-get(1)
+Queries for certs using Web Key Directory
+.TP
+wkd\-generate(1)
+Generates a Web Key Directory for the given domain and keys.
+.SH "SEE ALSO"
+For the full documentation see <https://docs.sequoia\-pgp.org/sq/>.
+.PP
+sq(1)
+sq\-armor(1)
+sq\-certify(1)
+sq\-dearmor(1)
+sq\-decrypt(1)
+sq\-encrypt(1)
+sq\-inspect(1)
+sq\-key(1)
+sq\-keyring(1)
+sq\-keyserver(1)
+sq\-packet(1)
+sq\-revoke(1)
+sq\-sign(1)
+sq\-verify(1)
+sq\-wkd\-direct\-url(1)
+sq\-wkd\-generate(1)
+sq\-wkd\-get(1)
+sq\-wkd\-url(1)

@@ -1,86 +1,87 @@
-.TH SQ-SIGN "1" "MARCH 2021" "0.24.0 (SEQUOIA-OPENPGP 1.0.0)" "USER COMMANDS" 5
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH sign 1 "July 2022" "sq 0.26.0" "Sequoia Manual"
 .SH NAME
-sq\-sign \- Signs messages or data files
-
+sign \- Signs messages or data files
+.SH SYNOPSIS
+\fBsign\fR [\fB\-o\fR|\fB\-\-output\fR] [\fB\-B\fR|\fB\-\-binary\fR] [\fB\-\-private\-key\-store\fR] [\fB\-\-detached\fR] [\fB\-\-cleartext\-signature\fR] [\fB\-a\fR|\fB\-\-append\fR] [\fB\-n\fR|\fB\-\-notarize\fR] [\fB\-\-merge\fR] [\fB\-\-signer\-key\fR] [\fB\-t\fR|\fB\-\-time\fR] [\fB\-\-notation\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fIFILE\fR] 
+.SH DESCRIPTION
+Signs messages or data files
+.PP
 Creates signed messages or detached signatures.  Detached signatures
 are often used to sign software packages.
-
+.PP
 The converse operation is "sq verify".
-
-.SH SYNOPSIS
-\fBsq sign\fR [FLAGS] [OPTIONS] [\-\-] [FILE]
-.SH FLAGS
+.SH OPTIONS
 .TP
-\fB\-h\fR, \fB\-\-help\fR
-Prints help information
-
+\fB\-o\fR, \fB\-\-output\fR=\fIFILE\fR
+Writes to FILE or stdout if omitted
 .TP
 \fB\-B\fR, \fB\-\-binary\fR
 Emits binary data
-
+.TP
+\fB\-\-private\-key\-store\fR=\fIKEY_STORE\fR
+Provides parameters for private key store
 .TP
 \fB\-\-detached\fR
 Creates a detached signature
-
 .TP
 \fB\-\-cleartext\-signature\fR
 Creates a cleartext signature
-
 .TP
 \fB\-a\fR, \fB\-\-append\fR
 Appends a signature to existing signature
-
 .TP
 \fB\-n\fR, \fB\-\-notarize\fR
 Signs a message and all existing signatures
-.SH OPTIONS
 .TP
-\fB\-o\fR, \fB\-\-output\fR FILE
-Writes to FILE or stdout if omitted
-
-.TP
-\fB\-\-merge\fR SIGNED\-MESSAGE
+\fB\-\-merge\fR=\fISIGNED\-MESSAGE\fR
 Merges signatures from the input and SIGNED\-MESSAGE
-
 .TP
-\fB\-\-signer\-key\fR KEY
+\fB\-\-signer\-key\fR=\fIKEY\fR
 Signs using KEY
-
 .TP
-\fB\-t\fR, \fB\-\-time\fR TIME
-Chooses keys valid at the specified time and sets the signature's creation time
-
+\fB\-t\fR, \fB\-\-time\fR=\fITIME\fR
+Chooses keys valid at the specified time and sets the signature\*(Aqs creation time
 .TP
-\fB\-\-notation\fR NAME
-Adds a notation to the certification.  A user\-defined notation's name must be of the form "name@a.domain.you.control.org". If the notation's name starts with a !, then the notation is marked as being critical.  If a consumer of a signature doesn't understand a critical notation, then it will ignore the signature.  The notation is marked as being human readable.
-.SH ARGS
+\fB\-\-notation\fR=\fINAME VALUE\fR
+Adds a notation to the certification.  A user\-defined notation\*(Aqs name must be of the form "name@a.domain.you.control.org". If the notation\*(Aqs name starts with a !, then the notation is marked as being critical.  If a consumer of a signature doesn\*(Aqt understand a critical notation, then it will ignore the signature.  The notation is marked as being human readable.
 .TP
-FILE
+\fB\-h\fR, \fB\-\-help\fR
+Print help information
+.TP
+[\fIFILE\fR]
 Reads from FILE or stdin if omitted
 .SH EXAMPLES
-.TP
-# Create a signed message
-\fB$ sq sign \-\-signer\-key juliet.pgp message.txt\fR
-.TP
-# Create a detached signature
-\fB$ sq sign \-\-detached \-\-signer\-key juliet.pgp message.txt\fR
-
-.SH SEE ALSO
-For the full documentation see <https://docs.sequoia\-pgp.org/sq/>.
-
-.ad l
-.nh
-sq(1), sq\-armor(1), sq\-certify(1), sq\-dearmor(1), sq\-decrypt(1), sq\-encrypt(1), sq\-inspect(1), sq\-key(1), sq\-keyring(1), sq\-packet(1), sq\-sign(1), sq\-verify(1)
-
-
-.SH AUTHORS
-.P
-.RS 2
+ Create a signed message
+.PP
 .nf
-Azul <azul@sequoia\-pgp.org>
-Igor Matuszewski <igor@sequoia\-pgp.org>
-Justus Winter <justus@sequoia\-pgp.org>
-Kai Michaelis <kai@sequoia\-pgp.org>
-Neal H. Walfield <neal@sequoia\-pgp.org>
-Nora Widdecke <nora@sequoia\-pgp.org>
-Wiktor Kwapisiewicz <wiktor@sequoia\-pgp.org>
+.RS
+ sq sign \-\-signer\-key juliet.pgp message.txt
+.RE
+.fi
+.PP
+ Create a detached signature
+.PP
+.nf
+.RS
+ sq sign \-\-detached \-\-signer\-key juliet.pgp message.txt
+.RE
+.fi
+.SH "SEE ALSO"
+For the full documentation see <https://docs.sequoia\-pgp.org/sq/>.
+.PP
+sq(1)
+sq\-armor(1)
+sq\-certify(1)
+sq\-dearmor(1)
+sq\-decrypt(1)
+sq\-encrypt(1)
+sq\-inspect(1)
+sq\-key(1)
+sq\-keyring(1)
+sq\-keyserver(1)
+sq\-packet(1)
+sq\-revoke(1)
+sq\-verify(1)
+sq\-wkd(1)

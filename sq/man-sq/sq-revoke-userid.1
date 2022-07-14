@@ -1,0 +1,77 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH userid 1 "July 2022" "sq 0.26.0" "Sequoia Manual"
+.SH NAME
+userid \- Revoke a User ID
+.SH SYNOPSIS
+\fBuserid\fR [\fB\-\-certificate\fR] [\fB\-\-revocation\-key\fR] [\fB\-\-private\-key\-store\fR] [\fB\-t\fR|\fB\-\-time\fR] [\fB\-\-notation\fR] [\fB\-B\fR|\fB\-\-binary\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIUSERID\fR> <\fIREASON\fR> <\fIMESSAGE\fR> 
+.SH DESCRIPTION
+Revokes a User ID
+.PP
+Creates a revocation certificate for a User ID.
+.PP
+If "\-\-revocation\-key" is provided, then that key is used to create the signature.  If that key is different from the certificate being revoked, this creates a third\-party revocation.  This is normally only useful if the owner of the certificate designated the key to be a designated revoker.
+.PP
+If "\-\-revocation\-key" is not provided, then the certificate must include a certification\-capable key.
+.SH OPTIONS
+.TP
+\fB\-\-certificate\fR=\fIFILE\fR
+Reads the certificate to revoke from FILE or stdin, if omitted.  It is an error for the file to contain more than one certificate.
+.TP
+\fB\-\-revocation\-key\fR=\fIKEY\fR
+Signs the revocation certificate using KEY.  If the key is different from the certificate, this creates a third\-party revocation.  If this option is not provided, and the certificate includes secret key material, then that key is used to sign the revocation certificate.
+.TP
+\fB\-\-private\-key\-store\fR=\fIKEY_STORE\fR
+Provides parameters for private key store
+.TP
+\fB\-t\fR, \fB\-\-time\fR=\fITIME\fR
+Chooses keys valid at the specified time and sets the revocation certificate\*(Aqs creation time
+.TP
+\fB\-\-notation\fR=\fINAME VALUE\fR
+Adds a notation to the certification.  A user\-defined notation\*(Aqs name must be of the form "name@a.domain.you.control.org". If the notation\*(Aqs name starts with a !, then the notation is marked as being critical.  If a consumer of a signature doesn\*(Aqt understand a critical notation, then it will ignore the signature.  The notation is marked as being human readable.
+.TP
+\fB\-B\fR, \fB\-\-binary\fR
+Emits binary data
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help information
+.TP
+<\fIUSERID\fR>
+The User ID to revoke.  By default, this must exactly match a self\-signed User ID.  Use \-\-force to generate a revocation certificate for a User ID, which is not self signed.
+.TP
+<\fIREASON\fR>
+The reason for the revocation.  This must be either: retired, or unspecified:
+
+  \- retired means that this User ID is no longer valid.  This is
+    appropriate when someone leaves an organisation, and the
+    organisation does not have their secret key material.  For
+    instance, if someone was part of Debian and retires, they would
+    use this to indicate that a Debian\-specific User ID is no longer
+    valid.
+
+  \- unspecified means that a different reason applies.
+
+If the reason happened in the past, you should specify that using the \-\-time argument.  This allows OpenPGP implementations to more accurately reason about objects whose validity depends on the validity of a User ID.
+.TP
+<\fIMESSAGE\fR>
+A short, explanatory text that is shown to a viewer of the revocation certificate.  It explains why the certificate has been revoked.  For instance, if Alice has created a new key, she would generate a \*(Aqsuperseded\*(Aq revocation certificate for her old key, and might include the message "I\*(Aqve created a new certificate, FINGERPRINT, please use that in the future."
+.SH "SEE ALSO"
+For the full documentation see <https://docs.sequoia\-pgp.org/sq/>.
+.PP
+sq(1)
+sq\-armor(1)
+sq\-certify(1)
+sq\-dearmor(1)
+sq\-decrypt(1)
+sq\-encrypt(1)
+sq\-inspect(1)
+sq\-key(1)
+sq\-keyring(1)
+sq\-keyserver(1)
+sq\-packet(1)
+sq\-revoke(1)
+sq\-revoke\-certificate(1)
+sq\-revoke\-subkey(1)
+sq\-sign(1)
+sq\-verify(1)
+sq\-wkd(1)

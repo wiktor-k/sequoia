@@ -1,0 +1,45 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH keyserver 1 "July 2022" "sq 0.26.0" "Sequoia Manual"
+.SH NAME
+keyserver \- Interacts with keyservers
+.SH SYNOPSIS
+\fBkeyserver\fR [\fB\-p\fR|\fB\-\-policy\fR] [\fB\-s\fR|\fB\-\-server\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fIsubcommands\fR>
+.SH DESCRIPTION
+Interacts with keyservers
+.SH OPTIONS
+.TP
+\fB\-p\fR, \fB\-\-policy\fR=\fINETWORK\-POLICY\fR [default: encrypted] [possible values: offline, anonymized, encrypted, insecure]
+Sets the network policy to use
+.TP
+\fB\-s\fR, \fB\-\-server\fR=\fIURI\fR
+Sets the keyserver to use
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help information
+.SH SUBCOMMANDS
+.TP
+keyserver\-get(1)
+Retrieves a key
+.TP
+keyserver\-send(1)
+Sends a key
+.SH "SEE ALSO"
+For the full documentation see <https://docs.sequoia\-pgp.org/sq/>.
+.PP
+sq(1)
+sq\-armor(1)
+sq\-certify(1)
+sq\-dearmor(1)
+sq\-decrypt(1)
+sq\-encrypt(1)
+sq\-inspect(1)
+sq\-key(1)
+sq\-keyring(1)
+sq\-keyserver\-get(1)
+sq\-keyserver\-send(1)
+sq\-packet(1)
+sq\-revoke(1)
+sq\-sign(1)
+sq\-verify(1)
+sq\-wkd(1)
