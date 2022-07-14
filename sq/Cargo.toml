@@ -29,7 +29,7 @@ maintenance = { status = "actively-developed" }
 buffered-reader = { path = "../buffered-reader", version = "1.0.0", default-features = false, features = ["compression-deflate"] }
 sequoia-openpgp = { path = "../openpgp", version = "1.1", default-features = false, features = ["compression-deflate"] }
 sequoia-autocrypt = { path = "../autocrypt", version = "0.24", default-features = false, optional = true }
-sequoia-net = { path = "../net", version = "0.24", default-features = false }
+sequoia-net = { path = "../net", version = "0.25", default-features = false }
 anyhow = "1.0.18"
 chrono = "0.4.10"
 clap = { version = "3", features = ["derive", "wrap_help"] }
@@ -45,7 +45,7 @@ clap = { version = "3", features = ["derive", "wrap_help"] }
 clap_complete = "3"
 chrono = "0.4.10"
 sequoia-openpgp = { path = "../openpgp", version = "1.0.0", default-features = false }
-sequoia-net = { path = "../net", version = "0.24", default-features = false }
+sequoia-net = { path = "../net", version = "0.25", default-features = false }
 subplot-build = "0.4.0"
 cfg-if = "1"
 
