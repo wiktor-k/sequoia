@@ -82,7 +82,7 @@ SUBCOMMANDS:
             Print this message or the help of the given subcommand(s)
 ```
 
-## Subcommand encrypt
+## Subcommand sq encrypt
 
 ```text
 Encrypts a message
@@ -157,7 +157,7 @@ $ sq encrypt --recipient-cert romeo.pgp --signer-key juliet.pgp message.txt
 $ sq encrypt --symmetric message.txt
 ```
 
-## Subcommand decrypt
+## Subcommand sq decrypt
 
 ```text
 Decrypts a message
@@ -232,7 +232,7 @@ $ sq decrypt --recipient-key juliet.pgp --signer-cert romeo.pgp ciphertext.pgp
 $ sq decrypt ciphertext.pgp
 ```
 
-## Subcommand sign
+## Subcommand sq sign
 
 ```text
 Signs messages or data files
@@ -301,7 +301,7 @@ $ sq sign --signer-key juliet.pgp message.txt
 $ sq sign --detached --signer-key juliet.pgp message.txt
 ```
 
-## Subcommand verify
+## Subcommand sq verify
 
 ```text
 Verifies signed messages or detached signatures
@@ -362,7 +362,7 @@ If you are looking for a standalone program to verify detached
 signatures, consider using sequoia-sqv.
 ```
 
-## Subcommand key
+## Subcommand sq key
 
 ```text
 Manages keys
@@ -399,7 +399,7 @@ SUBCOMMANDS:
             Print this message or the help of the given subcommand(s)
 ```
 
-### Subcommand key generate
+### Subcommand sq key generate
 
 ```text
 Generates a new key
@@ -504,7 +504,7 @@ $ sq key generate --userid "<juliet@example.org>" --with-password
 $ sq key generate --userid "<juliet@example.org>" --userid "Juliet Capulet"
 ```
 
-### Subcommand key password
+### Subcommand sq key password
 
 ```text
 Changes password protecting secrets
@@ -547,7 +547,7 @@ $ sq key password < juliet.key.pgp > juliet.encrypted_key.pgp
 $ sq key password --clear < juliet.encrypted_key.pgp > juliet.decrypted_key.pgp
 ```
 
-### Subcommand key userid
+### Subcommand sq key userid
 
 ```text
 Manages User IDs
@@ -570,7 +570,7 @@ SUBCOMMANDS:
             Print this message or the help of the given subcommand(s)
 ```
 
-#### Subcommand key userid add
+#### Subcommand sq key userid add
 
 ```text
 Adds a User ID
@@ -628,7 +628,7 @@ $ sq key userid add --userid "Juliet" juliet.key.pgp \
   --output juliet-new.key.pgp
 ```
 
-#### Subcommand key userid strip
+#### Subcommand sq key userid strip
 
 ```text
 Strips a User ID
@@ -683,7 +683,7 @@ $ sq key userid strip --userid "<juliet@example.org>" \
   --output juliet-new.key.pgp juliet.key.pgp
 ```
 
-### Subcommand key extract-cert
+### Subcommand sq key extract cert
 
 ```text
 Converts a key to a cert
@@ -719,7 +719,7 @@ $ sq key generate --userid "<juliet@example.org>" --export juliet.key.pgp
 $ sq key extract-cert --output juliet.cert.pgp juliet.key.pgp
 ```
 
-### Subcommand key attest-certifications
+### Subcommand sq key attest certifications
 
 ```text
 
@@ -767,7 +767,7 @@ $ sq key attest-certifications juliet.pgp
 $ sq key attest-certifications --none juliet.pgp
 ```
 
-### Subcommand key adopt
+### Subcommand sq key adopt
 
 ```text
 Binds keys from one certificate to another
@@ -811,7 +811,7 @@ EXAMPLES:
 $ sq key adopt --keyring juliet-old.pgp --key 0123456789ABCDEF -- juliet-new.pgp
 ```
 
-## Subcommand keyring
+## Subcommand sq keyring
 
 ```text
 Manages collections of keys or certs
@@ -846,7 +846,7 @@ SUBCOMMANDS:
             Print this message or the help of the given subcommand(s)
 ```
 
-### Subcommand keyring list
+### Subcommand sq keyring list
 
 ```text
 Lists keys in a keyring
@@ -878,7 +878,7 @@ $ sq keyring list certs.pgp
 $ sq keyring filter --domain example.org certs.pgp | sq keyring list
 ```
 
-### Subcommand keyring split
+### Subcommand sq keyring split
 
 ```text
 Splits a keyring into individual keys
@@ -915,7 +915,7 @@ $ sq keyring split certs.pgp
 $ sq keyring merge certs.pgp | sq keyring split
 ```
 
-### Subcommand keyring join
+### Subcommand sq keyring join
 
 ```text
 Joins keys or keyrings into a single keyring
@@ -948,7 +948,7 @@ EXAMPLES:
 $ sq keyring join juliet.pgp romeo.pgp alice.pgp
 ```
 
-### Subcommand keyring merge
+### Subcommand sq keyring merge
 
 ```text
 Merges keys or keyrings into a single keyring
@@ -981,7 +981,7 @@ EXAMPLES:
 $ sq keyring merge certs.pgp romeo-updates.pgp
 ```
 
-### Subcommand keyring filter
+### Subcommand sq keyring filter
 
 ```text
 Joins keys into a keyring applying a filter
@@ -1065,7 +1065,7 @@ $ sq keyring filter --domain example.org keys.pgp | \
 $ sq keyring filter --domain example.org --prune-certs certs.pgp
 ```
 
-## Subcommand certify
+## Subcommand sq certify
 
 ```text
 Certifies a User ID for a Certificate
@@ -1184,7 +1184,7 @@ EXAMPLES:
 $ sq certify juliet.pgp romeo.pgp "<romeo@example.org>"
 ```
 
-## Subcommand autocrypt
+## Subcommand sq autocrypt
 
 ```text
 Communicates certificates using Autocrypt
@@ -1212,7 +1212,7 @@ SUBCOMMANDS:
             Print this message or the help of the given subcommand(s)
 ```
 
-### Subcommand autocrypt decode
+### Subcommand sq autocrypt decode
 
 ```text
 Reads Autocrypt-encoded certificates
@@ -1245,7 +1245,7 @@ EXAMPLES:
 $ sq autocrypt decode autocrypt.eml
 ```
 
-### Subcommand autocrypt encode-sender
+### Subcommand sq autocrypt encode sender
 
 ```text
 Encodes a certificate into an Autocrypt header
@@ -1293,7 +1293,7 @@ $ sq autocrypt encode-sender --email juliet@example.org juliet.pgp
 $ sq autocrypt encode-sender --prefer-encrypt mutual juliet.pgp
 ```
 
-## Subcommand keyserver
+## Subcommand sq keyserver
 
 ```text
 Interacts with keyservers
@@ -1306,19 +1306,24 @@ OPTIONS:
             Print help information
 
     -p, --policy <NETWORK-POLICY>
-            Sets the network policy to use [default: encrypted] [possible
-            values: offline, anonymized, encrypted, insecure]
+            Sets the network policy to use
+
+            [default: encrypted]
+            [possible values: offline, anonymized, encrypted, insecure]
 
     -s, --server <URI>
             Sets the keyserver to use
 
 SUBCOMMANDS:
-    get     Retrieves a key
-    help    Print this message or the help of the given subcommand(s)
-    send    Sends a key
+    get
+            Retrieves a key
+    help
+            Print this message or the help of the given subcommand(s)
+    send
+            Sends a key
 ```
 
-### Subcommand keyserver get
+### Subcommand sq keyserver get
 
 ```text
 Retrieves a key
@@ -1327,16 +1332,22 @@ USAGE:
     sq keyserver get [OPTIONS] <QUERY>
 
 ARGS:
-    <QUERY>    Retrieve certificate(s) using QUERY. This may be a
-               fingerprint, a KeyID, or an email address.
+    <QUERY>
+            Retrieve certificate(s) using QUERY. This may be a fingerprint, a
+            KeyID, or an email address.
 
 OPTIONS:
-    -B, --binary           Emits binary data
-    -h, --help             Print help information
-    -o, --output <FILE>    Writes to FILE or stdout if omitted
+    -B, --binary
+            Emits binary data
+
+    -h, --help
+            Print help information
+
+    -o, --output <FILE>
+            Writes to FILE or stdout if omitted
 ```
 
-### Subcommand keyserver send
+### Subcommand sq keyserver send
 
 ```text
 Sends a key
@@ -1345,13 +1356,15 @@ USAGE:
     sq keyserver send [FILE]
 
 ARGS:
-    <FILE>    Reads from FILE or stdin if omitted
+    <FILE>
+            Reads from FILE or stdin if omitted
 
 OPTIONS:
-    -h, --help    Print help information
+    -h, --help
+            Print help information
 ```
 
-## Subcommand wkd
+## Subcommand sq wkd
 
 ```text
 Interacts with Web Key Directories
@@ -1361,24 +1374,28 @@ USAGE:
 
 OPTIONS:
     -n, --network-policy <NETWORK-POLICY>
-            Sets the network policy to use [default: encrypted] [possible
-            values: offline, anonymized, encrypted, insecure]
+            Sets the network policy to use
+
+            [default: encrypted]
+            [possible values: offline, anonymized, encrypted, insecure]
 
     -h, --help
             Print help information
 
 SUBCOMMANDS:
-    generate      Generates a Web Key Directory for the given domain and
-                      keys.
-    get           Queries for certs using Web Key Directory
-    direct-url    Prints the direct Web Key Directory URL of an email
-                      address.
-    url           Prints the advanced Web Key Directory URL of an email
-                      address.
-    help          Print this message or the help of the given subcommand(s)
+    generate
+            Generates a Web Key Directory for the given domain and keys.
+    get
+            Queries for certs using Web Key Directory
+    direct-url
+            Prints the direct Web Key Directory URL of an email address.
+    url
+            Prints the advanced Web Key Directory URL of an email address.
+    help
+            Print this message or the help of the given subcommand(s)
 ```
 
-### Subcommand wkd generate
+### Subcommand sq wkd generate
 
 ```text
 Generates a Web Key Directory for the given domain and keys.  If the WKD exists,
@@ -1430,7 +1447,7 @@ EXAMPLES:
 $ sq wkd generate /tmp/wkdroot example.com certs.ppg
 ```
 
-### Subcommand wkd get
+### Subcommand sq wkd get
 
 ```text
 Queries for certs using Web Key Directory
@@ -1439,15 +1456,21 @@ USAGE:
     sq wkd get [OPTIONS] <ADDRESS>
 
 ARGS:
-    <ADDRESS>    Queries a cert for ADDRESS
+    <ADDRESS>
+            Queries a cert for ADDRESS
 
 OPTIONS:
-    -B, --binary           Emits binary data
-    -h, --help             Print help information
-    -o, --output <FILE>    Writes to FILE or stdout if omitted
+    -B, --binary
+            Emits binary data
+
+    -h, --help
+            Print help information
+
+    -o, --output <FILE>
+            Writes to FILE or stdout if omitted
 ```
 
-### Subcommand wkd direct-url
+### Subcommand sq wkd direct url
 
 ```text
 Prints the direct Web Key Directory URL of an email address.
@@ -1456,13 +1479,15 @@ USAGE:
     sq wkd direct-url <ADDRESS>
 
 ARGS:
-    <ADDRESS>    Queries for ADDRESS
+    <ADDRESS>
+            Queries for ADDRESS
 
 OPTIONS:
-    -h, --help    Print help information
+    -h, --help
+            Print help information
 ```
 
-### Subcommand wkd url
+### Subcommand sq wkd url
 
 ```text
 Prints the advanced Web Key Directory URL of an email address.
@@ -1471,13 +1496,15 @@ USAGE:
     sq wkd url <ADDRESS>
 
 ARGS:
-    <ADDRESS>    Queries for ADDRESS
+    <ADDRESS>
+            Queries for ADDRESS
 
 OPTIONS:
-    -h, --help    Print help information
+    -h, --help
+            Print help information
 ```
 
-## Subcommand armor
+## Subcommand sq armor
 
 ```text
 Converts binary to ASCII
@@ -1518,7 +1545,7 @@ $ sq armor binary-juliet.pgp
 $ sq armor binary-message.pgp
 ```
 
-## Subcommand dearmor
+## Subcommand sq dearmor
 
 ```text
 Converts ASCII to binary
@@ -1554,7 +1581,7 @@ $ sq dearmor ascii-juliet.pgp
 $ sq dearmor ascii-message.pgp
 ```
 
-## Subcommand inspect
+## Subcommand sq inspect
 
 ```text
 Inspects data, like file(1)
@@ -1593,7 +1620,7 @@ $ sq inspect message.pgp
 $ sq inspect message.sig
 ```
 
-## Subcommand packet
+## Subcommand sq packet
 
 ```text
 Low-level packet manipulation
@@ -1624,7 +1651,7 @@ SUBCOMMANDS:
             Print this message or the help of the given subcommand(s)
 ```
 
-### Subcommand packet dump
+### Subcommand sq packet dump
 
 ```text
 
@@ -1676,7 +1703,7 @@ $ sq packet dump --hex juliet.pgp
 $ sq packet dump --session-key AAAABBBBCCCC... ciphertext.pgp
 ```
 
-### Subcommand packet decrypt
+### Subcommand sq packet decrypt
 
 ```text
 Unwraps an encryption container
@@ -1720,7 +1747,7 @@ EXAMPLES:
 $ sq packet decrypt --recipient-key juliet.pgp ciphertext.pgp
 ```
 
-### Subcommand packet split
+### Subcommand sq packet split
 
 ```text
 Splits a message into packets
@@ -1752,7 +1779,7 @@ EXAMPLES:
 $ sq packet split juliet.pgp
 ```
 
-### Subcommand packet join
+### Subcommand sq packet join
 
 ```text
 Joins packets split across files
@@ -1795,7 +1822,7 @@ $ sq packet split juliet.pgp
 $ sq packet join juliet.pgp-[0-3]*
 ```
 
-## Subcommand revoke
+## Subcommand sq revoke
 
 ```text
 Generates revocation certificates.
@@ -1848,7 +1875,7 @@ $ sq revoke userid --time 20220101 --certificate juliet.pgp \
   "Juliet <juliet@capuleti.it>" retired "I've left the family."
 ```
 
-### Subcommand revoke certificate
+### Subcommand sq revoke certificate
 
 ```text
 Revokes a certificate
@@ -1944,7 +1971,7 @@ OPTIONS:
             certificate's creation time
 ```
 
-### Subcommand revoke subkey
+### Subcommand sq revoke subkey
 
 ```text
 Revokes a subkey
@@ -2041,7 +2068,7 @@ OPTIONS:
             certificate's creation time
 ```
 
-### Subcommand revoke userid
+### Subcommand sq revoke userid
 
 ```text
 Revokes a User ID
@@ -2124,54 +2151,4 @@ OPTIONS:
     -t, --time <TIME>
             Chooses keys valid at the specified time and sets the revocation
             certificate's creation time
-```
-
-### Subcommand revoke EXAMPLES:
-
-```text
-
-USAGE:
-    sq revoke <SUBCOMMAND>
-
-For more information try --help
-```
-
-### Subcommand revoke #
-
-```text
-
-USAGE:
-    sq revoke <SUBCOMMAND>
-
-For more information try --help
-```
-
-### Subcommand revoke compromised
-
-```text
-
-USAGE:
-    sq revoke <SUBCOMMAND>
-
-For more information try --help
-```
-
-### Subcommand revoke #
-
-```text
-
-USAGE:
-    sq revoke <SUBCOMMAND>
-
-For more information try --help
-```
-
-### Subcommand revoke "Juliet
-
-```text
-
-USAGE:
-    sq revoke <SUBCOMMAND>
-
-For more information try --help
 ```
