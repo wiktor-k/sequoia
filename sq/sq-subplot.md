@@ -1546,6 +1546,21 @@ email address, and a subdirectory named after the email domain.
 given an installed sq
 when I run sq wkd url me@example.com
 then stdout contains "https://openpgpkey.example.com/.well-known/openpgpkey/example.com/hu/s8y7oh5xrdpu9psba3i5ntk64ohouhga?l=me"
+
+when I run sq --output-format=json wkd url me@example.com
+then stdout, as JSON, matches pattern wkd.json
+~~~
+
+~~~{#wkd.json .file .json .numberLines}
+{
+  "sq_output_version": {
+      "major": 0,
+      "minor": 0,
+      "patch": 0
+  },
+  "advanced_url": "https://openpgpkey.example.com/.well-known/openpgpkey/example.com/hu/s8y7oh5xrdpu9psba3i5ntk64ohouhga?l=me",
+  "direct_url": "https://example.com/.well-known/openpgpkey/hu/s8y7oh5xrdpu9psba3i5ntk64ohouhga?l=me"
+}
 ~~~
 
 ## Direct WKD URL
@@ -1558,6 +1573,9 @@ The direct URL lacks the subdomain and subdirectory of an advanced one.
 given an installed sq
 when I run sq wkd direct-url me@example.com
 then stdout contains "https://example.com/.well-known/openpgpkey/hu/s8y7oh5xrdpu9psba3i5ntk64ohouhga?l=me"
+
+when I run sq --output-format=json wkd url me@example.com
+then stdout, as JSON, matches pattern wkd.json
 ~~~
 
 ## Email local part in original form in WKD URL
