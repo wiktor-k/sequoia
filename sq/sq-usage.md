@@ -1360,37 +1360,22 @@ USAGE:
     sq wkd [OPTIONS] <SUBCOMMAND>
 
 OPTIONS:
-    -h, --help
-            Print help information
-
     -n, --network-policy <NETWORK-POLICY>
             Sets the network policy to use [default: encrypted] [possible
             values: offline, anonymized, encrypted, insecure]
 
+    -h, --help
+            Print help information
+
 SUBCOMMANDS:
-    direct-url    Prints the direct Web Key Directory URL of an email
-                      address.
     generate      Generates a Web Key Directory for the given domain and
                       keys.
     get           Queries for certs using Web Key Directory
-    help          Print this message or the help of the given subcommand(s)
+    direct-url    Prints the direct Web Key Directory URL of an email
+                      address.
     url           Prints the advanced Web Key Directory URL of an email
                       address.
-```
-
-### Subcommand wkd direct-url
-
-```text
-Prints the direct Web Key Directory URL of an email address.
-
-USAGE:
-    sq wkd direct-url <ADDRESS>
-
-ARGS:
-    <ADDRESS>    Queries for ADDRESS
-
-OPTIONS:
-    -h, --help    Print help information
+    help          Print this message or the help of the given subcommand(s)
 ```
 
 ### Subcommand wkd generate
@@ -1460,6 +1445,21 @@ OPTIONS:
     -B, --binary           Emits binary data
     -h, --help             Print help information
     -o, --output <FILE>    Writes to FILE or stdout if omitted
+```
+
+### Subcommand wkd direct-url
+
+```text
+Prints the direct Web Key Directory URL of an email address.
+
+USAGE:
+    sq wkd direct-url <ADDRESS>
+
+ARGS:
+    <ADDRESS>    Queries for ADDRESS
+
+OPTIONS:
+    -h, --help    Print help information
 ```
 
 ### Subcommand wkd url

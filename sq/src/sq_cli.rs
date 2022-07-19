@@ -2258,6 +2258,7 @@ pub struct KeyAttestCertificationsCommand {
     about = "Interacts with Web Key Directories",
     subcommand_required = true,
     arg_required_else_help = true,
+    setting(clap::AppSettings::DeriveDisplayOrder),
 )]
 pub struct WkdCommand {
     #[clap(
@@ -2275,10 +2276,10 @@ pub struct WkdCommand {
 
 #[derive(Debug, Subcommand)]
 pub enum WkdSubcommands {
-    Url(WkdUrlCommand),
-    DirectUrl(WkdDirectUrlCommand),
-    Get(WkdGetCommand),
     Generate(WkdGenerateCommand),
+    Get(WkdGetCommand),
+    DirectUrl(WkdDirectUrlCommand),
+    Url(WkdUrlCommand),
 }
 
 #[derive(Debug, Args)]
