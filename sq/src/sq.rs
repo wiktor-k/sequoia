@@ -1,4 +1,7 @@
-/// A command-line frontend for Sequoia.
+#![doc(html_favicon_url = "https://docs.sequoia-pgp.org/favicon.png")]
+#![doc(html_logo_url = "https://docs.sequoia-pgp.org/logo.svg")]
+
+#![doc = include_str!("../sq-usage.md")]
 
 use anyhow::Context as _;
 use std::fs::OpenOptions;

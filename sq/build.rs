@@ -11,23 +11,17 @@ pub mod sq_cli {
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
-    // XXX: Revisit once
-    // https://github.com/rust-lang/rust/issues/44732 is stabilized.
-
+    // Generate subplot tests.
     subplot_build::codegen(Path::new("sq-subplot.md"))
         .expect("failed to generate code with Subplot");
 
+    // Dump help output of all commands and subcommands, for inlcusion in docs
     let mut sq = sq_cli::build().term_width(80);
-    let mut main = fs::File::create("src/sq-usage.rs").unwrap();
+    let mut main = fs::File::create("sq-usage.md").unwrap();
     dump_help(&mut main,
               &mut sq,
               vec![],
               "#").unwrap();
-    writeln!(main, "\n#![doc(html_favicon_url = \"https://docs.sequoia-pgp.org/favicon.png\")]")
-        .unwrap();
-    writeln!(main, "#![doc(html_logo_url = \"https://docs.sequoia-pgp.org/logo.svg\")]")
-        .unwrap();
-    writeln!(main, "\ninclude!(\"sq.rs\");").unwrap();
 
     let outdir = match env::var_os("CARGO_TARGET_DIR") {
         None => return,
@@ -43,7 +37,7 @@ fn main() {
     };
 }
 
-fn dump_help(sink: &mut dyn io::Write,
+fn dump_help(sink: &mut dyn Write,
              sq: &mut clap::Command,
              cmd: Vec<String>,
              heading: &str)
@@ -51,15 +45,15 @@ fn dump_help(sink: &mut dyn io::Write,
 {
 
     if cmd.is_empty() {
-        writeln!(sink, "//! A command-line frontend for Sequoia.")?;
-        writeln!(sink, "//!")?;
-        writeln!(sink, "//! # Usage")?;
+        writeln!(sink, "A command-line frontend for Sequoia.")?;
+        writeln!(sink, "")?;
+        writeln!(sink, "# Usage")?;
     } else {
-        writeln!(sink, "//!")?;
-        writeln!(sink, "//! {} Subcommand {}", heading, cmd.join(" "))?;
+        writeln!(sink, "")?;
+        writeln!(sink, "{} Subcommand {}", heading, cmd.join(" "))?;
     }
 
-    writeln!(sink, "//!")?;
+    writeln!(sink, "")?;
 
     let args = std::iter::once("sq")
         .chain(cmd.iter().map(|s| s.as_str()))
@@ -69,15 +63,15 @@ fn dump_help(sink: &mut dyn io::Write,
     let help = sq.try_get_matches_from_mut(&args)
         .unwrap_err().to_string();
 
-    writeln!(sink, "//! ```text")?;
+    writeln!(sink, "```text")?;
     for line in help.trim_end().split('\n').skip(1) {
         if line.is_empty() {
-            writeln!(sink, "//!")?;
+            writeln!(sink, "")?;
         } else {
-            writeln!(sink, "//! {}", line.trim_end())?;
+            writeln!(sink, "{}", line.trim_end())?;
         }
     }
-    writeln!(sink, "//! ```")?;
+    writeln!(sink, "```")?;
 
     // Recurse.
     let mut found_subcommands = false;

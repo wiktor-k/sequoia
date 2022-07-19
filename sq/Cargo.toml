@@ -59,7 +59,7 @@ predicates = "2"
 
 [[bin]]
 name = "sq"
-path = "src/sq-usage.rs"
+path = "src/sq.rs"
 bench = false
 
 [features]
