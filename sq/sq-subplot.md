@@ -838,6 +838,8 @@ given an installed sq
 when I run sq key generate --userid Alice --export alice.pgp
 when I try to run sq --output-version=9999 keyring list alice.pgp
 then command fails
+when I try to run env SQ_OUTPUT_VERSION=9999 sq keyring list alice.pgp
+then command fails
 ~~~
 
 ### Choose too-new output minor version for keyring listing
@@ -892,6 +894,12 @@ then I remember the fingerprint as BOB_FINGERPRINT
 
 when I run sq keyring join alice.pgp bob.pgp -o ring.pgp
 when I run sq --output-format=json keyring list ring.pgp
+then stdout, as JSON, matches pattern keyring-list-pattern.json
+
+when I run env SQ_OUTPUT_FORMAT=json sq keyring list ring.pgp
+then stdout, as JSON, matches pattern keyring-list-pattern.json
+
+when I run env SQ_OUTPUT_FORMAT=human-readable sq --output-format=json keyring list ring.pgp
 then stdout, as JSON, matches pattern keyring-list-pattern.json
 ~~~
 

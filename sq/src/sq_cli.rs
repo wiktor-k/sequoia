@@ -64,12 +64,14 @@ pub struct SqCommand {
         value_name = "FORMAT",
         possible_values = ["human-readable", "json"],
         default_value = "human-readable",
+        env = "SQ_OUTPUT_FORMAT",
         help = "Produces output in FORMAT, if possible",
     )]
     pub output_format: String,
     #[clap(
         long = "output-version",
         value_name = "VERSION",
+        env = "SQ_OUTPUT_VERSION",
         help = "Produces output variant VERSION",
     )]
     pub output_version: Option<String>,

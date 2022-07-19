@@ -35,11 +35,14 @@
 //!         --output-format <FORMAT>
 //!             Produces output in FORMAT, if possible
 //! 
+//!             [env: SQ_OUTPUT_FORMAT=]
 //!             [default: human-readable]
 //!             [possible values: human-readable, json]
 //!
 //!         --output-version <VERSION>
 //!             Produces output variant VERSION
+//! 
+//!             [env: SQ_OUTPUT_VERSION=]
 //!
 //!     -V, --version
 //!             Print version information
