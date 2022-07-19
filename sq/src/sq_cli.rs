@@ -513,8 +513,7 @@ pub enum PacketSubcommands {
 #[clap(
     about = "Lists packets",
     long_about =
-"
-Lists packets
+"Lists packets
 
 Creates a human-readable description of the packet sequence.
 Additionally, it can print cryptographic artifacts, and print the raw
@@ -1231,13 +1230,13 @@ pub struct CertifyCommand {
         value_name = "TIME",
         help = "Sets the certification time to TIME (as ISO 8601)",
         long_help = "\
-Sets the certification time to TIME.  TIME is interpreted as an ISO 8601
-timestamp.  To set the certification time to June 9, 2011 at midnight UTC,
+Sets the certification time to TIME.  TIME is interpreted as an ISO 8601 \
+timestamp.  To set the certification time to June 9, 2011 at midnight UTC, \
 you can do:
 
 $ sq certify --time 20130721 neal.pgp ada.pgp ada
 
-To include a time, add a T, the time and optionally the timezone (the
+To include a time, add a T, the time and optionally the timezone (the \
 default timezone is UTC):
 
 $ sq certify --time 20130721T0550+0200 neal.pgp ada.pgp ada
@@ -1801,13 +1800,13 @@ pub struct KeyGenerateCommand {
         value_name = "CREATION_TIME",
         help = "Sets the key's creation time to TIME (as ISO 8601)",
         long_help = "\
-Sets the key's creation time to TIME.  TIME is interpreted as an ISO 8601
-timestamp.  To set the creation time to June 9, 2011 at midnight UTC,
+Sets the key's creation time to TIME.  TIME is interpreted as an ISO 8601 \
+timestamp.  To set the creation time to June 9, 2011 at midnight UTC, \
 you can do:
 
 $ sq key generate --creation-time 20110609 --export noam.pgp
 
-To include a time, add a T, the time and optionally the timezone (the
+To include a time, add a T, the time and optionally the timezone (the \
 default timezone is UTC):
 
 $ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
@@ -2039,14 +2038,14 @@ pub struct KeyUseridAddCommand {
         value_name = "CREATION_TIME",
         help = "Sets the binding signature creation time to TIME (as ISO 8601)",
         long_help = "\
-Sets the creation time of this User ID's binding signature to TIME.
-TIME is interpreted as an ISO 8601 timestamp.  To set the creation
+Sets the creation time of this User ID's binding signature to TIME. \
+TIME is interpreted as an ISO 8601 timestamp.  To set the creation \
 time to June 28, 2022 at midnight UTC, you can do:
 
 $ sq key userid add --userid \"Juliet\" --creation-time 20210628 \\
    juliet.key.pgp --output juliet-new.key.pgp
 
-To include a time, add a T, the time and optionally the timezone (the
+To include a time, add a T, the time and optionally the timezone (the \
 default timezone is UTC):
 
 $ sq key userid add --userid \"Juliet\" --creation-time 20210628T1137+0200 \\
@@ -2195,8 +2194,7 @@ pub struct KeyAdoptCommand {
     name = "attest-certifications",
     about = "Attests to third-party certifications",
     long_about =
-"
-Attests to third-party certifications allowing for their distribution
+"Attests to third-party certifications allowing for their distribution
 
 To prevent certificate flooding attacks, modern key servers prevent
 uncontrolled distribution of third-party certifications on
@@ -2334,23 +2332,23 @@ pub struct WkdGetCommand {
 #[derive(Debug, Args)]
 #[clap(
     about = "Generates a Web Key Directory for the given domain and keys.",
-    long_about = "Generates a Web Key Directory for the given domain and keys.  \
-        If the WKD exists, the new keys will be inserted and it \
-        is updated and existing ones will be updated. \
-        \n
-        \n
-        A WKD is per domain, and can be queried using the advanced or the \
-        direct method. The advanced method uses a URL with a subdomain \
-        'openpgpkey'. As per the specification, the advanced method is to be \
-        preferred. The direct method may only be used if the subdomain \
-        doesn't exist. The advanced method allows web key directories for \
-        several domains on one web server. \
-        \n
-        \n
-        The contents of the generated WKD must be copied to a web server so that \
-        they are accessible under https://openpgpkey.example.com/.well-known/openpgp/... \
-        for the advanced version, and https://example.com/.well-known/openpgp/... \
-        for the direct version. sq does not copy files to the web server.",
+    long_about =
+"Generates a Web Key Directory for the given domain and keys
+
+If the WKD exists, the new keys will be inserted and it \
+is updated and existing ones will be updated.
+
+A WKD is per domain, and can be queried using the advanced or the \
+direct method. The advanced method uses a URL with a subdomain \
+'openpgpkey'. As per the specification, the advanced method is to be \
+preferred. The direct method may only be used if the subdomain \
+doesn't exist. The advanced method allows web key directories for \
+several domains on one web server.
+
+The contents of the generated WKD must be copied to a web server so that \
+they are accessible under https://openpgpkey.example.com/.well-known/openpgp/... \
+for the advanced version, and https://example.com/.well-known/openpgp/... \
+for the direct version. sq does not copy files to the web server.",
     after_help =
 "EXAMPLES:
 
