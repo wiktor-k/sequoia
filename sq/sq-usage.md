@@ -24,14 +24,6 @@ OPTIONS:
     -f, --force
             Overwrites existing files
 
-    -h, --help
-            Print help information
-
-        --known-notation <NOTATION>
-            Adds NOTATION to the list of known notations. This is used when
-            validating signatures. Signatures that have unknown notations with
-            the critical bit set are considered invalid.
-
         --output-format <FORMAT>
             Produces output in FORMAT, if possible
 
@@ -43,6 +35,14 @@ OPTIONS:
             Produces output variant VERSION
 
             [env: SQ_OUTPUT_VERSION=]
+
+        --known-notation <NOTATION>
+            Adds NOTATION to the list of known notations. This is used when
+            validating signatures. Signatures that have unknown notations with
+            the critical bit set are considered invalid.
+
+    -h, --help
+            Print help information
 
     -V, --version
             Print version information
