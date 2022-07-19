@@ -24,6 +24,8 @@ use net::{
 
 use crate::{
     Config,
+    OutputFormat,
+    OutputVersion,
     open_or_stdin,
     serialize_keyring,
 };
@@ -99,16 +101,24 @@ pub fn dispatch_wkd(config: Config, c: WkdCommand) -> Result<()> {
 
     match c.subcommand {
         WkdSubcommands::Url(c) => {
-            let email_address = c.email_address;
-            let wkd_url = wkd::Url::from(email_address)?;
-            let url = wkd_url.to_url(None)?;
-            println!("{}", url);
+            let output = wkd_output::WkdUrl::new(None, &c.email_address)?;
+            match config.output_format {
+                OutputFormat::HumanReadable => println!("{}", output.advanced_url()),
+                OutputFormat::Json => {
+                    serde_json::to_writer_pretty(std::io::stdout(), &output)?;
+                    println!();
+                }
+            }
         },
         WkdSubcommands::DirectUrl(c) => {
-            let email_address = c.email_address;
-            let wkd_url = wkd::Url::from(email_address)?;
-            let url = wkd_url.to_url(wkd::Variant::Direct)?;
-            println!("{}", url);
+            let output = wkd_output::WkdUrl::new(None, &c.email_address)?;
+            match config.output_format {
+                OutputFormat::HumanReadable => println!("{}", output.direct_url()),
+                OutputFormat::Json => {
+                    serde_json::to_writer_pretty(std::io::stdout(), &output)?;
+                    println!();
+                }
+            }
         },
         WkdSubcommands::Get(c) => {
             // Check that the policy allows https.
@@ -167,4 +177,72 @@ pub fn dispatch_wkd(config: Config, c: WkdCommand) -> Result<()> {
     }
 
     Ok(())
+}
+
+// Model output as a data type that can be serialized.
+mod wkd_output {
+    use super::{wkd, OutputVersion, Result};
+    use anyhow::anyhow;
+    use serde::Serialize;
+
+    #[derive(Debug, Serialize)]
+    #[serde(untagged)]
+    pub(super) enum WkdUrl {
+        V0(WkdUrlV0),
+    }
+
+    impl WkdUrl {
+        const DEFAULT_VERSION: OutputVersion = OutputVersion::new(0, 0, 0);
+
+        pub(super) fn new(wanted: Option<OutputVersion>, email: &str) -> Result<Self> {
+            let wkd_url = wkd::Url::from(email)?;
+            let advanced_url = wkd_url.to_url(None)?.to_string();
+            let direct_url = wkd_url.to_url(wkd::Variant::Direct)?.to_string();
+
+            match wanted {
+                None => Self::new(Some(Self::DEFAULT_VERSION), email),
+                Some(wanted) if WkdUrlV0::V.is_acceptable_for(wanted) => Ok(Self::V0(WkdUrlV0::new(advanced_url, direct_url))),
+                Some(wanted) => Err(anyhow!("version not supported: {}", wanted)),
+            }
+        }
+
+        pub(super) fn advanced_url(&self) -> &str {
+            match self {
+                Self::V0(url) => url.advanced_url(),
+            }
+        }
+
+        pub(super) fn direct_url(&self) -> &str {
+            match self {
+                Self::V0(url) => url.direct_url(),
+            }
+        }
+    }
+
+    #[derive(Debug, Serialize)]
+    pub(super) struct WkdUrlV0 {
+        sq_output_version: OutputVersion,
+        advanced_url: String,
+        direct_url: String,
+    }
+
+    impl WkdUrlV0 {
+        const V: OutputVersion = OutputVersion::new(0, 0, 0);
+
+        fn new(advanced_url: String, direct_url: String) -> Self {
+            Self {
+                sq_output_version: Self::V,
+                advanced_url,
+                direct_url,
+            }
+        }
+
+        pub(super) fn advanced_url(&self) -> &str {
+            &self.advanced_url
+        }
+
+        pub(super) fn direct_url(&self) -> &str {
+            &self.direct_url
+        }
+    }
 }
