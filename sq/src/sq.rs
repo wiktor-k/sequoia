@@ -418,6 +418,16 @@ fn main() -> Result<()> {
     };
 
     match c.subcommand {
+        SqSubcommands::OutputVersions(command) => {
+            if command.default {
+                println!("{}", output::DEFAULT_OUTPUT_VERSION);
+            } else {
+                for v in output::OUTPUT_VERSIONS {
+                    println!("{}", v);
+                }
+            }
+        }
+
         SqSubcommands::Decrypt(command) => {
 
             let mut input = open_or_stdin(command.io.input.as_deref())?;

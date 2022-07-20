@@ -32,7 +32,10 @@ OPTIONS:
             [possible values: human-readable, json]
 
         --output-version <VERSION>
-            Produces output variant VERSION
+            Produces output variant VERSION, such as 0.0.0. The default is the
+            newest version. The output version is separate from the version of
+            the sq program. To see the current supported versions, use
+            output-versions subcommand.
 
             [env: SQ_OUTPUT_VERSION=]
 
@@ -80,6 +83,8 @@ SUBCOMMANDS:
             Generates revocation certificates
     help
             Print this message or the help of the given subcommand(s)
+    output-versions
+            List supported output versions
 ```
 
 ## Subcommand sq encrypt
@@ -2139,4 +2144,20 @@ OPTIONS:
     -t, --time <TIME>
             Chooses keys valid at the specified time and sets the revocation
             certificate's creation time
+```
+
+## Subcommand sq output versions
+
+```text
+List supported output versions
+
+USAGE:
+    sq output-versions [OPTIONS]
+
+OPTIONS:
+        --default
+            List only the default output version
+
+    -h, --help
+            Print help information
 ```

@@ -13,6 +13,9 @@ use serde::Serialize;
 pub use keyring::ListItem as KeyringListItem;
 pub use wkd::WkdUrlVariant;
 
+pub const DEFAULT_OUTPUT_VERSION: OutputVersion = OutputVersion::new(0, 0, 0);
+pub const OUTPUT_VERSIONS: &[OutputVersion] = &[OutputVersion::new(0, 0, 0)];
+
 /// What output format to prefer, when there's an option?
 #[derive(Clone)]
 pub enum OutputFormat {
@@ -98,6 +101,14 @@ impl fmt::Display for OutputVersion {
     }
 }
 
+impl PartialEq<OutputVersion> for &OutputVersion {
+    fn eq(&self, other: &OutputVersion) -> bool {
+        self.major == other.major &&
+            self.minor == other.minor &&
+            self.patch == other.patch
+    }
+}
+
 fn parse_ints(s: &str) -> Result<Vec<usize>> {
     let mut ints = vec![];
     let mut v = s;
@@ -134,10 +145,9 @@ pub enum Model {
 }
 
 impl Model {
-    const DEFAULT_VERSION: OutputVersion = OutputVersion::new(0, 0, 0);
 
     fn version(v: Option<OutputVersion>) -> OutputVersion {
-        v.unwrap_or(Self::DEFAULT_VERSION)
+        v.unwrap_or(DEFAULT_OUTPUT_VERSION)
     }
 
     /// Create a model for the output of `sq wkd url` and `sq wkd

@@ -64,7 +64,12 @@ pub struct SqCommand {
         long = "output-version",
         value_name = "VERSION",
         env = "SQ_OUTPUT_VERSION",
-        help = "Produces output variant VERSION",
+        help = "Produces output variant VERSION.",
+        long_help = "Produces output variant VERSION, such as 0.0.0. \
+                     The default is the newest version. The output version \
+                     is separate from the version of the sq program. To see \
+                     the current supported versions, use output-versions \
+                     subcommand."
     )]
     pub output_version: Option<String>,
     #[clap(
@@ -117,6 +122,8 @@ pub enum SqSubcommands {
     Packet(PacketCommand),
 
     Revoke(RevokeCommand),
+
+    OutputVersions(OutputVersionsCommand),
 }
 
 use chrono::{offset::Utc, DateTime};
@@ -2805,6 +2812,18 @@ impl<'a> std::fmt::Display for CliSessionKeyDisplay<'a> {
         let sk = self.csk;
         write!(f, "{}", hex::encode(&sk.session_key))
     }
+}
+
+#[derive(Parser, Debug)]
+#[clap(
+    name = "output-versions",
+    display_order = 110,
+    about = "List supported output versions",
+)]
+pub struct OutputVersionsCommand {
+    /// List only the default output version.
+    #[clap(long)]
+    pub default: bool,
 }
 
 #[cfg(feature = "autocrypt")]
