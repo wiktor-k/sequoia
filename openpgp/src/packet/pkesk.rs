@@ -155,7 +155,7 @@ impl PKESK3 {
             None
         };
         let plain = decryptor.decrypt(&self.esk, plaintext_len)?;
-        let key_rgn = 1..(plain.len() - 2);
+        let key_rgn = 1..plain.len().saturating_sub(2);
         let sym_algo: SymmetricAlgorithm = plain[0].into();
         let mut key: SessionKey = vec![0u8; sym_algo.key_size()?].into();
 
