@@ -422,16 +422,16 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.1.17"
+version = "3.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47582c09be7c8b32c0ab3a6181825ababb713fde6fff20fc573a3870dd45c6a0"
+checksum = "44bbe24bbd31a185bc2c4f7c2abe80bea13a20d57ee4e55be70ac512bdc76417"
 dependencies = [
  "atty",
  "bitflags",
  "clap_derive",
  "clap_lex",
  "indexmap",
- "lazy_static",
+ "once_cell",
  "strsim 0.10.0",
  "termcolor",
  "terminal_size",
@@ -444,16 +444,16 @@ version = "3.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da92e6facd8d73c22745a5d3cbb59bdf8e46e3235c923e516527d8e81eec14a4"
 dependencies = [
- "clap 3.1.17",
+ "clap 3.2.15",
 ]
 
 [[package]]
 name = "clap_derive"
-version = "3.1.7"
+version = "3.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3aab4734e083b809aaf5794e14e756d1c798d2c69c7f7de7a09a2f5214993c1"
+checksum = "9ba52acd3b0a5c33aeada5cdaa3267cdc7c594a98731d4268cdc1532f4264cb4"
 dependencies = [
- "heck 0.4.0",
+ "heck",
  "proc-macro-error",
  "proc-macro2",
  "quote",
@@ -462,9 +462,9 @@ dependencies = [
 
 [[package]]
 name = "clap_lex"
-version = "0.2.0"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a37c35f1112dad5e6e0b1adaff798507497a18fceeb30cceb3bae7d1427b9213"
+checksum = "2850f2f5a82cbf437dd5af4d49848fbdfc27c157c3d010345776f952765261c5"
 dependencies = [
  "os_str_bytes",
 ]
@@ -1295,15 +1295,6 @@ checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
 
 [[package]]
 name = "heck"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d621efb26863f0e9924c6ac577e8275e5e6b77455db64ffa6c65c904e9e132c"
-dependencies = [
- "unicode-segmentation",
-]
-
-[[package]]
-name = "heck"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2540771e65fc8cb83cd6e8a237f70c319bd5c29f78ed1084ba5d50eeac86f7f9"
@@ -1868,9 +1859,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.10.0"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87f3e037eac156d1775da914196f0f37741a274155e34a0b7e427c35d2a2ecb9"
+checksum = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1"
 
 [[package]]
 name = "oorandom"
@@ -2437,14 +2428,14 @@ dependencies = [
 
 [[package]]
 name = "roadmap"
-version = "0.4.0"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cca2c64101781867800fc47961ae6fe868e5ee19c805fd020b69deb60af864b4"
+checksum = "c460d89fa2561bd4eb9f6db252b79b1520dcdd807b2fe75d34c2056d58e39433"
 dependencies = [
  "anyhow",
+ "clap 3.2.15",
  "serde",
  "serde_yaml",
- "structopt",
  "textwrap 0.14.2",
  "thiserror",
 ]
@@ -2700,7 +2691,7 @@ dependencies = [
  "buffered-reader",
  "cfg-if",
  "chrono",
- "clap 3.1.17",
+ "clap 3.2.15",
  "clap_complete",
  "fehler",
  "itertools 0.10.3",
@@ -2964,37 +2955,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
-name = "structopt"
-version = "0.3.26"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c6b5c64445ba8094a6ab0c3cd2ad323e07171012d9c98b0b15651daf1787a10"
-dependencies = [
- "clap 2.34.0",
- "lazy_static",
- "structopt-derive",
-]
-
-[[package]]
-name = "structopt-derive"
-version = "0.4.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcb5ae327f9cc13b68763b5749770cb9e048a99bd9dfdfa58d0cf05d5f64afe0"
-dependencies = [
- "heck 0.3.3",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "subplot"
-version = "0.4.0"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "584b0072bc6904b69c4f0a8f7173ed691f6ede4139a28a253f0ac9c368b0de01"
+checksum = "7c826f5e83eb04e7d35ba6e22d0d9a085866933350872d6e515aa0a7f2a4149d"
 dependencies = [
  "anyhow",
  "base64",
+ "clap 3.2.15",
  "env_logger 0.9.0",
  "file_diff",
  "git-testament",
@@ -3011,7 +2979,6 @@ dependencies = [
  "serde-aux",
  "serde_json",
  "serde_yaml",
- "structopt",
  "tempfile",
  "tempfile-fast",
  "tera",
@@ -3022,9 +2989,9 @@ dependencies = [
 
 [[package]]
 name = "subplot-build"
-version = "0.4.0"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee04aee82ea6afac919c007006f4fc7661838cd6cb2f869ee283a6102a2eb51b"
+checksum = "b07b0f49a5ba78bae9db8fde58e94ae1bd508d883ff77c07c227c98da6d38ca2"
 dependencies = [
  "subplot",
  "tempfile",
@@ -3033,9 +3000,9 @@ dependencies = [
 
 [[package]]
 name = "subplotlib"
-version = "0.4.1"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e17d1fff7b1ad8b0c44466dfd11a5986f1e08bf317af82450ab6d06bc44f7f51"
+checksum = "e2cbc3e6319877b1eaf3e6f0c8ff7a8d36b01f00cca972bd4246d65bad7d004c"
 dependencies = [
  "base64",
  "fehler",
@@ -3056,9 +3023,9 @@ dependencies = [
 
 [[package]]
 name = "subplotlib-derive"
-version = "0.4.0"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db5264ca1d43fab97c844a8053c9f6da34c41fc659a52214c85002537651cb83"
+checksum = "ddff03e508f6ea13b990ad2a038731c24372b06c9b334eeea3d8d08db71d1be0"
 dependencies = [
  "fehler",
  "proc-macro2",
@@ -3551,12 +3518,6 @@ checksum = "d54590932941a9e9266f0832deed84ebe1bf2e4c9e4a3554d393d18f5e854bf9"
 dependencies = [
  "tinyvec",
 ]
-
-[[package]]
-name = "unicode-segmentation"
-version = "1.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e8820f5d777f6224dc4be3632222971ac30164d4a258d595640799554ebfd99"
 
 [[package]]
 name = "unicode-width"
