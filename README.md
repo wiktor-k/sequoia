@@ -194,11 +194,18 @@ $ docker tag registry.gitlab.com/sequoia-pgp/sequoia:latest sq
 $ docker run --rm -i sq --help
 ```
 
-## Requirements
+## Requirements and MSRV
 
-To build Sequoia, you need at least Rust 1.56 and a few libraries,
-notably the Nettle cryptographic library version 3.4.1 or up.  Please
-see below for OS-specific commands to install the needed libraries:
+The minimum supported Rust version (MSRV) is 1.56.  Sequoia aims to always be
+compatible with the version included in [Debian testing], the MSRV follows what
+is available there.  Increasing the MSRV will be accompanied by a raise in
+the minor version of all crates.
+
+[Debian testing]: https://tracker.debian.org/pkg/rustc
+
+Building Sequoia requires a few libraries, notably the Nettle cryptographic library
+version 3.4.1 or up.  Please see below for OS-specific commands to install the
+needed libraries:
 
 ### Debian
 
