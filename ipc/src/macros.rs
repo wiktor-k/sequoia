@@ -1,5 +1,3 @@
-use std::cmp;
-
 macro_rules! trace {
     ( $TRACE:expr, $fmt:expr, $($pargs:expr),* ) => {
         if $TRACE {
@@ -15,7 +13,7 @@ macro_rules! trace {
 pub(crate) fn indent(i: isize) -> &'static str {
     use std::convert::TryFrom;
     let s = "                                                  ";
-    &s[0..cmp::min(usize::try_from(i).unwrap_or(0), s.len())]
+    &s[0..usize::try_from(i).unwrap_or(0).min(s.len())]
 }
 
 macro_rules! tracer {
