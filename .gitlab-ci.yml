@@ -305,6 +305,7 @@ windows-gnu-nettle:
       - $CI_PROJECT_NAMESPACE == "sequoia-pgp"
   before_script:
     # the default before_scipt scriptlet doesn't work on Powershell
+    - pacman -S gnupg --noconfirm
     - rustc --version --verbose
     - cargo --version
     - clang -v
