@@ -303,7 +303,12 @@ windows-gnu-nettle:
       # Forks of this project most likely use gitlab's shared windows runners, which
       # do not use the docker executor, so disable the windows jobs for forks.
       - $CI_PROJECT_NAMESPACE == "sequoia-pgp"
-  before_script: [] # scriptlet doesn't work on Powershell
+  before_script:
+    # the default before_scipt scriptlet doesn't work on Powershell
+    - rustc --version --verbose
+    - cargo --version
+    - clang -v
+    - gpg --version
   script:
     - cargo test -p buffered-reader -p sequoia-openpgp
   after_script: [] # scriptlet doesn't work on Powershell
@@ -327,7 +332,12 @@ windows-gnu-cng:
       # Forks of this project most likely use gitlab's shared windows runners, which
       # do not use the docker executor, so disable the windows jobs for forks.
       - $CI_PROJECT_NAMESPACE == "sequoia-pgp"
-  before_script: [] # scriptlet doesn't work on Powershell
+  before_script:
+    # the default before_scipt scriptlet doesn't work on Powershell
+    - rustc --version --verbose
+    - cargo --version
+    - clang -v
+    - gpg --version
   script:
     # https://github.com/rust-lang/cargo/issues/5015
     - cargo test --manifest-path openpgp/Cargo.toml --no-default-features --features crypto-cng,compression
