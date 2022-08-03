@@ -311,7 +311,7 @@ windows-gnu-nettle:
     - clang -v
     - gpg --version
   script:
-    - cargo test -p buffered-reader -p sequoia-openpgp
+    - cargo test --workspace
   after_script: [] # scriptlet doesn't work on Powershell
   variables:
     CFLAGS: "" # Silence some C warnings when compiling under Windows
