@@ -6,7 +6,7 @@ use clap_complete::Shell;
 use anyhow::Result;
 
 pub mod sq_cli {
-    include!("src/sq_cli.rs");
+    include!("src/sq_cli/mod.rs");
 }
 
 fn main() {

@@ -18,7 +18,7 @@ use crate::SECONDS_IN_YEAR;
 use crate::commands::get_certification_keys;
 use crate::commands::GetKeysOptions;
 
-use crate::sq_cli::CertifyCommand;
+use crate::sq_cli::certify::CertifyCommand;
 
 pub fn certify(config: Config, c: CertifyCommand)
     -> Result<()>

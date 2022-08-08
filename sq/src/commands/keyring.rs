@@ -33,8 +33,8 @@ use crate::{
     output::KeyringListItem,
 };
 
-use crate::sq_cli::KeyringCommand;
-use crate::sq_cli::KeyringSubcommands::*;
+use crate::sq_cli::keyring::KeyringCommand;
+use crate::sq_cli::keyring::KeyringSubcommands::*;
 
 pub fn dispatch(config: Config, c: KeyringCommand) -> Result<()> {
     match c.subcommand {

@@ -36,9 +36,9 @@ use crate::{
     Config,
 };
 
-use crate::sq_cli::EncryptCompressionMode;
-use crate::sq_cli::EncryptEncryptionMode;
-use crate::sq_cli::PacketJoinCommand;
+use crate::sq_cli::encrypt::EncryptCompressionMode;
+use crate::sq_cli::encrypt::EncryptEncryptionMode;
+use crate::sq_cli::packet::PacketJoinCommand;
 
 #[cfg(feature = "autocrypt")]
 pub mod autocrypt;

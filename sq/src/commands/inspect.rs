@@ -17,7 +17,7 @@ use super::dump::Convert;
 use crate::SECONDS_IN_YEAR;
 use crate::SECONDS_IN_DAY;
 
-use crate::sq_cli::InspectCommand;
+use crate::sq_cli::inspect::InspectCommand;
 
 pub fn inspect(c: InspectCommand, policy: &dyn Policy, output: &mut dyn io::Write)
                -> Result<()> {

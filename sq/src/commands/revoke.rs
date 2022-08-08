@@ -44,11 +44,11 @@ impl RevocationTarget {
     }
 }
 
-use crate::sq_cli::RevokeCommand;
-use crate::sq_cli::RevokeSubcommands;
-use crate::sq_cli::RevokeCertificateCommand;
-use crate::sq_cli::RevokeSubkeyCommand;
-use crate::sq_cli::RevokeUseridCommand;
+use crate::sq_cli::revoke::RevokeCommand;
+use crate::sq_cli::revoke::RevokeSubcommands;
+use crate::sq_cli::revoke::RevokeCertificateCommand;
+use crate::sq_cli::revoke::RevokeSubkeyCommand;
+use crate::sq_cli::revoke::RevokeUseridCommand;
 
 pub fn dispatch(config: Config, c: RevokeCommand) -> Result<()> {
 

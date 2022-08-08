@@ -24,16 +24,16 @@ use crate::SECONDS_IN_YEAR;
 use crate::parse_duration;
 use crate::decrypt_key;
 
-use crate::sq_cli::KeyCommand;
-use crate::sq_cli::KeyGenerateCommand;
-use crate::sq_cli::KeyPasswordCommand;
-use crate::sq_cli::KeyUseridCommand;
-use crate::sq_cli::KeyUseridAddCommand;
-use crate::sq_cli::KeyUseridStripCommand;
-use crate::sq_cli::KeyExtractCertCommand;
-use crate::sq_cli::KeyAdoptCommand;
-use crate::sq_cli::KeyAttestCertificationsCommand;
-use crate::sq_cli::KeySubcommands::*;
+use crate::sq_cli::key::KeyCommand;
+use crate::sq_cli::key::KeyGenerateCommand;
+use crate::sq_cli::key::KeyPasswordCommand;
+use crate::sq_cli::key::KeyUseridCommand;
+use crate::sq_cli::key::KeyUseridAddCommand;
+use crate::sq_cli::key::KeyUseridStripCommand;
+use crate::sq_cli::key::KeyExtractCertCommand;
+use crate::sq_cli::key::KeyAdoptCommand;
+use crate::sq_cli::key::KeyAttestCertificationsCommand;
+use crate::sq_cli::key::KeySubcommands::*;
 
 pub fn dispatch(config: Config, command: KeyCommand) -> Result<()> {
     match command.subcommand {
@@ -91,7 +91,7 @@ fn generate(config: Config, command: KeyGenerateCommand) -> Result<()> {
     }
 
     // Cipher Suite
-    use crate::sq_cli::KeyCipherSuite::*;
+    use crate::sq_cli::key::KeyCipherSuite::*;
     match command.cipher_suite {
         Rsa3k => {
             builder = builder.set_cipher_suite(CipherSuite::RSA3k);
@@ -130,7 +130,7 @@ fn generate(config: Config, command: KeyGenerateCommand) -> Result<()> {
     }
 
     // Encryption Capability
-    use crate::sq_cli::KeyEncryptPurpose::*;
+    use crate::sq_cli::key::KeyEncryptPurpose::*;
     match (command.can_encrypt, command.cannot_encrypt) {
         (Some(Universal), false) | (None, false) => {
             builder = builder.add_subkey(KeyFlags::empty()

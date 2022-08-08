@@ -29,7 +29,7 @@ use crate::openpgp::cert::prelude::*;
 use crate::openpgp::policy::StandardPolicy as P;
 
 use clap::FromArgMatches;
-use crate::sq_cli::PacketSubcommands;
+use crate::sq_cli::packet::PacketSubcommands;
 use sq_cli::SqSubcommands;
 
 mod sq_cli;

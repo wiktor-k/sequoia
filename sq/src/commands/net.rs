@@ -30,10 +30,10 @@ use crate::{
     output::WkdUrlVariant,
 };
 
-use crate::sq_cli::KeyserverCommand;
-use crate::sq_cli::KeyserverSubcommands;
-use crate::sq_cli::WkdCommand;
-use crate::sq_cli::WkdSubcommands;
+use crate::sq_cli::keyserver::KeyserverCommand;
+use crate::sq_cli::keyserver::KeyserverSubcommands;
+use crate::sq_cli::wkd::WkdCommand;
+use crate::sq_cli::wkd::WkdSubcommands;
 
 pub fn dispatch_keyserver(config: Config, c: KeyserverCommand) -> Result<()> {
     let network_policy = c.network_policy.into();
