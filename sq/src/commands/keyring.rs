@@ -33,10 +33,10 @@ use crate::{
     output::KeyringListItem,
 };
 
-use crate::sq_cli::keyring::KeyringCommand;
-use crate::sq_cli::keyring::KeyringSubcommands::*;
+use crate::sq_cli::keyring;
 
-pub fn dispatch(config: Config, c: KeyringCommand) -> Result<()> {
+pub fn dispatch(config: Config, c: keyring::Command) -> Result<()> {
+    use crate::sq_cli::keyring::Subcommands::*;
     match c.subcommand {
         Filter(command) => {
             let any_uid_predicates =

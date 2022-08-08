@@ -19,17 +19,17 @@ as a learning tool.
     arg_required_else_help = true,
     setting(clap::AppSettings::DeriveDisplayOrder),
     )]
-pub struct PacketCommand {
+pub struct Command {
     #[clap(subcommand)]
-    pub subcommand: PacketSubcommands,
+    pub subcommand: Subcommands,
 }
 
 #[derive(Debug, Subcommand)]
-pub enum PacketSubcommands {
-    Dump(PacketDumpCommand),
-    Decrypt(PacketDecryptCommand),
-    Split(PacketSplitCommand),
-    Join(PacketJoinCommand),
+pub enum Subcommands {
+    Dump(DumpCommand),
+    Decrypt(DecryptCommand),
+    Split(SplitCommand),
+    Join(JoinCommand),
 }
 
 #[derive(Debug, Args)]
@@ -62,7 +62,7 @@ $ sq packet dump --hex juliet.pgp
 $ sq packet dump --session-key AAAABBBBCCCC... ciphertext.pgp
 ",
 )]
-pub struct PacketDumpCommand {
+pub struct DumpCommand {
     #[clap(flatten)]
     pub io: IoArgs,
     #[clap(
@@ -100,7 +100,7 @@ that can, among other things, be inspected using \"sq packet dump\".
 $ sq packet decrypt --recipient-key juliet.pgp ciphertext.pgp
 ",
 )]
-pub struct PacketDecryptCommand {
+pub struct DecryptCommand {
     #[clap(flatten)]
     pub io: IoArgs,
     #[clap(
@@ -152,7 +152,7 @@ The converse operation is \"sq packet join\".
 $ sq packet split juliet.pgp
 ",
 )]
-pub struct PacketSplitCommand {
+pub struct SplitCommand {
     #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
     pub input: Option<String>,
     #[clap(
@@ -186,7 +186,7 @@ $ sq packet split juliet.pgp
 $ sq packet join juliet.pgp-[0-3]*
 ",
 )]
-pub struct PacketJoinCommand {
+pub struct JoinCommand {
     #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
     pub input: Vec<String>,
     #[clap(

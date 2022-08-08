@@ -27,7 +27,7 @@ $ sq encrypt --recipient-cert romeo.pgp --signer-key juliet.pgp message.txt
 $ sq encrypt --symmetric message.txt
 ",
 )]
-pub struct EncryptCommand {
+pub struct Command {
     #[clap(flatten)]
     pub io: IoArgs,
     #[clap(
@@ -69,7 +69,7 @@ pub struct EncryptCommand {
     #[clap(
         long = "mode",
         value_name = "MODE",
-        default_value_t = EncryptEncryptionMode::All,
+        default_value_t = EncryptionMode::All,
         help = "Selects what kind of keys are considered for encryption.",
         long_help =
             "Selects what kind of keys are considered for \
@@ -80,15 +80,15 @@ pub struct EncryptCommand {
             subkeys.",
         arg_enum,
     )]
-    pub mode: EncryptEncryptionMode,
+    pub mode: EncryptionMode,
     #[clap(
         long = "compression",
         value_name = "KIND",
-        default_value_t = EncryptCompressionMode::Pad,
+        default_value_t = CompressionMode::Pad,
         help = "Selects compression scheme to use",
         arg_enum,
     )]
-    pub compression: EncryptCompressionMode,
+    pub compression: CompressionMode,
     #[clap(
         short = 't',
         long = "time",
@@ -109,14 +109,14 @@ pub struct EncryptCommand {
 }
 
 #[derive(ArgEnum, Debug, Clone)]
-pub enum EncryptEncryptionMode {
+pub enum EncryptionMode {
     Transport,
     Rest,
     All
 }
 
 #[derive(ArgEnum, Debug, Clone)]
-pub enum EncryptCompressionMode {
+pub enum CompressionMode {
     None,
     Pad,
     Zip,

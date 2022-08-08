@@ -30,12 +30,9 @@ use crate::{
     output::WkdUrlVariant,
 };
 
-use crate::sq_cli::keyserver::KeyserverCommand;
-use crate::sq_cli::keyserver::KeyserverSubcommands;
-use crate::sq_cli::wkd::WkdCommand;
-use crate::sq_cli::wkd::WkdSubcommands;
+use crate::sq_cli;
 
-pub fn dispatch_keyserver(config: Config, c: KeyserverCommand) -> Result<()> {
+pub fn dispatch_keyserver(config: Config, c: sq_cli::keyserver::Command) -> Result<()> {
     let network_policy = c.network_policy.into();
     let mut ks = if let Some(uri) = c.server {
         KeyServer::new(network_policy, &uri)
@@ -48,8 +45,9 @@ pub fn dispatch_keyserver(config: Config, c: KeyserverCommand) -> Result<()> {
         .enable_time()
         .build()?;
 
+    use crate::sq_cli::keyserver::Subcommands::*;
     match c.subcommand {
-         KeyserverSubcommands::Get(c) => {
+         Get(c) => {
             let query = c.query;
 
             let handle = query.parse::<KeyHandle>();
@@ -78,7 +76,7 @@ pub fn dispatch_keyserver(config: Config, c: KeyserverCommand) -> Result<()> {
                      or an email address: {:?}", query));
             }
         },
-        KeyserverSubcommands::Send(c) => {
+        Send(c) => {
             let mut input = open_or_stdin(c.input.as_deref())?;
             let cert = Cert::from_reader(&mut input).
                 context("Malformed key")?;
@@ -91,7 +89,7 @@ pub fn dispatch_keyserver(config: Config, c: KeyserverCommand) -> Result<()> {
     Ok(())
 }
 
-pub fn dispatch_wkd(config: Config, c: WkdCommand) -> Result<()> {
+pub fn dispatch_wkd(config: Config, c: sq_cli::wkd::Command) -> Result<()> {
     let network_policy: net::Policy = c.network_policy.into();
 
     let rt = tokio::runtime::Builder::new_current_thread()
@@ -99,8 +97,9 @@ pub fn dispatch_wkd(config: Config, c: WkdCommand) -> Result<()> {
         .enable_time()
         .build()?;
 
+    use crate::sq_cli::wkd::Subcommands::*;
     match c.subcommand {
-        WkdSubcommands::Url(c) => {
+        Url(c) => {
             let wkd_url = wkd::Url::from(&c.email_address)?;
             let advanced = wkd_url.to_url(None)?.to_string();
             let direct = wkd_url.to_url(wkd::Variant::Direct)?.to_string();
@@ -108,7 +107,7 @@ pub fn dispatch_wkd(config: Config, c: WkdCommand) -> Result<()> {
                                        WkdUrlVariant::Advanced, advanced, direct)?;
             output.write(config.output_format, &mut std::io::stdout())?;
         },
-        WkdSubcommands::DirectUrl(c) => {
+        DirectUrl(c) => {
             let wkd_url = wkd::Url::from(&c.email_address)?;
             let advanced = wkd_url.to_url(None)?.to_string();
             let direct = wkd_url.to_url(wkd::Variant::Direct)?.to_string();
@@ -116,7 +115,7 @@ pub fn dispatch_wkd(config: Config, c: WkdCommand) -> Result<()> {
                                        WkdUrlVariant::Direct, advanced, direct)?;
             output.write(config.output_format, &mut std::io::stdout())?;
         },
-        WkdSubcommands::Get(c) => {
+        Get(c) => {
             // Check that the policy allows https.
             network_policy.assert(net::Policy::Encrypted)?;
 
@@ -138,7 +137,7 @@ pub fn dispatch_wkd(config: Config, c: WkdCommand) -> Result<()> {
                 config.create_or_stdout_safe(c.output.as_deref())?;
             serialize_keyring(&mut output, &certs, c.binary)?;
         },
-        WkdSubcommands::Generate(c) => {
+        Generate(c) => {
             let domain = c.domain;
             let skip = c.skip;
             let f = open_or_stdin(c.input.as_deref())?;

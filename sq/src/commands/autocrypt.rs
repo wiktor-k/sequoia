@@ -14,12 +14,11 @@ use crate::{
     sq_cli,
 };
 
-use sq_cli::autocrypt::{AutocryptSubcommands, AutocryptCommand};
-
-pub fn dispatch(config: Config, c: &AutocryptCommand) -> Result<()> {
+pub fn dispatch(config: Config, c: &sq_cli::autocrypt::Command) -> Result<()> {
+    use sq_cli::autocrypt::Subcommands::*;
 
     match &c.subcommand {
-        AutocryptSubcommands::Decode(command) => {
+        Decode(command) => {
             let input = open_or_stdin(command.io.input.as_deref())?;
             let mut output = config.create_or_stdout_pgp(
                 command.io.output.as_deref(),
@@ -34,7 +33,7 @@ pub fn dispatch(config: Config, c: &AutocryptCommand) -> Result<()> {
             }
             output.finalize()?;
         }
-        AutocryptSubcommands::EncodeSender(command) => {
+        EncodeSender(command) => {
             let input = open_or_stdin(command.io.input.as_deref())?;
             let mut output =
                 config.create_or_stdout_safe(command.io.output.as_deref())?;

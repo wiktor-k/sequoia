@@ -21,20 +21,20 @@ operations on certificates.
     arg_required_else_help = true,
     setting(clap::AppSettings::DeriveDisplayOrder),
 )]
-pub struct KeyCommand {
+pub struct Command {
     #[clap(subcommand)]
-    pub subcommand: KeySubcommands,
+    pub subcommand: Subcommands,
 }
 
 #[derive(Debug, Subcommand)]
-pub enum KeySubcommands {
-    Generate(KeyGenerateCommand),
-    Password(KeyPasswordCommand),
+pub enum Subcommands {
+    Generate(GenerateCommand),
+    Password(PasswordCommand),
     #[clap(subcommand)]
-    Userid(KeyUseridCommand),
-    ExtractCert(KeyExtractCertCommand),
-    AttestCertifications(KeyAttestCertificationsCommand),
-    Adopt(KeyAdoptCommand),
+    Userid(UseridCommand),
+    ExtractCert(ExtractCertCommand),
+    AttestCertifications(AttestCertificationsCommand),
+    Adopt(AdoptCommand),
 }
 
 #[derive(Debug, Args)]
@@ -76,7 +76,7 @@ $ sq key generate --userid \"<juliet@example.org>\" --userid \"Juliet Capulet\"
 #[clap(group(ArgGroup::new("cap-sign").args(&["can-sign", "cannot-sign"])))]
 #[clap(group(ArgGroup::new("cap-authenticate").args(&["can-authenticate", "cannot-authenticate"])))]
 #[clap(group(ArgGroup::new("cap-encrypt").args(&["can-encrypt", "cannot-encrypt"])))]
-pub struct KeyGenerateCommand {
+pub struct GenerateCommand {
     #[clap(
         short = 'u',
         long = "userid",
@@ -88,11 +88,11 @@ pub struct KeyGenerateCommand {
         short = 'c',
         long = "cipher-suite",
         value_name = "CIPHER-SUITE",
-        default_value_t = KeyCipherSuite::Cv25519,
+        default_value_t = CipherSuite::Cv25519,
         help = "Selects the cryptographic algorithms for the key",
         arg_enum,
     )]
-    pub cipher_suite: KeyCipherSuite,
+    pub cipher_suite: CipherSuite,
     #[clap(
         long = "with-password",
         help = "Protects the key with a password",
@@ -171,7 +171,7 @@ $ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
             [default: universal]",
         arg_enum,
     )]
-    pub can_encrypt: Option<KeyEncryptPurpose>,
+    pub can_encrypt: Option<EncryptPurpose>,
     #[clap(
         long = "cannot-encrypt",
         help = "Adds no encryption-capable subkey",
@@ -200,14 +200,14 @@ $ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
 }
 
 #[derive(ArgEnum, Clone, Debug)]
-pub enum KeyCipherSuite {
+pub enum CipherSuite {
     Rsa3k,
     Rsa4k,
     Cv25519
 }
 
 #[derive(ArgEnum, Clone, Debug)]
-pub enum KeyEncryptPurpose {
+pub enum EncryptPurpose {
     Transport,
     Storage,
     Universal
@@ -239,7 +239,7 @@ $ sq key password < juliet.key.pgp > juliet.encrypted_key.pgp
 $ sq key password --clear < juliet.encrypted_key.pgp > juliet.decrypted_key.pgp
 ",
 )]
-pub struct KeyPasswordCommand {
+pub struct PasswordCommand {
     #[clap(flatten)]
     pub io: IoArgs,
     #[clap(
@@ -276,7 +276,7 @@ $ sq key generate --userid \"<juliet@example.org>\" --export juliet.key.pgp
 $ sq key extract-cert --output juliet.cert.pgp juliet.key.pgp
 ",
 )]
-pub struct KeyExtractCertCommand {
+pub struct ExtractCertCommand {
     #[clap(flatten)]
     pub io: IoArgs,
     #[clap(
@@ -300,9 +300,9 @@ Add User IDs to, or strip User IDs from a key.
     arg_required_else_help = true,
     setting(clap::AppSettings::DeriveDisplayOrder),
 )]
-pub enum KeyUseridCommand {
-    Add(KeyUseridAddCommand),
-    Strip(KeyUseridStripCommand),
+pub enum UseridCommand {
+    Add(UseridAddCommand),
+    Strip(UseridStripCommand),
 }
 
 #[derive(Debug, Args)]
@@ -326,7 +326,7 @@ $ sq key userid add --userid \"Juliet\" juliet.key.pgp \\
   --output juliet-new.key.pgp
 ",
 )]
-pub struct KeyUseridAddCommand {
+pub struct UseridAddCommand {
     #[clap(flatten)]
     pub io: IoArgs,
     #[clap(
@@ -408,7 +408,7 @@ $ sq key userid strip --userid \"<juliet@example.org>\" \\
   --output juliet-new.key.pgp juliet.key.pgp
 ",
 )]
-pub struct KeyUseridStripCommand {
+pub struct UseridStripCommand {
     #[clap(flatten)]
     pub io: IoArgs,
     #[clap(
@@ -449,7 +449,7 @@ feasible.
 $ sq key adopt --keyring juliet-old.pgp --key 0123456789ABCDEF -- juliet-new.pgp
 ",
 )]
-pub struct KeyAdoptCommand {
+pub struct AdoptCommand {
     #[clap(
         short = 'r',
         long = "keyring",
@@ -519,7 +519,7 @@ $ sq key attest-certifications juliet.pgp
 $ sq key attest-certifications --none juliet.pgp
 ",
 )]
-pub struct KeyAttestCertificationsCommand {
+pub struct AttestCertificationsCommand {
     #[clap(
         long = "none",
         conflicts_with = "all",

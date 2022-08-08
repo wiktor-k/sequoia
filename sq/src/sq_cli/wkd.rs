@@ -10,7 +10,7 @@ use super::NetworkPolicy;
     arg_required_else_help = true,
     setting(clap::AppSettings::DeriveDisplayOrder),
 )]
-pub struct WkdCommand {
+pub struct Command {
     #[clap(
         short,
         long,
@@ -21,22 +21,22 @@ pub struct WkdCommand {
     )]
     pub network_policy: NetworkPolicy,
     #[clap(subcommand)]
-    pub subcommand: WkdSubcommands,
+    pub subcommand: Subcommands,
 }
 
 #[derive(Debug, Subcommand)]
-pub enum WkdSubcommands {
-    Generate(WkdGenerateCommand),
-    Get(WkdGetCommand),
-    DirectUrl(WkdDirectUrlCommand),
-    Url(WkdUrlCommand),
+pub enum Subcommands {
+    Generate(GenerateCommand),
+    Get(GetCommand),
+    DirectUrl(DirectUrlCommand),
+    Url(UrlCommand),
 }
 
 #[derive(Debug, Args)]
 #[clap(
     about = "Prints the advanced Web Key Directory URL of an email address.",
 )]
-pub struct WkdUrlCommand {
+pub struct UrlCommand {
     #[clap(
         value_name = "ADDRESS",
         help = "Queries for ADDRESS",
@@ -48,7 +48,7 @@ pub struct WkdUrlCommand {
 #[clap(
     about = "Prints the direct Web Key Directory URL of an email address.",
 )]
-pub struct WkdDirectUrlCommand {
+pub struct DirectUrlCommand {
     #[clap(
         value_name = "ADDRESS",
         help = "Queries for ADDRESS",
@@ -60,7 +60,7 @@ pub struct WkdDirectUrlCommand {
 #[clap(
     about = "Queries for certs using Web Key Directory",
 )]
-pub struct WkdGetCommand {
+pub struct GetCommand {
     #[clap(
         value_name = "ADDRESS",
         help = "Queries a cert for ADDRESS",
@@ -108,7 +108,7 @@ for the direct version. sq does not copy files to the web server.",
 $ sq wkd generate /tmp/wkdroot example.com certs.ppg
 ",
 )]
-pub struct WkdGenerateCommand {
+pub struct GenerateCommand {
     #[clap(
         value_name = "WEB-ROOT",
         help = "Writes the WKD to WEB-ROOT",

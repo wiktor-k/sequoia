@@ -27,7 +27,7 @@ $ sq dearmor ascii-juliet.pgp
 $ sq dearmor ascii-message.pgp
 ",
     )]
-pub struct DearmorCommand {
+pub struct Command {
     #[clap(flatten)]
     pub io: IoArgs,
 }

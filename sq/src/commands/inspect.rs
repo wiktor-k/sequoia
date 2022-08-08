@@ -17,9 +17,9 @@ use super::dump::Convert;
 use crate::SECONDS_IN_YEAR;
 use crate::SECONDS_IN_DAY;
 
-use crate::sq_cli::inspect::InspectCommand;
+use crate::sq_cli::inspect;
 
-pub fn inspect(c: InspectCommand, policy: &dyn Policy, output: &mut dyn io::Write)
+pub fn inspect(c: inspect::Command, policy: &dyn Policy, output: &mut dyn io::Write)
                -> Result<()> {
     let print_certifications = c.certifications;
 

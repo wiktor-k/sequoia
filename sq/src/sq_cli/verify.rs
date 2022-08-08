@@ -39,7 +39,7 @@ If you are looking for a standalone program to verify detached
 signatures, consider using sequoia-sqv.
 ",
     )]
-pub struct VerifyCommand {
+pub struct Command {
     #[clap(flatten)]
     pub io: IoArgs,
     #[clap(

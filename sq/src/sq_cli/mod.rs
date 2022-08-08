@@ -119,30 +119,30 @@ pub struct SqCommand {
 /// The order is derived from the order of variants in this enum.
 #[derive(Debug, Subcommand)]
 pub enum SqSubcommands {
-    Encrypt(encrypt::EncryptCommand),
-    Decrypt(decrypt::DecryptCommand),
+    Encrypt(encrypt::Command),
+    Decrypt(decrypt::Command),
 
-    Sign(sign::SignCommand),
-    Verify(verify::VerifyCommand),
+    Sign(sign::Command),
+    Verify(verify::Command),
 
-    Key(key::KeyCommand),
-    Keyring(keyring::KeyringCommand),
-    Certify(certify::CertifyCommand),
+    Key(key::Command),
+    Keyring(keyring::Command),
+    Certify(certify::Command),
 
     #[cfg(feature = "autocrypt")]
-    Autocrypt(autocrypt::AutocryptCommand),
-    Keyserver(keyserver::KeyserverCommand),
-    Wkd(wkd::WkdCommand),
+    Autocrypt(autocrypt::Command),
+    Keyserver(keyserver::Command),
+    Wkd(wkd::Command),
 
-    Armor(armor::ArmorCommand),
-    Dearmor(dearmor::DearmorCommand),
+    Armor(armor::Command),
+    Dearmor(dearmor::Command),
 
-    Inspect(inspect::InspectCommand),
-    Packet(packet::PacketCommand),
+    Inspect(inspect::Command),
+    Packet(packet::Command),
 
-    Revoke(revoke::RevokeCommand),
+    Revoke(revoke::Command),
 
-    OutputVersions(output_versions::OutputVersionsCommand),
+    OutputVersions(output_versions::Command),
 }
 
 use chrono::{offset::Utc, DateTime};

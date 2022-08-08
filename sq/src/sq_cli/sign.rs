@@ -24,7 +24,7 @@ $ sq sign --signer-key juliet.pgp message.txt
 $ sq sign --detached --signer-key juliet.pgp message.txt
 ",
     )]
-pub struct SignCommand {
+pub struct Command {
     #[clap(flatten)]
     pub io: IoArgs,
     // TODO: Why capital B?

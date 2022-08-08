@@ -24,18 +24,10 @@ use crate::SECONDS_IN_YEAR;
 use crate::parse_duration;
 use crate::decrypt_key;
 
-use crate::sq_cli::key::KeyCommand;
-use crate::sq_cli::key::KeyGenerateCommand;
-use crate::sq_cli::key::KeyPasswordCommand;
-use crate::sq_cli::key::KeyUseridCommand;
-use crate::sq_cli::key::KeyUseridAddCommand;
-use crate::sq_cli::key::KeyUseridStripCommand;
-use crate::sq_cli::key::KeyExtractCertCommand;
-use crate::sq_cli::key::KeyAdoptCommand;
-use crate::sq_cli::key::KeyAttestCertificationsCommand;
-use crate::sq_cli::key::KeySubcommands::*;
+use crate::sq_cli;
 
-pub fn dispatch(config: Config, command: KeyCommand) -> Result<()> {
+pub fn dispatch(config: Config, command: sq_cli::key::Command) -> Result<()> {
+    use sq_cli::key::Subcommands::*;
     match command.subcommand {
         Generate(c) => generate(config, c)?,
         Password(c) => password(config, c)?,
@@ -47,7 +39,10 @@ pub fn dispatch(config: Config, command: KeyCommand) -> Result<()> {
     Ok(())
 }
 
-fn generate(config: Config, command: KeyGenerateCommand) -> Result<()> {
+fn generate(
+    config: Config,
+    command: sq_cli::key::GenerateCommand,
+) -> Result<()> {
     let mut builder = CertBuilder::new();
 
     // User ID
@@ -91,7 +86,7 @@ fn generate(config: Config, command: KeyGenerateCommand) -> Result<()> {
     }
 
     // Cipher Suite
-    use crate::sq_cli::key::KeyCipherSuite::*;
+    use sq_cli::key::CipherSuite::*;
     match command.cipher_suite {
         Rsa3k => {
             builder = builder.set_cipher_suite(CipherSuite::RSA3k);
@@ -130,7 +125,7 @@ fn generate(config: Config, command: KeyGenerateCommand) -> Result<()> {
     }
 
     // Encryption Capability
-    use crate::sq_cli::key::KeyEncryptPurpose::*;
+    use sq_cli::key::EncryptPurpose::*;
     match (command.can_encrypt, command.cannot_encrypt) {
         (Some(Universal), false) | (None, false) => {
             builder = builder.add_subkey(KeyFlags::empty()
@@ -228,7 +223,10 @@ fn generate(config: Config, command: KeyGenerateCommand) -> Result<()> {
     Ok(())
 }
 
-fn password(config: Config, command: KeyPasswordCommand) -> Result<()> {
+fn password(
+    config: Config,
+    command: sq_cli::key::PasswordCommand,
+) -> Result<()> {
     let input = open_or_stdin(command.io.input.as_deref())?;
     let key = Cert::from_reader(input)?;
 
@@ -296,7 +294,10 @@ fn password(config: Config, command: KeyPasswordCommand) -> Result<()> {
     Ok(())
 }
 
-fn extract_cert(config: Config, command: KeyExtractCertCommand) -> Result<()> {
+fn extract_cert(
+    config: Config,
+    command: sq_cli::key::ExtractCertCommand,
+) -> Result<()> {
     let input = open_or_stdin(command.io.input.as_deref())?;
     let mut output = config.create_or_stdout_safe(command.io.output.as_deref())?;
 
@@ -309,16 +310,16 @@ fn extract_cert(config: Config, command: KeyExtractCertCommand) -> Result<()> {
     Ok(())
 }
 
-fn userid(config: Config, command: KeyUseridCommand) -> Result<()> {
+fn userid(config: Config, command: sq_cli::key::UseridCommand) -> Result<()> {
     match command {
-        KeyUseridCommand::Add(c) => userid_add(config, c)?,
-        KeyUseridCommand::Strip(c) => userid_strip(config, c)?,
+        sq_cli::key::UseridCommand::Add(c) => userid_add(config, c)?,
+        sq_cli::key::UseridCommand::Strip(c) => userid_strip(config, c)?,
     }
 
     Ok(())
 }
 
-fn userid_add(config: Config, command: KeyUseridAddCommand) -> Result<()> {
+fn userid_add(config: Config, command: sq_cli::key::UseridAddCommand) -> Result<()> {
     let input = open_or_stdin(command.io.input.as_deref())?;
     let key = Cert::from_reader(input)?;
 
@@ -462,7 +463,10 @@ fn userid_add(config: Config, command: KeyUseridAddCommand) -> Result<()> {
     Ok(())
 }
 
-fn userid_strip(config: Config, command: KeyUseridStripCommand) -> Result<()> {
+fn userid_strip(
+    config: Config,
+    command: sq_cli::key::UseridStripCommand,
+) -> Result<()> {
     let input = open_or_stdin(command.io.input.as_deref())?;
     let key = Cert::from_reader(input)?;
 
@@ -511,7 +515,7 @@ signatures on other User IDs to make the key valid again.",
     Ok(())
 }
 
-fn adopt(config: Config, command: KeyAdoptCommand) -> Result<()> {
+fn adopt(config: Config, command: sq_cli::key::AdoptCommand) -> Result<()> {
     let input = open_or_stdin(command.certificate.as_deref())?;
     let cert = Cert::from_reader(input)?;
     let mut wanted: Vec<(KeyHandle,
@@ -714,8 +718,10 @@ fn adopt(config: Config, command: KeyAdoptCommand) -> Result<()> {
     Ok(())
 }
 
-fn attest_certifications(config: Config, command: KeyAttestCertificationsCommand)
-                         -> Result<()> {
+fn attest_certifications(
+    config: Config,
+    command: sq_cli::key::AttestCertificationsCommand,
+) -> Result<()> {
     // Attest to all certifications?
     let all = !command.none; // All is the default.
 

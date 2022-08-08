@@ -9,7 +9,7 @@ use super::NetworkPolicy;
     subcommand_required = true,
     arg_required_else_help = true,
 )]
-pub struct KeyserverCommand {
+pub struct Command {
     #[clap(
         short = 'p',
         long = "policy",
@@ -27,20 +27,20 @@ pub struct KeyserverCommand {
     )]
     pub server: Option<String>,
     #[clap(subcommand)]
-    pub subcommand: KeyserverSubcommands,
+    pub subcommand: Subcommands,
 }
 
 #[derive(Debug, Subcommand)]
-pub enum KeyserverSubcommands {
-    Get(KeyserverGetCommand),
-    Send(KeyserverSendCommand),
+pub enum Subcommands {
+    Get(GetCommand),
+    Send(SendCommand),
 }
 
 #[derive(Debug, Args)]
 #[clap(
     about = "Retrieves a key",
 )]
-pub struct KeyserverGetCommand {
+pub struct GetCommand {
     #[clap(
         short,
         long,
@@ -67,7 +67,7 @@ pub struct KeyserverGetCommand {
 #[clap(
     about = "Sends a key",
 )]
-pub struct KeyserverSendCommand {
+pub struct SendCommand {
     #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
     pub input: Option<String>,
 }

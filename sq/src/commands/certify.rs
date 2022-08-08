@@ -18,9 +18,9 @@ use crate::SECONDS_IN_YEAR;
 use crate::commands::get_certification_keys;
 use crate::commands::GetKeysOptions;
 
-use crate::sq_cli::certify::CertifyCommand;
+use crate::sq_cli::certify;
 
-pub fn certify(config: Config, c: CertifyCommand)
+pub fn certify(config: Config, c: certify::Command)
     -> Result<()>
 {
     let certifier = c.certifier;

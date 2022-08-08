@@ -29,7 +29,7 @@ $ sq armor binary-juliet.pgp
 $ sq armor binary-message.pgp
 "
     )]
-pub struct ArmorCommand {
+pub struct Command {
     #[clap(flatten)]
     pub io: IoArgs,
     #[clap(

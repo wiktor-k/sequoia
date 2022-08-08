@@ -29,7 +29,7 @@ use crate::openpgp::cert::prelude::*;
 use crate::openpgp::policy::StandardPolicy as P;
 
 use clap::FromArgMatches;
-use crate::sq_cli::packet::PacketSubcommands;
+use crate::sq_cli::packet;
 use sq_cli::SqSubcommands;
 
 mod sq_cli;
@@ -625,7 +625,7 @@ fn main() -> Result<()> {
         },
 
         SqSubcommands::Packet(command) => match command.subcommand {
-            PacketSubcommands::Dump(command) => {
+            packet::Subcommands::Dump(command) => {
                 let mut input = open_or_stdin(command.io.input.as_deref())?;
                 let mut output = config.create_or_stdout_unsafe(
                     command.io.output.as_deref(),
@@ -638,7 +638,7 @@ fn main() -> Result<()> {
                                session_key.as_ref(), width)?;
             },
 
-            PacketSubcommands::Decrypt(command) => {
+            packet::Subcommands::Decrypt(command) => {
                 let mut input = open_or_stdin(command.io.input.as_deref())?;
                 let mut output = config.create_or_stdout_pgp(
                     command.io.output.as_deref(),
@@ -658,7 +658,7 @@ fn main() -> Result<()> {
                 output.finalize()?;
             },
 
-            PacketSubcommands::Split(command) => {
+            packet::Subcommands::Split(command) => {
                 let mut input = open_or_stdin(command.input.as_deref())?;
                 let prefix =
                 // The prefix is either specified explicitly...
@@ -675,7 +675,7 @@ fn main() -> Result<()> {
                             + "-");
                 commands::split(&mut input, &prefix)?;
             },
-            PacketSubcommands::Join(command) => commands::join(config, command)?,
+            packet::Subcommands::Join(command) => commands::join(config, command)?,
         },
 
         SqSubcommands::Keyserver(command) => {

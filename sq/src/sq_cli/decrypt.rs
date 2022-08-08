@@ -41,7 +41,7 @@ $ sq decrypt ciphertext.pgp
 ",
 )]
 // TODO use usize
-pub struct DecryptCommand {
+pub struct Command {
     #[clap(flatten)]
     pub io: IoArgs,
     #[clap(

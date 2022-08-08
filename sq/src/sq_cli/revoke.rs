@@ -46,16 +46,16 @@ $ sq revoke userid --time 20220101 --certificate juliet.pgp \\
     arg_required_else_help = true,
     setting(clap::AppSettings::DeriveDisplayOrder),
 )]
-pub struct RevokeCommand {
+pub struct Command {
     #[clap(subcommand)]
-    pub subcommand: RevokeSubcommands,
+    pub subcommand: Subcommands,
 }
 
 #[derive(Debug, Subcommand)]
-pub enum RevokeSubcommands {
-    Certificate(RevokeCertificateCommand),
-    Subkey(RevokeSubkeyCommand),
-    Userid(RevokeUseridCommand),
+pub enum Subcommands {
+    Certificate(CertificateCommand),
+    Subkey(SubkeyCommand),
+    Userid(UseridCommand),
 }
 
 #[derive(Debug, Args)]
@@ -76,7 +76,7 @@ If \"--revocation-key\" is not provided, then the certificate must
 include a certification-capable key.
 ",
 )]
-pub struct RevokeCertificateCommand {
+pub struct CertificateCommand {
     #[clap(
         value_name = "FILE",
         long = "certificate",
@@ -222,7 +222,7 @@ designated revoker.
 If \"--revocation-key\" is not provided, then the certificate must \
 include a certification-capable key.",
 )]
-pub struct RevokeSubkeyCommand {
+pub struct SubkeyCommand {
     #[clap(
         value_name = "FILE",
         long = "certificate",
@@ -355,7 +355,7 @@ designated revoker.
 If \"--revocation-key\" is not provided, then the certificate must \
 include a certification-capable key.",
 )]
-pub struct RevokeUseridCommand {
+pub struct UseridCommand {
     #[clap(
         value_name = "FILE",
         long = "certificate",

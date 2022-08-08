@@ -36,9 +36,9 @@ use crate::{
     Config,
 };
 
-use crate::sq_cli::encrypt::EncryptCompressionMode;
-use crate::sq_cli::encrypt::EncryptEncryptionMode;
-use crate::sq_cli::packet::PacketJoinCommand;
+use crate::sq_cli::encrypt::CompressionMode;
+use crate::sq_cli::encrypt::EncryptionMode;
+use crate::sq_cli::packet;
 
 #[cfg(feature = "autocrypt")]
 pub mod autocrypt;
@@ -313,8 +313,8 @@ pub struct EncryptOpts<'a> {
     pub npasswords: usize,
     pub recipients: &'a [openpgp::Cert],
     pub signers: Vec<openpgp::Cert>,
-    pub mode: EncryptEncryptionMode,
-    pub compression: EncryptCompressionMode,
+    pub mode: EncryptionMode,
+    pub compression: CompressionMode,
     pub time: Option<SystemTime>,
     pub use_expired_subkey: bool,
 }
@@ -337,13 +337,13 @@ pub fn encrypt(opts: EncryptOpts) -> Result<()> {
     }
 
     let mode = match opts.mode {
-        EncryptEncryptionMode::Rest => {
+        EncryptionMode::Rest => {
             KeyFlags::empty().set_storage_encryption()
         }
-        EncryptEncryptionMode::Transport => {
+        EncryptionMode::Transport => {
             KeyFlags::empty().set_transport_encryption()
         }
-        EncryptEncryptionMode::All => KeyFlags::empty()
+        EncryptionMode::All => KeyFlags::empty()
             .set_storage_encryption()
             .set_transport_encryption(),
     };
@@ -402,13 +402,13 @@ pub fn encrypt(opts: EncryptOpts) -> Result<()> {
         .context("Failed to create encryptor")?;
 
     match opts.compression {
-        EncryptCompressionMode::None => (),
-        EncryptCompressionMode::Pad => sink = Padder::new(sink).build()?,
-        EncryptCompressionMode::Zip => sink =
+        CompressionMode::None => (),
+        CompressionMode::Pad => sink = Padder::new(sink).build()?,
+        CompressionMode::Zip => sink =
             Compressor::new(sink).algo(CompressionAlgorithm::Zip).build()?,
-        EncryptCompressionMode::Zlib => sink =
+        CompressionMode::Zlib => sink =
             Compressor::new(sink).algo(CompressionAlgorithm::Zlib).build()?,
-        EncryptCompressionMode::Bzip2 => sink =
+        CompressionMode::Bzip2 => sink =
             Compressor::new(sink).algo(CompressionAlgorithm::BZip2).build()?,
     }
 
@@ -683,7 +683,7 @@ pub fn split(input: &mut (dyn io::Read + Sync + Send), prefix: &str)
 }
 
 /// Joins the given files.
-pub fn join(config: Config, c: PacketJoinCommand) -> Result<()> {
+pub fn join(config: Config, c: packet::JoinCommand) -> Result<()> {
     // Either we know what kind of armor we want to produce, or we
     // need to detect it using the first packet we see.
     let kind = c.kind.into();

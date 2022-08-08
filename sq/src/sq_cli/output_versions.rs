@@ -6,7 +6,7 @@ use clap::Parser;
     display_order = 110,
     about = "List supported output versions",
 )]
-pub struct OutputVersionsCommand {
+pub struct Command {
     /// List only the default output version.
     #[clap(long)]
     pub default: bool,

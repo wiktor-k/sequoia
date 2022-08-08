@@ -18,16 +18,16 @@ See https://autocrypt.org/
     subcommand_required = true,
     arg_required_else_help = true
 )]
-pub struct AutocryptCommand {
+pub struct Command {
     #[clap(subcommand)]
-    pub subcommand: AutocryptSubcommands,
+    pub subcommand: Subcommands,
 }
 
 #[derive(Debug, Subcommand)]
-pub enum AutocryptSubcommands {
-    Decode(AutocryptDecodeCommand),
+pub enum Subcommands {
+    Decode(DecodeCommand),
 
-    EncodeSender(AutocryptEncodeSenderCommand),
+    EncodeSender(EncodeSenderCommand),
 }
 
 #[derive(Debug, Args)]
@@ -46,7 +46,7 @@ The converse operation is \"sq autocrypt encode-sender\".
 $ sq autocrypt decode autocrypt.eml
 "
 )]
-pub struct AutocryptDecodeCommand {
+pub struct DecodeCommand {
     #[clap(flatten)]
     pub io: IoArgs,
     #[clap(short = 'B', long, help = "Emits binary data")]
@@ -80,7 +80,7 @@ $ sq autocrypt encode-sender --email juliet@example.org juliet.pgp
 $ sq autocrypt encode-sender --prefer-encrypt mutual juliet.pgp
 "
 )]
-pub struct AutocryptEncodeSenderCommand {
+pub struct EncodeSenderCommand {
     #[clap(flatten)]
     pub io: IoArgs,
     // TODO the help message looks like "primary userid" might be the default

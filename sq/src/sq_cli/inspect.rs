@@ -28,7 +28,7 @@ $ sq inspect message.pgp
 $ sq inspect message.sig
 ",
 )]
-pub struct InspectCommand {
+pub struct Command {
     #[clap(
         value_name = "FILE",
         help = "Reads from FILE or stdin if omitted",

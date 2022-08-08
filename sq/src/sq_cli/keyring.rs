@@ -19,18 +19,18 @@ terms keys and certs interchangeably.
     arg_required_else_help = true,
     setting(clap::AppSettings::DeriveDisplayOrder),
 )]
-pub struct KeyringCommand {
+pub struct Command {
     #[clap(subcommand)]
-    pub subcommand: KeyringSubcommands,
+    pub subcommand: Subcommands,
 }
 
 #[derive(Debug, Subcommand)]
-pub enum KeyringSubcommands {
-    List(KeyringListCommand),
-    Split(KeyringSplitCommand),
-    Join(KeyringJoinCommand),
-    Merge(KeyringMergeCommand),
-    Filter(KeyringFilterCommand),
+pub enum Subcommands {
+    List(ListCommand),
+    Split(SplitCommand),
+    Join(JoinCommand),
+    Merge(MergeCommand),
+    Filter(FilterCommand),
 }
 
 #[derive(Debug, Args)]
@@ -74,7 +74,7 @@ $ sq keyring filter --domain example.org keys.pgp | \\
 $ sq keyring filter --domain example.org --prune-certs certs.pgp
 ",
 )]
-pub struct KeyringFilterCommand {
+pub struct FilterCommand {
     #[clap(value_name = "FILE", help = "Reads from FILE or stdin if omitted")]
     pub input: Vec<String>,
     #[clap(
@@ -175,7 +175,7 @@ The converse operation is \"sq keyring split\".
 $ sq keyring join juliet.pgp romeo.pgp alice.pgp
 ",
 )]
-pub struct KeyringJoinCommand {
+pub struct JoinCommand {
     #[clap(value_name = "FILE", help = "Sets the input files to use")]
     pub input: Vec<String>,
     #[clap(
@@ -211,7 +211,7 @@ is preferred.
 $ sq keyring merge certs.pgp romeo-updates.pgp
 ",
 )]
-pub struct KeyringMergeCommand {
+pub struct MergeCommand {
     #[clap(
         value_name = "FILE",
         help = "Reads from FILE",
@@ -251,7 +251,7 @@ $ sq keyring list certs.pgp
 $ sq keyring filter --domain example.org certs.pgp | sq keyring list
 ",
 )]
-pub struct KeyringListCommand {
+pub struct ListCommand {
     #[clap(
         value_name = "FILE",
         help = "Reads from FILE or stdin if omitted",
@@ -288,7 +288,7 @@ $ sq keyring split certs.pgp
 $ sq keyring merge certs.pgp | sq keyring split
 ",
 )]
-pub struct KeyringSplitCommand {
+pub struct SplitCommand {
     #[clap(
         value_name = "FILE",
         help = "Reads from FILE or stdin if omitted",

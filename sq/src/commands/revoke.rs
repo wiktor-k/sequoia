@@ -44,22 +44,18 @@ impl RevocationTarget {
     }
 }
 
-use crate::sq_cli::revoke::RevokeCommand;
-use crate::sq_cli::revoke::RevokeSubcommands;
-use crate::sq_cli::revoke::RevokeCertificateCommand;
-use crate::sq_cli::revoke::RevokeSubkeyCommand;
-use crate::sq_cli::revoke::RevokeUseridCommand;
+use crate::sq_cli::revoke;
 
-pub fn dispatch(config: Config, c: RevokeCommand) -> Result<()> {
+pub fn dispatch(config: Config, c: revoke::Command) -> Result<()> {
 
     match c.subcommand {
-        RevokeSubcommands::Certificate(c) => revoke_certificate(config, c),
-        RevokeSubcommands::Subkey(c) => revoke_subkey(config, c),
-        RevokeSubcommands::Userid(c) => revoke_userid(config, c),
+        revoke::Subcommands::Certificate(c) => revoke_certificate(config, c),
+        revoke::Subcommands::Subkey(c) => revoke_subkey(config, c),
+        revoke::Subcommands::Userid(c) => revoke_userid(config, c),
     }
 }
 
-pub fn revoke_certificate(config: Config, c: RevokeCertificateCommand) -> Result<()> {
+pub fn revoke_certificate(config: Config, c: revoke::CertificateCommand) -> Result<()> {
     let revocation_target = RevocationTarget::Certificate;
 
     let cert = read_cert(c.input.as_deref())?;
@@ -86,7 +82,7 @@ pub fn revoke_certificate(config: Config, c: RevokeCertificateCommand) -> Result
     Ok(())
 }
 
-pub fn revoke_subkey(config: Config, c: RevokeSubkeyCommand) -> Result<()> {
+pub fn revoke_subkey(config: Config, c: revoke::SubkeyCommand) -> Result<()> {
     let revocation_target = {
         let kh: KeyHandle = c.subkey
             .parse()
@@ -121,7 +117,7 @@ pub fn revoke_subkey(config: Config, c: RevokeSubkeyCommand) -> Result<()> {
     Ok(())
 }
 
-pub fn revoke_userid(config: Config, c: RevokeUseridCommand) -> Result<()> {
+pub fn revoke_userid(config: Config, c: revoke::UseridCommand) -> Result<()> {
     let revocation_target = RevocationTarget::UserID(c.userid);
 
     let cert = read_cert(c.input.as_deref())?;
