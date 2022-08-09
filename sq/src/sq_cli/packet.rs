@@ -1,6 +1,6 @@
 use clap::{Args, Parser, Subcommand};
 
-use super::{IoArgs, SessionKey, PacketKind};
+use super::{ArmorKind, IoArgs, SessionKey};
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -199,12 +199,12 @@ pub struct JoinCommand {
     #[clap(
         long = "label",
         value_name = "LABEL",
-        default_value_t = PacketKind::Auto,
+        default_value_t = ArmorKind::Auto,
         conflicts_with = "binary",
         help = "Selects the kind of armor header",
         arg_enum,
     )]
-    pub kind: PacketKind,
+    pub kind: ArmorKind,
     #[clap(
         short = 'B',
         long,

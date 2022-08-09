@@ -1,6 +1,6 @@
-use clap::{ArgEnum, Parser};
+use clap::Parser;
 
-use super::IoArgs;
+use super::{ArmorKind, IoArgs};
 
 // TODO?: Option<_> conflicts with default value
 // TODO: Use PathBuf as input type for more type safety? Investigate conversion
@@ -40,32 +40,4 @@ pub struct Command {
         arg_enum
     )]
     pub kind: ArmorKind,
-}
-
-#[derive(ArgEnum)]
-#[derive(Debug, Clone)]
-pub enum ArmorKind {
-    Auto,
-    Message,
-    #[clap(name = "cert")]
-    PublicKey,
-    #[clap(name = "key")]
-    SecretKey,
-    #[clap(name = "sig")]
-    Signature,
-    File,
-}
-
-use sequoia_openpgp::armor::Kind as OpenPGPArmorKind;
-impl From<ArmorKind> for Option<OpenPGPArmorKind> {
-    fn from(c: ArmorKind) -> Self {
-        match c {
-            ArmorKind::Auto => None,
-            ArmorKind::Message => Some(OpenPGPArmorKind::Message),
-            ArmorKind::PublicKey => Some(OpenPGPArmorKind::PublicKey),
-            ArmorKind::SecretKey => Some(OpenPGPArmorKind::SecretKey),
-            ArmorKind::Signature => Some(OpenPGPArmorKind::Signature),
-            ArmorKind::File => Some(OpenPGPArmorKind::File),
-        }
-    }
 }

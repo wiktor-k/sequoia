@@ -3,6 +3,7 @@ use clap::{Command, ArgEnum, Args, Subcommand};
 use clap::{CommandFactory, Parser};
 
 use sequoia_openpgp as openpgp;
+use openpgp::armor::Kind as OpenPGPArmorKind;
 use openpgp::crypto::SessionKey as OpenPGPSessionKey;
 use openpgp::types::SymmetricAlgorithm;
 use openpgp::fmt::hex;
@@ -221,29 +222,29 @@ pub struct IoArgs {
     pub output: Option<String>,
 }
 
-// TODO: reuse ArmorKind, requires changes in sq.rs
-#[derive(ArgEnum, Clone, Debug)]
-pub enum PacketKind {
+#[derive(ArgEnum, Debug, Clone)]
+pub enum ArmorKind {
     Auto,
     Message,
-    Cert,
-    Key,
-    Sig,
-    File
+    #[clap(name = "cert")]
+    PublicKey,
+    #[clap(name = "key")]
+    SecretKey,
+    #[clap(name = "sig")]
+    Signature,
+    File,
 }
 
-impl From<PacketKind> for Option<openpgp::armor::Kind> {
+impl From<ArmorKind> for Option<OpenPGPArmorKind> {
 
-    fn from(pk: PacketKind) -> Self {
-        use openpgp::armor::Kind as OpenpgpArmorKind;
-
-        match pk {
-            PacketKind::Auto => None,
-            PacketKind::Message => Some(OpenpgpArmorKind::Message),
-            PacketKind::Cert => Some(OpenpgpArmorKind::PublicKey),
-            PacketKind::Key => Some(OpenpgpArmorKind::SecretKey),
-            PacketKind::Sig => Some(OpenpgpArmorKind::Signature),
-            PacketKind::File => Some(OpenpgpArmorKind::File),
+    fn from(c: ArmorKind) -> Self {
+        match c {
+            ArmorKind::Auto => None,
+            ArmorKind::Message => Some(OpenPGPArmorKind::Message),
+            ArmorKind::PublicKey => Some(OpenPGPArmorKind::PublicKey),
+            ArmorKind::SecretKey => Some(OpenPGPArmorKind::SecretKey),
+            ArmorKind::Signature => Some(OpenPGPArmorKind::Signature),
+            ArmorKind::File => Some(OpenPGPArmorKind::File),
         }
     }
 }
