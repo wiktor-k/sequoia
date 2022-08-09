@@ -3,7 +3,7 @@ use clap::{ArgEnum, Args, Subcommand};
 
 use sequoia_openpgp as openpgp;
 
-use super::Time;
+use crate::sq_cli::types::Time;
 
 #[derive(Parser, Debug)]
 #[clap(

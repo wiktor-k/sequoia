@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use super::IoArgs;
+use crate::sq_cli::types::IoArgs;
 
 #[derive(Parser, Debug)]
 #[clap(

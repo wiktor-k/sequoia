@@ -1,6 +1,6 @@
 use clap::{Args, Parser, Subcommand};
 
-use super::{ArmorKind, IoArgs, SessionKey};
+use crate::sq_cli::types::{ArmorKind, IoArgs, SessionKey};
 
 #[derive(Parser, Debug)]
 #[clap(

@@ -25,7 +25,7 @@ use crate::{
         dump::PacketDumper,
         VHelper,
     },
-    sq_cli::SessionKey as CliSessionKey,
+    sq_cli,
 };
 
 trait PrivateKey {
@@ -94,7 +94,7 @@ struct Helper<'a> {
     secret_keys: HashMap<KeyID, Box<dyn PrivateKey>>,
     key_identities: HashMap<KeyID, Fingerprint>,
     key_hints: HashMap<KeyID, String>,
-    session_keys: Vec<CliSessionKey>,
+    session_keys: Vec<sq_cli::types::SessionKey>,
     dump_session_key: bool,
     dumper: Option<PacketDumper>,
 }
@@ -102,7 +102,7 @@ struct Helper<'a> {
 impl<'a> Helper<'a> {
     fn new(config: &Config<'a>, private_key_store: Option<&str>,
            signatures: usize, certs: Vec<Cert>, secrets: Vec<Cert>,
-           session_keys: Vec<CliSessionKey>,
+           session_keys: Vec<sq_cli::types::SessionKey>,
            dump_session_key: bool, dump: bool)
            -> Self
     {
@@ -364,7 +364,7 @@ pub fn decrypt(config: Config,
                output: &mut dyn io::Write,
                signatures: usize, certs: Vec<Cert>, secrets: Vec<Cert>,
                dump_session_key: bool,
-               sk: Vec<CliSessionKey>,
+               sk: Vec<sq_cli::types::SessionKey>,
                dump: bool, hex: bool)
                -> Result<()> {
     let helper = Helper::new(&config, private_key_store, signatures, certs,
@@ -388,7 +388,7 @@ pub fn decrypt_unwrap(config: Config,
                       input: &mut (dyn io::Read + Sync + Send),
                       output: &mut dyn io::Write,
                       secrets: Vec<Cert>,
-                      session_keys: Vec<CliSessionKey>,
+                      session_keys: Vec<sq_cli::types::SessionKey>,
                       dump_session_key: bool)
                       -> Result<()>
 {

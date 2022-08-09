@@ -1,6 +1,6 @@
 use clap::{Args, Parser, Subcommand};
 
-use super::NetworkPolicy;
+use crate::sq_cli::types::NetworkPolicy;
 
 #[derive(Parser, Debug)]
 #[clap(

@@ -12,7 +12,7 @@ use self::openpgp::packet::signature::subpacket::{Subpacket, SubpacketValue};
 use self::openpgp::crypto::S2K;
 use self::openpgp::parse::{map::Map, Parse, PacketParserResult};
 
-use crate::sq_cli::SessionKey;
+use crate::sq_cli::types::SessionKey;
 
 #[derive(Debug)]
 pub enum Kind {

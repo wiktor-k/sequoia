@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use super::{ArmorKind, IoArgs};
+use crate::sq_cli::types::{ArmorKind, IoArgs};
 
 // TODO?: Option<_> conflicts with default value
 // TODO: Use PathBuf as input type for more type safety? Investigate conversion

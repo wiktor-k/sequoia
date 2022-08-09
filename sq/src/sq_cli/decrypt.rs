@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use super::{SessionKey, IoArgs};
+use crate::sq_cli::types::{IoArgs, SessionKey};
 
 #[derive(Parser, Debug)]
 #[clap(
