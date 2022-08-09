@@ -3,7 +3,7 @@ use clap::{Command, ArgEnum, Args, Subcommand};
 use clap::{CommandFactory, Parser};
 
 use sequoia_openpgp as openpgp;
-use openpgp::crypto::SessionKey;
+use openpgp::crypto::SessionKey as OpenPGPSessionKey;
 use openpgp::types::SymmetricAlgorithm;
 use openpgp::fmt::hex;
 
@@ -147,21 +147,21 @@ pub enum SqSubcommands {
 
 use chrono::{offset::Utc, DateTime};
 #[derive(Debug)]
-pub struct CliTime {
+pub struct Time {
     pub time: DateTime<Utc>,
 }
 
-impl std::str::FromStr for CliTime {
+impl std::str::FromStr for Time {
     type Err = anyhow::Error;
 
-    fn from_str(s: &str) -> anyhow::Result<CliTime> {
+    fn from_str(s: &str) -> anyhow::Result<Time> {
         let time =
-            CliTime::parse_iso8601(s, chrono::NaiveTime::from_hms(0, 0, 0))?;
-        Ok(CliTime { time })
+            Time::parse_iso8601(s, chrono::NaiveTime::from_hms(0, 0, 0))?;
+        Ok(Time { time })
     }
 }
 
-impl CliTime {
+impl Time {
     /// Parses the given string depicting a ISO 8601 timestamp.
     fn parse_iso8601(
         s: &str,
@@ -221,7 +221,7 @@ pub struct IoArgs {
     pub output: Option<String>,
 }
 
-// TODO: reuse CliArmorKind, requires changes in sq.rs
+// TODO: reuse ArmorKind, requires changes in sq.rs
 #[derive(ArgEnum, Clone, Debug)]
 pub enum PacketKind {
     Auto,
@@ -277,12 +277,12 @@ impl From<NetworkPolicy> for sequoia_net::Policy {
 /// [`Display`]: std::fmt::Display
 /// [`display_sensitive`]: CliSessionKey::display_sensitive
 #[derive(Debug, Clone)]
-pub struct CliSessionKey {
-    pub session_key: SessionKey,
+pub struct SessionKey {
+    pub session_key: OpenPGPSessionKey,
     pub symmetric_algo: Option<SymmetricAlgorithm>,
 }
 
-impl std::str::FromStr for CliSessionKey {
+impl std::str::FromStr for SessionKey {
     type Err = anyhow::Error;
 
     /// Parse a session key. The format is: an optional prefix specifying the
@@ -292,13 +292,13 @@ impl std::str::FromStr for CliSessionKey {
         let result = if let Some((algo, sk)) = sk.split_once(':') {
             let algo = SymmetricAlgorithm::from(algo.parse::<u8>()?);
             let dsk = hex::decode_pretty(sk)?.into();
-            CliSessionKey {
+            SessionKey {
                 session_key: dsk,
                 symmetric_algo: Some(algo),
             }
         } else {
             let dsk = hex::decode_pretty(sk)?.into();
-            CliSessionKey {
+            SessionKey {
                 session_key: dsk,
                 symmetric_algo: None,
             }
@@ -307,12 +307,12 @@ impl std::str::FromStr for CliSessionKey {
     }
 }
 
-impl CliSessionKey {
+impl SessionKey {
 
     /// Returns an object that implements Display for explicitly opting into
     /// printing a `SessionKey`.
-    pub fn display_sensitive(&self) -> CliSessionKeyDisplay {
-        CliSessionKeyDisplay { csk: self }
+    pub fn display_sensitive(&self) -> SessionKeyDisplay {
+        SessionKeyDisplay { csk: self }
     }
 }
 
@@ -323,12 +323,12 @@ impl CliSessionKey {
 /// [`CliSessionKey::display_sensitive`]. By requiring the user to opt-in, this
 /// will hopefully reduce that the chance that the session key is inadvertently
 /// leaked, e.g., in a log that may be publicly posted.
-pub struct CliSessionKeyDisplay<'a> {
-    csk: &'a CliSessionKey,
+pub struct SessionKeyDisplay<'a> {
+    csk: &'a SessionKey,
 }
 
 /// Print the session key without prefix in hexadecimal representation.
-impl<'a> std::fmt::Display for CliSessionKeyDisplay<'a> {
+impl<'a> std::fmt::Display for SessionKeyDisplay<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let sk = self.csk;
         write!(f, "{}", hex::encode(&sk.session_key))
@@ -342,26 +342,26 @@ mod test {
     #[test]
     fn test_parse_iso8601() -> anyhow::Result<()> {
         let z = chrono::NaiveTime::from_hms(0, 0, 0);
-        CliTime::parse_iso8601("2017-03-04T13:25:35Z", z)?;
-        CliTime::parse_iso8601("2017-03-04T13:25:35+08:30", z)?;
-        CliTime::parse_iso8601("2017-03-04T13:25:35", z)?;
-        CliTime::parse_iso8601("2017-03-04T13:25Z", z)?;
-        CliTime::parse_iso8601("2017-03-04T13:25", z)?;
+        Time::parse_iso8601("2017-03-04T13:25:35Z", z)?;
+        Time::parse_iso8601("2017-03-04T13:25:35+08:30", z)?;
+        Time::parse_iso8601("2017-03-04T13:25:35", z)?;
+        Time::parse_iso8601("2017-03-04T13:25Z", z)?;
+        Time::parse_iso8601("2017-03-04T13:25", z)?;
         // CliTime::parse_iso8601("2017-03-04T13Z", z)?; // XXX: chrono doesn't like
         // CliTime::parse_iso8601("2017-03-04T13", z)?; // ditto
-        CliTime::parse_iso8601("2017-03-04", z)?;
+        Time::parse_iso8601("2017-03-04", z)?;
         // CliTime::parse_iso8601("2017-03", z)?; // ditto
-        CliTime::parse_iso8601("2017-031", z)?;
-        CliTime::parse_iso8601("20170304T132535Z", z)?;
-        CliTime::parse_iso8601("20170304T132535+0830", z)?;
-        CliTime::parse_iso8601("20170304T132535", z)?;
-        CliTime::parse_iso8601("20170304T1325Z", z)?;
-        CliTime::parse_iso8601("20170304T1325", z)?;
+        Time::parse_iso8601("2017-031", z)?;
+        Time::parse_iso8601("20170304T132535Z", z)?;
+        Time::parse_iso8601("20170304T132535+0830", z)?;
+        Time::parse_iso8601("20170304T132535", z)?;
+        Time::parse_iso8601("20170304T1325Z", z)?;
+        Time::parse_iso8601("20170304T1325", z)?;
         // CliTime::parse_iso8601("20170304T13Z", z)?; // ditto
         // CliTime::parse_iso8601("20170304T13", z)?; // ditto
-        CliTime::parse_iso8601("20170304", z)?;
+        Time::parse_iso8601("20170304", z)?;
         // CliTime::parse_iso8601("201703", z)?; // ditto
-        CliTime::parse_iso8601("2017031", z)?;
+        Time::parse_iso8601("2017031", z)?;
         // CliTime::parse_iso8601("2017", z)?; // ditto
         Ok(())
     }

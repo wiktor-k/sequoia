@@ -1,6 +1,6 @@
 use clap::{ArgEnum, Parser};
 
-use super::{IoArgs, CliTime};
+use super::{IoArgs, Time};
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -96,7 +96,7 @@ pub struct Command {
         help = "Chooses keys valid at the specified time and \
             sets the signature's creation time",
     )]
-    pub time: Option<CliTime>,
+    pub time: Option<Time>,
     #[clap(
         long = "use-expired-subkey",
         help = "Falls back to expired encryption subkeys",

@@ -3,7 +3,7 @@ use clap::{ArgEnum, Args, Subcommand};
 
 use sequoia_openpgp as openpgp;
 
-use super::CliTime;
+use super::Time;
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -162,7 +162,7 @@ that in the future.\"",
 "Chooses keys valid at the specified time and sets the revocation \
 certificate's creation time",
     )]
-    pub time: Option<CliTime>,
+    pub time: Option<Time>,
     #[clap(
         long,
         value_names = &["NAME", "VALUE"],
@@ -315,7 +315,7 @@ the message \"I've created a new subkey, please refresh the certificate."
 "Chooses keys valid at the specified time and sets the revocation \
 certificate's creation time",
     )]
-    pub time: Option<CliTime>,
+    pub time: Option<Time>,
     #[clap(
         long,
         value_names = &["NAME", "VALUE"],
@@ -436,7 +436,7 @@ that in the future.\"",
 "Chooses keys valid at the specified time and sets the revocation \
 certificate's creation time",
     )]
-    pub time: Option<CliTime>,
+    pub time: Option<Time>,
     #[clap(
         long,
         value_names = &["NAME", "VALUE"],

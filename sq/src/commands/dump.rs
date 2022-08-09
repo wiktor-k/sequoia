@@ -12,7 +12,7 @@ use self::openpgp::packet::signature::subpacket::{Subpacket, SubpacketValue};
 use self::openpgp::crypto::S2K;
 use self::openpgp::parse::{map::Map, Parse, PacketParserResult};
 
-use crate::sq_cli::CliSessionKey;
+use crate::sq_cli::SessionKey;
 
 #[derive(Debug)]
 pub enum Kind {
@@ -58,7 +58,7 @@ impl Convert<chrono::DateTime<chrono::offset::Utc>> for Timestamp {
 pub fn dump<W>(input: &mut (dyn io::Read + Sync + Send),
                output: &mut dyn io::Write,
                mpis: bool, hex: bool,
-               sk: Option<&CliSessionKey>,
+               sk: Option<&SessionKey>,
                width: W)
                -> Result<Kind>
     where W: Into<Option<usize>>

@@ -25,7 +25,7 @@ use crate::{
         dump::PacketDumper,
         VHelper,
     },
-    sq_cli::CliSessionKey,
+    sq_cli::SessionKey as CliSessionKey,
 };
 
 trait PrivateKey {

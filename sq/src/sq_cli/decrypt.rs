@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use super::{CliSessionKey, IoArgs};
+use super::{SessionKey, IoArgs};
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -85,7 +85,7 @@ pub struct Command {
         value_name = "SESSION-KEY",
         help = "Decrypts an encrypted message using SESSION-KEY",
     )]
-    pub session_key: Vec<CliSessionKey>,
+    pub session_key: Vec<SessionKey>,
     #[clap(
         long = "dump",
         help = "Prints a packet dump to stderr",

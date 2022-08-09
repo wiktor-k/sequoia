@@ -1,6 +1,6 @@
 use clap::{ArgEnum, ArgGroup, Args, Parser, Subcommand};
 
-use super::{IoArgs, CliTime};
+use super::{IoArgs, Time};
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -115,7 +115,7 @@ default timezone is UTC):
 $ sq key generate --creation-time 20110609T1938+0200 --export noam.pgp
 ",
     )]
-    pub creation_time: Option<CliTime>,
+    pub creation_time: Option<Time>,
     #[clap(
         long = "expires",
         value_name = "TIME",
@@ -355,7 +355,7 @@ $ sq key userid add --userid \"Juliet\" --creation-time 20210628T1137+0200 \\
    juliet.key.pgp --output juliet-new.key.pgp
 ",
     )]
-    pub creation_time: Option<CliTime>,
+    pub creation_time: Option<Time>,
     #[clap(
         long = "private-key-store",
         value_name = "KEY_STORE",

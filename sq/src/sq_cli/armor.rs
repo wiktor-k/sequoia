@@ -36,15 +36,15 @@ pub struct Command {
         long = "label",
         value_name = "LABEL",
         help = "Selects the kind of armor header",
-        default_value_t = CliArmorKind::Auto,
+        default_value_t = ArmorKind::Auto,
         arg_enum
     )]
-    pub kind: CliArmorKind,
+    pub kind: ArmorKind,
 }
 
 #[derive(ArgEnum)]
 #[derive(Debug, Clone)]
-pub enum CliArmorKind {
+pub enum ArmorKind {
     Auto,
     Message,
     #[clap(name = "cert")]
@@ -57,15 +57,15 @@ pub enum CliArmorKind {
 }
 
 use sequoia_openpgp::armor::Kind as OpenPGPArmorKind;
-impl From<CliArmorKind> for Option<OpenPGPArmorKind> {
-    fn from(c: CliArmorKind) -> Self {
+impl From<ArmorKind> for Option<OpenPGPArmorKind> {
+    fn from(c: ArmorKind) -> Self {
         match c {
-            CliArmorKind::Auto => None,
-            CliArmorKind::Message => Some(OpenPGPArmorKind::Message),
-            CliArmorKind::PublicKey => Some(OpenPGPArmorKind::PublicKey),
-            CliArmorKind::SecretKey => Some(OpenPGPArmorKind::SecretKey),
-            CliArmorKind::Signature => Some(OpenPGPArmorKind::Signature),
-            CliArmorKind::File => Some(OpenPGPArmorKind::File),
+            ArmorKind::Auto => None,
+            ArmorKind::Message => Some(OpenPGPArmorKind::Message),
+            ArmorKind::PublicKey => Some(OpenPGPArmorKind::PublicKey),
+            ArmorKind::SecretKey => Some(OpenPGPArmorKind::SecretKey),
+            ArmorKind::Signature => Some(OpenPGPArmorKind::Signature),
+            ArmorKind::File => Some(OpenPGPArmorKind::File),
         }
     }
 }
