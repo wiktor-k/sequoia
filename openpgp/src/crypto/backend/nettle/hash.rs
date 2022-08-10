@@ -78,21 +78,21 @@ impl HashAlgorithm {
                 Err(Error::UnsupportedHashAlgorithm(self).into()),
         }
     }
+}
 
-    /// Returns the ASN.1 OID of this hash algorithm.
-    pub fn oid(self) -> Result<&'static [u8]> {
-        use nettle::rsa;
+#[cfg(all(test, feature = "crypto-nettle"))]
+mod tests {
+    use super::*;
+    use nettle::rsa;
 
-        match self {
-            HashAlgorithm::SHA1 => Ok(rsa::ASN1_OID_SHA1),
-            HashAlgorithm::SHA224 => Ok(rsa::ASN1_OID_SHA224),
-            HashAlgorithm::SHA256 => Ok(rsa::ASN1_OID_SHA256),
-            HashAlgorithm::SHA384 => Ok(rsa::ASN1_OID_SHA384),
-            HashAlgorithm::SHA512 => Ok(rsa::ASN1_OID_SHA512),
-            HashAlgorithm::MD5 => Ok(rsa::ASN1_OID_MD5),
-            HashAlgorithm::RipeMD => Ok(rsa::ASN1_OID_RIPEMD160),
-            HashAlgorithm::Private(_) | HashAlgorithm::Unknown(_) =>
-                Err(Error::UnsupportedHashAlgorithm(self).into()),
-        }
+    #[test]
+    fn oids_match_nettle() {
+        assert_eq!(HashAlgorithm::SHA1.oid().unwrap(), rsa::ASN1_OID_SHA1);
+        assert_eq!(HashAlgorithm::SHA224.oid().unwrap(), rsa::ASN1_OID_SHA224);
+        assert_eq!(HashAlgorithm::SHA256.oid().unwrap(), rsa::ASN1_OID_SHA256);
+        assert_eq!(HashAlgorithm::SHA384.oid().unwrap(), rsa::ASN1_OID_SHA384);
+        assert_eq!(HashAlgorithm::SHA512.oid().unwrap(), rsa::ASN1_OID_SHA512);
+        assert_eq!(HashAlgorithm::MD5.oid().unwrap(), rsa::ASN1_OID_MD5);
+        assert_eq!(HashAlgorithm::RipeMD.oid().unwrap(), rsa::ASN1_OID_RIPEMD160);
     }
 }

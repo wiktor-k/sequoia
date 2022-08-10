@@ -51,6 +51,51 @@ use std::io::{self, Write};
 // hashed to files /tmp/hash-N, where N is a number.
 const DUMP_HASHED_VALUES: Option<&str> = None;
 
+// ASN.1 OID values copied from the nettle-rs crate:
+// https://gitlab.com/sequoia-pgp/nettle-rs/-/blob/main/src/rsa/pkcs1.rs#L22
+
+/// ASN.1 OID for MD5
+const ASN1_OID_MD5: &[u8] = &[
+    0x30, 0x20, 0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d,
+    0x02, 0x05, 0x05, 0x00, 0x04, 0x10,
+];
+
+/// ASN.1 OID for RipeMD160
+const ASN1_OID_RIPEMD160: &[u8] = &[
+    0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2B, 0x24, 0x03, 0x02, 0x01, 0x05,
+    0x00, 0x04, 0x14,
+];
+
+/// ASN.1 OID for SHA1
+const ASN1_OID_SHA1: &[u8] = &[
+    0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05,
+    0x00, 0x04, 0x14,
+];
+
+/// ASN.1 OID for SHA224
+const ASN1_OID_SHA224: &[u8] = &[
+    0x30, 0x2D, 0x30, 0x0D, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+    0x04, 0x02, 0x04, 0x05, 0x00, 0x04, 0x1C,
+];
+
+/// ASN.1 OID for SHA256
+const ASN1_OID_SHA256: &[u8] = &[
+    0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+    0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20,
+];
+
+/// ASN.1 OID for SHA384
+const ASN1_OID_SHA384: &[u8] = &[
+    0x30, 0x41, 0x30, 0x0D, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+    0x04, 0x02, 0x02, 0x05, 0x00, 0x04, 0x30,
+];
+
+/// ASN.1 OID for SHA512
+const ASN1_OID_SHA512: &[u8] = &[
+    0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+    0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40,
+];
+
 lazy_static::lazy_static! {
     /// List of hashes that the signer may produce.
     /// This list is ordered by the preference so that the most preferred
@@ -158,6 +203,42 @@ impl HashAlgorithm {
         } else {
             hasher
         })
+    }
+
+    /// Returns the prefix of a serialized `DigestInfo` structure
+    /// that contains the ASN.1 OID of this hash algorithm.
+    ///
+    /// The prefix is used for encoding RSA signatures according to
+    /// the `EMSA-PKCS1-v1_5` algorithm as specified in [RFC 8017].
+    ///
+    /// [RFC 8017]: https://www.rfc-editor.org/rfc/rfc8017.html#section-9.2
+    ///
+    /// ```
+    /// # use sequoia_openpgp::types::HashAlgorithm;
+    /// # fn main() -> sequoia_openpgp::Result<()> {
+    /// let algo = HashAlgorithm::SHA512;
+    /// let digest = // raw bytes of the digest
+    /// # Vec::<u8>::new();
+    /// let digest_info = Vec::from(algo.oid()?).extend(digest);
+    /// # Ok(()) }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Fails with `Error::UnsupportedHashAlgorithm` for unknown or
+    /// private hash algorithms.
+    pub fn oid(self) -> Result<&'static [u8]> {
+        match self {
+            HashAlgorithm::SHA1 => Ok(ASN1_OID_SHA1),
+            HashAlgorithm::SHA224 => Ok(ASN1_OID_SHA224),
+            HashAlgorithm::SHA256 => Ok(ASN1_OID_SHA256),
+            HashAlgorithm::SHA384 => Ok(ASN1_OID_SHA384),
+            HashAlgorithm::SHA512 => Ok(ASN1_OID_SHA512),
+            HashAlgorithm::MD5 => Ok(ASN1_OID_MD5),
+            HashAlgorithm::RipeMD => Ok(ASN1_OID_RIPEMD160),
+            HashAlgorithm::Private(_) | HashAlgorithm::Unknown(_) =>
+                Err(crate::Error::UnsupportedHashAlgorithm(self).into()),
+        }
     }
 }
 

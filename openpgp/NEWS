@@ -16,6 +16,8 @@
      alternate formatter (e.g. =format!("{:#}", ...)=)
    - cert::KeyBuilder
    - cert::SubkeyBuilder
+   - HashAlgorithm::oid is available on all crypto backends
+     (previously only on Nettle)
 ** Deprecated functionality
    - Error::UnsupportedCert, use Error::UnsupportedCert2 instead
    - DataFormat::MIME, no replacement, see #863 for details
