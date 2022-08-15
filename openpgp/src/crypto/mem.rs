@@ -269,7 +269,7 @@ mod has_access_to_prekey {
     // algorithms MUST be supported by the cryptographic library.
     const HASH_ALGO: HashAlgorithm = HashAlgorithm::SHA256;
     const SYMMETRIC_ALGO: SymmetricAlgorithm = SymmetricAlgorithm::AES256;
-    const AEAD_ALGO: AEADAlgorithm = AEADAlgorithm::EAX;
+    const AEAD_ALGO: AEADAlgorithm = AEADAlgorithm::const_default();
 
     impl Encrypted {
         /// Computes the sealing key used to encrypt the memory.
