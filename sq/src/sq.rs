@@ -46,30 +46,6 @@ fn open_or_stdin(f: Option<&str>)
     }
 }
 
-#[deprecated(note = "Use the appropriate function on Config instead")]
-fn create_or_stdout(f: Option<&str>, force: bool)
-    -> Result<Box<dyn io::Write + Sync + Send>> {
-    match f {
-        None => Ok(Box::new(io::stdout())),
-        Some(p) if p == "-" => Ok(Box::new(io::stdout())),
-        Some(f) => {
-            let p = Path::new(f);
-            if !p.exists() || force {
-                Ok(Box::new(OpenOptions::new()
-                            .write(true)
-                            .truncate(true)
-                            .create(true)
-                            .open(f)
-                            .context("Failed to create output file")?))
-            } else {
-                Err(anyhow::anyhow!(
-                    format!("File {:?} exists, use \"sq --force ...\" to \
-                             overwrite", p)))
-            }
-        }
-    }
-}
-
 const SECONDS_IN_DAY : u64 = 24 * 60 * 60;
 const SECONDS_IN_YEAR : u64 =
     // Average number of days in a year.
@@ -355,8 +331,7 @@ impl Config<'_> {
     /// authenticated payloads.
     fn create_or_stdout_safe(&self, f: Option<&str>)
                              -> Result<Box<dyn io::Write + Sync + Send>> {
-        #[allow(deprecated)]
-        create_or_stdout(f, self.force)
+        Config::create_or_stdout(f, self.force)
     }
 
     /// Opens the file (or stdout) for writing data that is NOT safe
@@ -370,8 +345,7 @@ impl Config<'_> {
             emit_unstable_cli_warning();
             self.unstable_cli_warning_emitted = true;
         }
-        #[allow(deprecated)]
-        create_or_stdout(f, self.force)
+        Config::create_or_stdout(f, self.force)
     }
 
     /// Opens the file (or stdout) for writing data that is safe for
@@ -385,6 +359,37 @@ impl Config<'_> {
             message = Armorer::new(message).kind(kind).build()?;
         }
         Ok(message)
+    }
+
+    /// Helper function, do not use directly. Instead, use create_or_stdout_safe
+    /// or create_or_stdout_unsafe.
+    fn create_or_stdout(
+        f: Option<&str>,
+        force: bool,
+    ) -> Result<Box<dyn io::Write + Sync + Send>> {
+        match f {
+            None => Ok(Box::new(io::stdout())),
+            Some(p) if p == "-" => Ok(Box::new(io::stdout())),
+            Some(f) => {
+                let p = Path::new(f);
+                if !p.exists() || force {
+                    Ok(Box::new(
+                        OpenOptions::new()
+                            .write(true)
+                            .truncate(true)
+                            .create(true)
+                            .open(f)
+                            .context("Failed to create output file")?,
+                    ))
+                } else {
+                    Err(anyhow::anyhow!(format!(
+                        "File {:?} exists, use \"sq --force ...\" to \
+                                overwrite",
+                        p
+                    )))
+                }
+            }
+        }
     }
 }
 
