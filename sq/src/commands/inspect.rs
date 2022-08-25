@@ -2,15 +2,15 @@ use std::convert::TryFrom;
 use std::io::{self, Read};
 
 use sequoia_openpgp as openpgp;
-use crate::openpgp::{KeyHandle, Packet, Result};
-use crate::openpgp::cert::prelude::*;
+use openpgp::{KeyHandle, Packet, Result};
+use openpgp::cert::prelude::*;
 use openpgp::packet::{
     Signature,
     key::PublicParts,
 };
-use crate::openpgp::parse::{Parse, PacketParserResult};
-use crate::openpgp::policy::{Policy, HashAlgoSecurity};
-use crate::openpgp::packet::key::SecretKeyMaterial;
+use openpgp::parse::{Parse, PacketParserResult};
+use openpgp::policy::{Policy, HashAlgoSecurity};
+use openpgp::packet::key::SecretKeyMaterial;
 
 use super::dump::Convert;
 
@@ -285,7 +285,7 @@ fn inspect_revocation(output: &mut dyn io::Write,
                       indent: &str,
                       revoked: openpgp::types::RevocationStatus)
                       -> Result<()> {
-    use crate::openpgp::types::RevocationStatus::*;
+    use openpgp::types::RevocationStatus::*;
     fn print_reasons(output: &mut dyn io::Write, indent: &str,
                      third_party: bool, sigs: &[&Signature])
                      -> Result<()> {
@@ -371,7 +371,7 @@ fn inspect_key_flags(flags: openpgp::types::KeyFlags) -> Option<String> {
 
 fn inspect_signatures(output: &mut dyn io::Write,
                       sigs: &[openpgp::packet::Signature]) -> Result<()> {
-    use crate::openpgp::types::SignatureType::*;
+    use openpgp::types::SignatureType::*;
     for sig in sigs {
         match sig.typ() {
             Binary | Text => (),

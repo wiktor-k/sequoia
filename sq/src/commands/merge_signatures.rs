@@ -2,12 +2,12 @@ use anyhow::Context as _;
 use std::io;
 
 extern crate sequoia_openpgp as openpgp;
-use crate::openpgp::packet::Literal;
-use crate::openpgp::packet::Tag;
-use crate::openpgp::parse::{PacketParser, PacketParserResult, Parse};
-use crate::openpgp::serialize::stream::{LiteralWriter, Message};
-use crate::openpgp::serialize::Serialize;
-use crate::openpgp::{Packet, Result};
+use openpgp::packet::Literal;
+use openpgp::packet::Tag;
+use openpgp::parse::{PacketParser, PacketParserResult, Parse};
+use openpgp::serialize::stream::{LiteralWriter, Message};
+use openpgp::serialize::Serialize;
+use openpgp::{Packet, Result};
 
 pub fn merge_signatures(
     input1: &mut (dyn io::Read + Send + Sync),

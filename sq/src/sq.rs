@@ -18,15 +18,15 @@ use sequoia_openpgp as openpgp;
 use openpgp::{
     Result,
 };
-use crate::openpgp::{armor, Cert};
-use crate::openpgp::crypto::Password;
-use crate::openpgp::packet::prelude::*;
-use crate::openpgp::parse::{Parse, PacketParser, PacketParserResult};
-use crate::openpgp::packet::signature::subpacket::NotationData;
-use crate::openpgp::packet::signature::subpacket::NotationDataFlags;
-use crate::openpgp::serialize::{Serialize, stream::{Message, Armorer}};
-use crate::openpgp::cert::prelude::*;
-use crate::openpgp::policy::StandardPolicy as P;
+use openpgp::{armor, Cert};
+use openpgp::crypto::Password;
+use openpgp::packet::prelude::*;
+use openpgp::parse::{Parse, PacketParser, PacketParserResult};
+use openpgp::packet::signature::subpacket::NotationData;
+use openpgp::packet::signature::subpacket::NotationDataFlags;
+use openpgp::serialize::{Serialize, stream::{Message, Armorer}};
+use openpgp::cert::prelude::*;
+use openpgp::policy::StandardPolicy as P;
 
 use clap::FromArgMatches;
 use crate::sq_cli::packet;

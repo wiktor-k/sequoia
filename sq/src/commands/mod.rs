@@ -8,29 +8,29 @@ use std::time::SystemTime;
 
 use sequoia_net::pks;
 use sequoia_openpgp as openpgp;
-use crate::openpgp::{
+use openpgp::{
     armor,
 };
-use crate::openpgp::types::{
+use openpgp::types::{
     CompressionAlgorithm,
 };
-use crate::openpgp::cert::prelude::*;
-use crate::openpgp::crypto;
-use crate::openpgp::{Cert, KeyID, Result};
-use crate::openpgp::packet::prelude::*;
-use crate::openpgp::parse::{
+use openpgp::cert::prelude::*;
+use openpgp::crypto;
+use openpgp::{Cert, KeyID, Result};
+use openpgp::packet::prelude::*;
+use openpgp::parse::{
     Parse,
     PacketParserResult,
 };
-use crate::openpgp::parse::stream::*;
-use crate::openpgp::serialize::stream::{
+use openpgp::parse::stream::*;
+use openpgp::serialize::stream::{
     Message, Signer, LiteralWriter, Encryptor, Recipient,
     Compressor,
     padding::Padder,
 };
-use crate::openpgp::policy::Policy;
-use crate::openpgp::types::KeyFlags;
-use crate::openpgp::types::RevocationStatus;
+use openpgp::policy::Policy;
+use openpgp::types::KeyFlags;
+use openpgp::types::RevocationStatus;
 
 use crate::{
     Config,

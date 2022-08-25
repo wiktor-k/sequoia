@@ -4,18 +4,18 @@ use std::io;
 
 use sequoia_net::pks;
 use sequoia_openpgp as openpgp;
-use crate::openpgp::types::SymmetricAlgorithm;
-use crate::openpgp::fmt::hex;
-use crate::openpgp::crypto::{self, SessionKey, Decryptor, Password};
-use crate::openpgp::{Fingerprint, Cert, KeyID, Result};
-use crate::openpgp::packet;
-use crate::openpgp::packet::prelude::*;
-use crate::openpgp::parse::{
+use openpgp::types::SymmetricAlgorithm;
+use openpgp::fmt::hex;
+use openpgp::crypto::{self, SessionKey, Decryptor, Password};
+use openpgp::{Fingerprint, Cert, KeyID, Result};
+use openpgp::packet;
+use openpgp::packet::prelude::*;
+use openpgp::parse::{
     Parse,
     PacketParser,
     PacketParserResult,
 };
-use crate::openpgp::parse::stream::{
+use openpgp::parse::stream::{
     VerificationHelper, DecryptionHelper, DecryptorBuilder, MessageStructure,
 };
 

@@ -6,19 +6,19 @@ use std::time::SystemTime;
 use tempfile::NamedTempFile;
 
 use sequoia_openpgp as openpgp;
-use crate::openpgp::armor;
-use crate::openpgp::{Packet, Result};
-use crate::openpgp::packet::prelude::*;
-use crate::openpgp::packet::signature::subpacket::NotationData;
-use crate::openpgp::parse::{
+use openpgp::armor;
+use openpgp::{Packet, Result};
+use openpgp::packet::prelude::*;
+use openpgp::packet::signature::subpacket::NotationData;
+use openpgp::parse::{
     Parse,
     PacketParserResult,
 };
-use crate::openpgp::serialize::Serialize;
-use crate::openpgp::serialize::stream::{
+use openpgp::serialize::Serialize;
+use openpgp::serialize::stream::{
     Message, Armorer, Signer, LiteralWriter,
 };
-use crate::openpgp::types::SignatureType;
+use openpgp::types::SignatureType;
 use crate::{
     Config,
 };

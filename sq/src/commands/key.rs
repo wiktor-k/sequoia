@@ -2,18 +2,19 @@ use anyhow::Context as _;
 use itertools::Itertools;
 use std::time::{SystemTime, Duration};
 
-use crate::openpgp::KeyHandle;
-use crate::openpgp::Packet;
-use crate::openpgp::Result;
-use crate::openpgp::armor::{Writer, Kind};
-use crate::openpgp::cert::prelude::*;
-use crate::openpgp::packet::prelude::*;
-use crate::openpgp::packet::signature::subpacket::SubpacketTag;
-use crate::openpgp::parse::Parse;
-use crate::openpgp::policy::{Policy, HashAlgoSecurity};
-use crate::openpgp::serialize::Serialize;
-use crate::openpgp::types::KeyFlags;
-use crate::openpgp::types::SignatureType;
+use sequoia_openpgp as openpgp;
+use openpgp::KeyHandle;
+use openpgp::Packet;
+use openpgp::Result;
+use openpgp::armor::{Writer, Kind};
+use openpgp::cert::prelude::*;
+use openpgp::packet::prelude::*;
+use openpgp::packet::signature::subpacket::SubpacketTag;
+use openpgp::parse::Parse;
+use openpgp::policy::{Policy, HashAlgoSecurity};
+use openpgp::serialize::Serialize;
+use openpgp::types::KeyFlags;
+use openpgp::types::SignatureType;
 
 use crate::{
     open_or_stdin,
@@ -533,7 +534,7 @@ fn adopt(config: Config, command: sq_cli::key::AdoptCommand) -> Result<()> {
         wanted.push((h, None));
     }
 
-    let null_policy = &crate::openpgp::policy::NullPolicy::new();
+    let null_policy = &openpgp::policy::NullPolicy::new();
     let adoptee_policy: &dyn Policy =
         if command.allow_broken_crypto {
             null_policy
