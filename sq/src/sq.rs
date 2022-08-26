@@ -191,29 +191,21 @@ const ARMOR_DETECTION_LIMIT: u64 = 1 << 24;
 ///
 /// Returns the given reader unchanged.  If the detection fails,
 /// armor::Kind::File is returned as safe default.
-#[allow(clippy::never_loop)]
-fn detect_armor_kind(input: Box<dyn BufferedReader<()>>)
-                     -> (Box<dyn BufferedReader<()>>, armor::Kind) {
-    let mut dup = Limitor::new(Dup::new(input), ARMOR_DETECTION_LIMIT).as_boxed();
-    let kind = 'detection: loop {
-        if let Ok(PacketParserResult::Some(pp)) =
-            PacketParser::from_reader(&mut dup)
-        {
-            let (packet, _) = match pp.next() {
-                Ok(v) => v,
-                Err(_) => break 'detection armor::Kind::File,
-            };
-
-            break 'detection match packet {
-                Packet::Signature(_) => armor::Kind::Signature,
-                Packet::SecretKey(_) => armor::Kind::SecretKey,
-                Packet::PublicKey(_) => armor::Kind::PublicKey,
-                Packet::PKESK(_) | Packet::SKESK(_) =>
-                    armor::Kind::Message,
-                _ => armor::Kind::File,
-            };
-        }
-        break 'detection armor::Kind::File;
+fn detect_armor_kind(
+    input: Box<dyn BufferedReader<()>>,
+) -> (Box<dyn BufferedReader<()>>, armor::Kind) {
+    let mut dup =
+        Limitor::new(Dup::new(input), ARMOR_DETECTION_LIMIT).as_boxed();
+    let kind = match PacketParser::from_reader(&mut dup) {
+        Ok(PacketParserResult::Some(pp)) => match pp.next() {
+            Ok((Packet::Signature(_), _)) => armor::Kind::Signature,
+            Ok((Packet::SecretKey(_), _)) => armor::Kind::SecretKey,
+            Ok((Packet::PublicKey(_), _)) => armor::Kind::PublicKey,
+            Ok((Packet::PKESK(_), _)) => armor::Kind::Message,
+            Ok((Packet::SKESK(_), _)) => armor::Kind::Message,
+            _ => armor::Kind::File,
+        },
+        _ => armor::Kind::File,
     };
     (dup.into_inner().unwrap().into_inner().unwrap(), kind)
 }
