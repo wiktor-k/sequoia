@@ -329,6 +329,9 @@ if it is larger, then the output will be truncated.
 
 The converse operation is "sq sign".
 
+If you are looking for a standalone program to verify detached
+signatures, consider using sequoia-sqv.
+
 USAGE:
     sq verify [OPTIONS] [FILE]
 
@@ -362,11 +365,6 @@ $ sq verify --signer-cert juliet.pgp signed-message.pgp
 
 # Verify a detached message
 $ sq verify --signer-cert juliet.pgp --detached message.sig message.txt
-
-SEE ALSO:
-
-If you are looking for a standalone program to verify detached
-signatures, consider using sequoia-sqv.
 ```
 
 ## Subcommand sq key

@@ -33,9 +33,11 @@ use crate::sq_cli::packet;
 use sq_cli::SqSubcommands;
 
 mod sq_cli;
+mod man;
 mod commands;
 pub mod output;
 pub use output::{wkd::WkdUrlVariant, Model, OutputFormat, OutputVersion};
+
 
 fn open_or_stdin(f: Option<&str>)
                  -> Result<Box<dyn BufferedReader<()>>> {
@@ -388,6 +390,17 @@ impl Config<'_> {
 // TODO: Use `derive`d command structs. No more values_of
 // TODO: Handling (and cli position) of global arguments
 fn main() -> Result<()> {
+    if let Ok(dirname) = std::env::var("SQ_MAN") {
+        let dirname = PathBuf::from(dirname);
+        if !dirname.exists() {
+            std::fs::create_dir(&dirname)?;
+        }
+        for man in man::manpages(&sq_cli::build()) {
+            std::fs::write(dirname.join(man.filename()), man.troff_source())?;
+        }
+        return Ok(())
+    }
+
     let policy = &mut P::new();
 
     let c = sq_cli::SqCommand::from_arg_matches(&sq_cli::build().get_matches())?;

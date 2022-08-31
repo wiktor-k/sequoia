@@ -23,6 +23,9 @@ i.e. if the message is smaller than 25 MiB, no output is produced, and
 if it is larger, then the output will be truncated.
 
 The converse operation is \"sq sign\".
+
+If you are looking for a standalone program to verify detached
+signatures, consider using sequoia-sqv.
 ",
     after_help =
 "EXAMPLES:
@@ -32,11 +35,6 @@ $ sq verify --signer-cert juliet.pgp signed-message.pgp
 
 # Verify a detached message
 $ sq verify --signer-cert juliet.pgp --detached message.sig message.txt
-
-SEE ALSO:
-
-If you are looking for a standalone program to verify detached
-signatures, consider using sequoia-sqv.
 ",
     )]
 pub struct Command {

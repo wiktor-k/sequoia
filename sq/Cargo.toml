@@ -40,6 +40,7 @@ tokio = { version = "1.13.1" }
 rpassword = "5.0"
 serde_json = "1.0.80"
 serde = { version = "1.0.137", features = ["derive"] }
+roff = "0.2.1"
 
 [build-dependencies]
 anyhow = "1.0.18"
