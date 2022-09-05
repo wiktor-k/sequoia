@@ -6,7 +6,7 @@
 //!   [regular expression language]: https://tools.ietf.org/html/rfc4880#section-8
 //!   [trust signatures]: https://tools.ietf.org/html/rfc4880#section-5.2.3.13
 //!
-//! Compared with most regular expression lanugages, OpenPGP's is
+//! Compared with most regular expression languages, OpenPGP's is
 //! quite simple.  In particular, it only includes the following
 //! features:
 //!
@@ -869,7 +869,7 @@ impl RegexSet {
     ///
     /// This can be used to optimize the evaluation of scoping rules
     /// along a path: if a `RegexSet` matches everything, then it
-    /// doesn't further contrain the path.
+    /// doesn't further constrain the path.
     pub fn everything() -> Result<Self>
     {
         Ok(Self {

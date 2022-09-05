@@ -140,7 +140,7 @@ impl KeyBuilder {
     /// the key is immediately transferred to another computer and its
     /// clock is not quite synchronized, the key may appear to have
     /// been created in the future and will thus be ignored.  Although
-    /// NTP is widely used, emperically it seems that some virtual
+    /// NTP is widely used, empirically it seems that some virtual
     /// machines have laggy clocks.
     pub fn subkey(self, vc: ValidCert) -> Result<SubkeyBuilder<'_>> {
         let mut key: Key<key::SecretParts, key::SubordinateRole>

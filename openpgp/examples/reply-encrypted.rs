@@ -1,4 +1,4 @@
-//! Demonstates how to reply to an encrypted message without having
+//! Demonstrates how to reply to an encrypted message without having
 //! everyone's certs.
 //!
 //! This example demonstrates how to fall back to the original
