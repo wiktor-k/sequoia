@@ -254,10 +254,11 @@ impl<'a> DecryptionHelper for Helper<'a> {
                         break keypair;
                     }
 
-                    let p = rpassword::read_password_from_tty(Some(
-                        &format!(
-                            "Enter password to decrypt key {}: ",
-                            self.key_hints.get(keyid).unwrap())))?.into();
+                    let p = rpassword::prompt_password(&format!(
+                        "Enter password to decrypt key {}: ",
+                        self.key_hints.get(keyid).unwrap()
+                    ))?
+                    .into();
 
                     match key.unlock(&p) {
                         Ok(decryptor) => break decryptor,
@@ -308,10 +309,11 @@ impl<'a> DecryptionHelper for Helper<'a> {
                         break keypair;
                     }
 
-                    let p = rpassword::read_password_from_tty(Some(
-                        &format!(
-                            "Enter password to decrypt key {}: ",
-                            self.key_hints.get(&keyid).unwrap())))?.into();
+                    let p = rpassword::prompt_password(&format!(
+                        "Enter password to decrypt key {}: ",
+                        self.key_hints.get(&keyid).unwrap()
+                    ))?
+                    .into();
 
                     if let Ok(decryptor) = key.unlock(&p) {
                         break decryptor;
@@ -336,9 +338,10 @@ impl<'a> DecryptionHelper for Helper<'a> {
 
         // Finally, try to decrypt using the SKESKs.
         loop {
-            let password =
-                rpassword::read_password_from_tty(Some(
-                    "Enter password to decrypt message: "))?.into();
+            let password = rpassword::prompt_password(
+                "Enter password to decrypt message: ",
+            )?
+            .into();
 
             for skesk in skesks {
                 if let Some(sk) = skesk.decrypt(&password).ok()

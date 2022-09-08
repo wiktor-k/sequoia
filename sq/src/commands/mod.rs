@@ -126,9 +126,9 @@ fn get_keys<C>(certs: &[C], p: &dyn Policy,
             if let Some(secret) = key.optional_secret() {
                 let unencrypted = match secret {
                     SecretKeyMaterial::Encrypted(ref e) => {
-                        let password = rpassword::read_password_from_tty(Some(
+                        let password = rpassword::prompt_password(
                             &format!("Please enter password to decrypt {}/{}: ",
-                                     tsk, key)))
+                                     tsk, key))
                             .context("Reading password from tty")?;
                         e.decrypt(key.pk_algo(), &password.into())
                             .expect("decryption failed")
@@ -140,8 +140,8 @@ fn get_keys<C>(certs: &[C], p: &dyn Policy,
                           .unwrap()));
                 continue 'next_cert;
             } else if let Some(private_key_store) = private_key_store {
-                let password = rpassword::read_password_from_tty(
-                    Some(&format!("Please enter password to key {}/{}: ", tsk, key))).unwrap().into();
+                let password = rpassword::prompt_password(
+                    &format!("Please enter password to key {}/{}: ", tsk, key)).unwrap().into();
                 match pks::unlock_signer(private_key_store, key.clone(), &password) {
                     Ok(signer) => {
                         keys.push(signer);
@@ -323,12 +323,12 @@ pub fn encrypt(opts: EncryptOpts) -> Result<()> {
     let mut passwords: Vec<crypto::Password> = Vec::with_capacity(opts.npasswords);
     for n in 0..opts.npasswords {
         let nprompt = format!("Enter password {}: ", n + 1);
-        passwords.push(rpassword::read_password_from_tty(Some(
+        passwords.push(rpassword::prompt_password(
             if opts.npasswords > 1 {
                 &nprompt
             } else {
                 "Enter password: "
-            }))?.into());
+            })?.into());
     }
 
     if opts.recipients.len() + passwords.len() == 0 {

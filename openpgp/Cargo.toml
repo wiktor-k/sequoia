@@ -87,7 +87,7 @@ lalrpop = { version = ">=0.17", default-features = false }
 [dev-dependencies]
 quickcheck = { version = "1", default-features = false }
 rand = { version = "0.8" }
-rpassword = "5.0"
+rpassword = "6.0"
 criterion = { version = "0.3.4", features = ["html_reports"] }
 
 [features]

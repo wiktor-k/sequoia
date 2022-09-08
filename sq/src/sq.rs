@@ -238,12 +238,11 @@ fn decrypt_key<R>(key: Key<key::SecretParts, R>, passwords: &mut Vec<String>)
             let mut first = true;
             loop {
                 // Prompt the user.
-                match rpassword::read_password_from_tty(
-                    Some(&format!(
-                        "{}Enter password to unlock {} (blank to skip): ",
-                        if first { "" } else { "Invalid password. " },
-                        key.keyid().to_hex())))
-                {
+                match rpassword::prompt_password(&format!(
+                    "{}Enter password to unlock {} (blank to skip): ",
+                    if first { "" } else { "Invalid password. " },
+                    key.keyid().to_hex()
+                )) {
                     Ok(p) => {
                         first = false;
                         if p.is_empty() {

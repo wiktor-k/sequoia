@@ -150,10 +150,10 @@ fn generate(
     }
 
     if command.with_password {
-        let p0 = rpassword::read_password_from_tty(Some(
-            "Enter password to protect the key: "))?.into();
-        let p1 = rpassword::read_password_from_tty(Some(
-            "Repeat the password once more: "))?.into();
+        let p0 = rpassword::prompt_password(
+            "Enter password to protect the key: ")?.into();
+        let p1 = rpassword::prompt_password(
+            "Repeat the password once more: ")?.into();
 
         if p0 == p1 {
             builder = builder.set_password(Some(p0));
@@ -254,11 +254,9 @@ fn password(
     let new_password = if command.clear {
         None
     } else {
-        let prompt_0 =
-            rpassword::read_password_from_tty(Some("New password: "))
+        let prompt_0 = rpassword::prompt_password("New password: ")
             .context("Error reading password")?;
-        let prompt_1 =
-            rpassword::read_password_from_tty(Some("Repeat new password: "))
+        let prompt_1 = rpassword::prompt_password("Repeat new password: ")
             .context("Error reading password")?;
 
         if prompt_0 != prompt_1 {

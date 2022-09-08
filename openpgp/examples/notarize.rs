@@ -39,9 +39,10 @@ fn main() -> openpgp::Result<()> {
             keys.push({
                 let mut key = key.clone();
                 if key.secret().is_encrypted() {
-                    let password = rpassword::read_password_from_tty(
-                        Some(&format!("Please enter password to decrypt \
-                                       {}/{}: ",tsk, key)))?;
+                    let password = rpassword::prompt_password(format!(
+                        "Please enter password to decrypt {}/{}: ",
+                        tsk, key
+                    ))?;
                     let algo = key.pk_algo();
                     key.secret_mut()
                         .decrypt_in_place(algo, &password.into())
