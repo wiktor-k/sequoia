@@ -46,6 +46,7 @@ use fs2::FileExt;
 
 use capnp_rpc::{RpcSystem, twoparty};
 use capnp_rpc::rpc_twoparty_capnp::Side;
+pub use capnp_rpc as capnp_rpc;
 
 #[cfg(unix)]
 use std::os::unix::{io::{IntoRawFd, FromRawFd}, fs::OpenOptionsExt};
