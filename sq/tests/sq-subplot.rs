@@ -1,1 +1,1 @@
-include!(concat!(env!("OUT_DIR"), "/sq-subplot.rs"));
+include!(concat!(env!("OUT_DIR"), "/sq.rs"));

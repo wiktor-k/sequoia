@@ -2551,15 +2551,15 @@ dependencies = [
 
 [[package]]
 name = "roadmap"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c460d89fa2561bd4eb9f6db252b79b1520dcdd807b2fe75d34c2056d58e39433"
+checksum = "3f0c08002dd427499194cef0e292cfd515281777d5b9cc4c638028d2d3aebda4"
 dependencies = [
  "anyhow",
  "clap 3.2.15",
  "serde",
  "serde_yaml",
- "textwrap 0.14.2",
+ "textwrap 0.15.0",
  "thiserror",
 ]
 
@@ -2845,9 +2845,9 @@ dependencies = [
 
 [[package]]
 name = "serde-aux"
-version = "3.0.1"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93abf9799c576f004252b2a05168d58527fb7c54de12e94b4d12fe3475ffad24"
+checksum = "c79c1a5a310c28bf9f7a4b9bd848553051120d80a5952f993c7eb62f6ed6e4c5"
 dependencies = [
  "serde",
  "serde_json",
@@ -2887,9 +2887,9 @@ dependencies = [
 
 [[package]]
 name = "serde_yaml"
-version = "0.8.23"
+version = "0.8.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4a521f2940385c165a24ee286aa8599633d162077a54bdcae2a6fd5a7bfa7a0"
+checksum = "578a7433b776b56a35785ed5ce9a7e777ac0598aac5a6dd1b4b18a307c7fc71b"
 dependencies = [
  "indexmap",
  "ryu",
@@ -3081,9 +3081,9 @@ checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
 name = "subplot"
-version = "0.4.3"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c826f5e83eb04e7d35ba6e22d0d9a085866933350872d6e515aa0a7f2a4149d"
+checksum = "0b14be17e3a06a320b4d9851ef7f512bcb19e9c931cd2b2493b61b4a7e6aa6d5"
 dependencies = [
  "anyhow",
  "base64",
@@ -3114,9 +3114,9 @@ dependencies = [
 
 [[package]]
 name = "subplot-build"
-version = "0.4.3"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b07b0f49a5ba78bae9db8fde58e94ae1bd508d883ff77c07c227c98da6d38ca2"
+checksum = "c65e0385a02e0ee2fbf130b67265402f5554ce7b1af36462e201fb20fb168efb"
 dependencies = [
  "subplot",
  "tempfile",
@@ -3125,9 +3125,9 @@ dependencies = [
 
 [[package]]
 name = "subplotlib"
-version = "0.4.3"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2cbc3e6319877b1eaf3e6f0c8ff7a8d36b01f00cca972bd4246d65bad7d004c"
+checksum = "d42a381ce7bcbef67870adc04e9c7340a5aef3aab0633922494220da2179f3c1"
 dependencies = [
  "base64",
  "fehler",
@@ -3148,9 +3148,9 @@ dependencies = [
 
 [[package]]
 name = "subplotlib-derive"
-version = "0.4.3"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddff03e508f6ea13b990ad2a038731c24372b06c9b334eeea3d8d08db71d1be0"
+checksum = "ed6c74877ef4d4bb536eacbb057a52c00d5c4ab855df7b8786f5985add2a3d15"
 dependencies = [
  "fehler",
  "proc-macro2",
@@ -3295,22 +3295,14 @@ dependencies = [
 
 [[package]]
 name = "textwrap"
-version = "0.14.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0066c8d12af8b5acd21e00547c3797fde4e8677254a7ee429176ccebbe93dd80"
-dependencies = [
- "smawk",
- "unicode-linebreak",
- "unicode-width",
-]
-
-[[package]]
-name = "textwrap"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1141d4d61095b28419e22cb0bbf02755f5e54e0526f97f1e3d1d160e60885fb"
 dependencies = [
+ "smawk",
  "terminal_size",
+ "unicode-linebreak",
+ "unicode-width",
 ]
 
 [[package]]

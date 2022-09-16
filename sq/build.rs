@@ -13,7 +13,7 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
     // Generate subplot tests.
-    subplot_build::codegen(Path::new("sq-subplot.md"))
+    subplot_build::codegen(Path::new("sq.subplot"))
         .expect("failed to generate code with Subplot");
 
     let mut sq = sq_cli::build();

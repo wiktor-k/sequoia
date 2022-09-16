@@ -33,8 +33,8 @@ OPTIONS:
 
         --output-version <VERSION>
             Produces output variant VERSION, such as 0.0.0. The default is the
-            newest version. The output version is separate from the version of
-            the sq program. To see the current supported versions, use
+            newest version. The output version is separate from the version
+            of the sq program. To see the current supported versions, use
             output-versions subcommand.
 
             [env: SQ_OUTPUT_VERSION=]
@@ -457,8 +457,8 @@ OPTIONS:
             Adds no signing-capable subkey
 
         --creation-time <CREATION_TIME>
-            Sets the key's creation time to TIME.  TIME is interpreted as an ISO
-            8601 timestamp.  To set the creation time to June 9, 2011 at
+            Sets the key's creation time to TIME.  TIME is interpreted as an
+            ISO 8601 timestamp.  To set the creation time to June 9, 2011 at
             midnight UTC, you can do:
 
             $ sq key generate --creation-time 20110609 --export noam.pgp
@@ -1038,8 +1038,8 @@ OPTIONS:
             Removes certificate components not matching the filter
 
         --to-cert
-            Converts any keys in the input to certificates.  Converting a key to
-            a certificate removes secret key material from the key thereby
+            Converts any keys in the input to certificates.  Converting a key
+            to a certificate removes secret key material from the key thereby
             turning it into a certificate.
 
         --userid <USERID>
@@ -1116,8 +1116,8 @@ OPTIONS:
             Emits binary data
 
     -d, --depth <TRUST_DEPTH>
-            Sets the trust depth (sometimes referred to as the trust level).  0
-            means a normal certification of <CERTIFICATE, USERID>.  1 means
+            Sets the trust depth (sometimes referred to as the trust level).
+            0 means a normal certification of <CERTIFICATE, USERID>.  1 means
             CERTIFICATE is also a trusted introducer, 2 means CERTIFICATE is a
             meta-trusted introducer, etc.
 
@@ -1159,9 +1159,9 @@ OPTIONS:
             Provides parameters for private key store
 
     -r, --regex <REGEX>
-            Adds a regular expression to constrain what a trusted introducer can
-            certify.  The regular expression must match the certified User ID in
-            all intermediate introducers, and the certified certificate.
+            Adds a regular expression to constrain what a trusted introducer
+            can certify.  The regular expression must match the certified User
+            ID in all intermediate introducers, and the certified certificate.
             Multiple regular expressions may be specified.  In that case, at
             least one must match.
 
@@ -1402,9 +1402,9 @@ Generates a Web Key Directory for the given domain and keys
 If the WKD exists, the new keys will be inserted and it is updated and existing
 ones will be updated.
 
-A WKD is per domain, and can be queried using the advanced or the direct method.
-The advanced method uses a URL with a subdomain 'openpgpkey'. As per the
-specification, the advanced method is to be preferred. The direct method may
+A WKD is per domain, and can be queried using the advanced or the direct
+method. The advanced method uses a URL with a subdomain 'openpgpkey'. As per
+the specification, the advanced method is to be preferred. The direct method may
 only be used if the subdomain doesn't exist. The advanced method allows web key
 directories for several domains on one web server.
 
@@ -1978,8 +1978,8 @@ ARGS:
             A short, explanatory text that is shown to a viewer of the
             revocation certificate.  It explains why the certificate has been
             revoked.  For instance, if Alice has created a new key, she would
-            generate a 'superseded' revocation certificate for her old key, and
-            might include the message "I've created a new certificate,
+            generate a 'superseded' revocation certificate for her old key,
+            and might include the message "I've created a new certificate,
             FINGERPRINT, please use that in the future."
 
 OPTIONS:
@@ -2132,8 +2132,8 @@ USAGE:
 
 ARGS:
     <USERID>
-            The User ID to revoke.  By default, this must exactly match a
-            self-signed User ID.  Use --force to generate a revocation
+            The User ID to revoke.  By default, this must exactly match
+            a self-signed User ID.  Use --force to generate a revocation
             certificate for a User ID, which is not self signed.
 
     <REASON>
@@ -2160,8 +2160,8 @@ ARGS:
             A short, explanatory text that is shown to a viewer of the
             revocation certificate.  It explains why the certificate has been
             revoked.  For instance, if Alice has created a new key, she would
-            generate a 'superseded' revocation certificate for her old key, and
-            might include the message "I've created a new certificate,
+            generate a 'superseded' revocation certificate for her old key,
+            and might include the message "I've created a new certificate,
             FINGERPRINT, please use that in the future."
 
 OPTIONS:
