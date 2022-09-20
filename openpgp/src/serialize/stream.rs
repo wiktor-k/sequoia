@@ -3844,4 +3844,64 @@ mod test {
 
         Ok(())
     }
+
+    // Example copied from `Encryptor::aead_algo` and slightly
+    // adjusted since the doctest from `Encryptor::aead_algo` does not
+    // run.  Additionally this test case utilizes
+    // `AEADAlgorithm::const_default` to detect which algorithm to
+    // use.
+    #[test]
+    fn experimental_aead_encryptor() -> Result<()> {
+        use std::io::Write;
+        use crate::types::AEADAlgorithm;
+        use crate::policy::StandardPolicy;
+        use crate::serialize::stream::{
+            Message, Encryptor, LiteralWriter,
+        };
+        use crate::parse::stream::{
+            DecryptorBuilder, VerificationHelper,
+            DecryptionHelper, MessageStructure,
+        };
+
+        let mut sink = vec![];
+        let message = Message::new(&mut sink);
+        let message =
+          Encryptor::with_passwords(message, Some("совершенно секретно"))
+              .aead_algo(AEADAlgorithm::const_default())
+              .build()?;
+        let mut message = LiteralWriter::new(message).build()?;
+        message.write_all(b"Hello world.")?;
+        message.finalize()?;
+
+        struct Helper;
+
+        impl VerificationHelper for Helper {
+            fn get_certs(&mut self, _ids: &[crate::KeyHandle]) -> Result<Vec<Cert>> where {
+                Ok(Vec::new())
+            }
+
+            fn check(&mut self, _structure: MessageStructure) -> Result<()> {
+                Ok(())
+            }
+        }
+
+        impl DecryptionHelper for Helper {
+            fn decrypt<D>(&mut self, _: &[PKESK], skesks: &[SKESK],
+                          _sym_algo: Option<SymmetricAlgorithm>,
+                          mut decrypt: D) -> Result<Option<crate::Fingerprint>>
+            where D: FnMut(SymmetricAlgorithm, &SessionKey) -> bool
+            {
+                skesks[0].decrypt(&"совершенно секретно".into())
+                    .map(|(algo, session_key)| decrypt(algo, &session_key))?;
+                Ok(None)
+            }
+        }
+
+        let p = &StandardPolicy::new();
+        let mut v = DecryptorBuilder::from_bytes(&sink)?.with_policy(p, None, Helper)?;
+        let mut content = vec![];
+        v.read_to_end(&mut content)?;
+        assert_eq!(content, b"Hello world.");
+        Ok(())
+    }
 }
