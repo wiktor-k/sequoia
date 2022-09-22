@@ -48,7 +48,7 @@ RUN groupadd user && \
     chown -R user:user /home/user && \
     apt-get update && \
     apt-get upgrade --assume-yes && \
-    apt-get install --assume-yes ca-certificates libssl1.1 libsqlite3-0 && \
+    apt-get install --assume-yes ca-certificates libssl3 libsqlite3-0 && \
     apt-get clean && \
     rm -fr -- /var/lib/apt/lists/* /var/cache/*
 
