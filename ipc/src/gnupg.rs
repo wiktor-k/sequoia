@@ -31,7 +31,6 @@ use crate::sexp::Sexp;
 pub struct Context {
     homedir: Option<PathBuf>,
     sockets: BTreeMap<String, PathBuf>,
-    #[allow(dead_code)] // We keep it around for the cleanup.
     ephemeral: Option<tempfile::TempDir>,
     // XXX: Remove me once hack for Cygwin won't be necessary.
     #[cfg(windows)]
