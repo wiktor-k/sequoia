@@ -92,9 +92,26 @@ impl Keygrip {
         use self::PublicKey::*;
         let mut hash = HashAlgorithm::SHA1.context().unwrap();
 
-        fn hash_sexp_mpi(hash: &mut dyn hash::Digest, kind: char, prefix: &[u8],
-                         mpi: &MPI)
+        fn hash_sexp_mpi(hash: &mut dyn hash::Digest, kind: char, mpi: &MPI)
         {
+            // gcrypt's MPIs can be signed or unsigned.  Our MPIs are
+            // always unsigned (well, for us they are opaque byte
+            // strings, so the concept of a sign does not apply).
+            // Every now and then we need to pay attention to this, as
+            // gcrypt sometimes prepends a zero to prevent the most
+            // significant bit from being interpreted as a sign bit.
+            // Computing keygrips is one of these times.
+            let prefix = if mpi.value().get(0).map(|msb| msb & 0x80 > 0)
+                .unwrap_or(false)
+            {
+                // The most significant bit is set.  Prepend a zero
+                // byte so that the MSB will not be interpreted as a
+                // sign bit.
+                &b"\x00"[..]
+            } else {
+                // The MSB is not set, no need to prepend anything.
+                &b""[..]
+            };
             hash_sexp(hash, kind, prefix, mpi.value());
         }
 
@@ -153,18 +170,16 @@ impl Keygrip {
             },
 
             &DSA { ref p, ref q, ref g, ref y } => {
-                // Empirical evidence suggest that we need to prepend
-                // a 0 to some parameters.
-                hash_sexp_mpi(&mut hash, 'p', b"\x00", p);
-                hash_sexp_mpi(&mut hash, 'q', b"\x00", q);
-                hash_sexp_mpi(&mut hash, 'g', b"", g);
-                hash_sexp_mpi(&mut hash, 'y', b"", y);
+                hash_sexp_mpi(&mut hash, 'p', p);
+                hash_sexp_mpi(&mut hash, 'q', q);
+                hash_sexp_mpi(&mut hash, 'g', g);
+                hash_sexp_mpi(&mut hash, 'y', y);
             },
 
             &ElGamal { ref p, ref g, ref y } => {
-                hash_sexp_mpi(&mut hash, 'p', b"\x00", p);
-                hash_sexp_mpi(&mut hash, 'g', b"", g);
-                hash_sexp_mpi(&mut hash, 'y', b"", y);
+                hash_sexp_mpi(&mut hash, 'p', p);
+                hash_sexp_mpi(&mut hash, 'g', g);
+                hash_sexp_mpi(&mut hash, 'y', y);
             },
 
             &EdDSA { ref curve, ref q } => hash_ecc(&mut hash, curve, q)?,
@@ -393,6 +408,43 @@ mod tests {
             "erika-corinna-daniela-simone-antonia-nistp384.pgp",
             "erika-corinna-daniela-simone-antonia-nistp521.pgp",
             "keygrip-issue-439.pgp",
+        ]
+            .iter().map(|n| (n, openpgp::Cert::from_bytes(crate::tests::key(n)).unwrap()))
+        {
+            eprintln!("{}", name);
+            for key in cert.keys().map(|a| a.key()) {
+                let fp = key.fingerprint();
+                eprintln!("(sub)key: {}", fp);
+                assert_eq!(&Keygrip::of(key.mpis()).unwrap(),
+                           keygrips.get(&fp).unwrap());
+            }
+        }
+    }
+
+    /// Tests vectors from GPGME, using GnuPG as oracle.
+    #[test]
+    fn gpgme_keys() {
+        use std::collections::HashMap;
+        use openpgp::Fingerprint as FP;
+        use super::Keygrip as KG;
+        use openpgp::parse::Parse;
+
+        let keygrips: HashMap<FP, KG> = [
+            // alpha.pgp
+            ("A0FF4590BB6122EDEF6E3C542D727CC768697734".parse::<FP>().unwrap(),
+             "76F7E2B35832976B50A27A282D9B87E44577EB66".parse::<KG>().unwrap()),
+            ("3B3FBC948FE59301ED629EFB6AE6D7EE46A871F8".parse::<FP>().unwrap(),
+             "A0747D5F9425E6664F4FFBEED20FBCA79FDED2BD".parse::<KG>().unwrap()),
+            // zulu.pgp
+            ("23FD347A419429BACCD5E72D6BC4778054ACD246".parse::<FP>().unwrap(),
+             "13CBE3758AFE42B5E5E2AE4CED27AFA455E3F87F".parse::<KG>().unwrap()),
+            ("2DCA5A1392DE06ED4FCB8C53EF9DC276A172C881".parse::<FP>().unwrap(),
+             "7A030357C0F253A5BBCD282FFC4E521B37558F5C".parse::<KG>().unwrap()),
+        ].iter().cloned().collect();
+
+        for (name, cert) in [
+            "alpha.pgp",
+            "zulu.pgp",
         ]
             .iter().map(|n| (n, openpgp::Cert::from_bytes(crate::tests::key(n)).unwrap()))
         {
