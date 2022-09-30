@@ -89,12 +89,12 @@ an error for the file to contain more than one certificate.",
     pub input: Option<String>,
     #[clap(
         long = "revocation-key",
-        value_name = "KEY",
-        help = "Signs the revocation certificate using KEY",
+        value_name = "KEY_FILE",
+        help = "Signs the revocation certificate using the key in KEY_FILE",
         long_help =
-"Signs the revocation certificate using KEY.  If the key is different \
-from the certificate, this creates a third-party revocation.  If this \
-option is not provided, and the certificate includes secret key material, \
+"Signs the revocation certificate using the key in KEY_FILE.  If the key is \
+different from the certificate, this creates a third-party revocation.  If \
+this option is not provided, and the certificate includes secret key material, \
 then that key is used to sign the revocation certificate.",
     )]
     pub secret_key_file: Option<String>,
@@ -236,13 +236,14 @@ certificate."
     pub input: Option<String>,
     #[clap(
         long = "revocation-key",
-        value_name = "KEY",
-        help = "Signs the revocation certificate using KEY",
+        value_name = "KEY_FILE",
+        help = "Signs the revocation certificate using the key in KEY_FILE",
         long_help =
-"Signs the revocation certificate using KEY.  If the key is different \
-from the certificate, this creates a third-party revocation.  If this \
-option is not provided, and the certificate includes secret key material, \
-then that key is used to sign the revocation certificate.",
+
+"Signs the revocation certificate using the key in KEY_FILE.  If the key \
+is different from the certificate, this creates a third-party revocation.  \
+If this option is not provided, and the certificate includes secret key \
+material, then that key is used to sign the revocation certificate.",
     )]
     pub secret_key_file: Option<String>,
     #[clap(
@@ -369,13 +370,14 @@ certificate."
     pub input: Option<String>,
     #[clap(
         long = "revocation-key",
-        value_name = "KEY",
-        help = "Signs the revocation certificate using KEY",
+        value_name = "KEY_FILE",
+        help = "Signs the revocation certificate using the specified key",
         long_help =
-"Signs the revocation certificate using KEY.  If the key is different \
-from the certificate, this creates a third-party revocation.  If this \
-option is not provided, and the certificate includes secret key material, \
-then that key is used to sign the revocation certificate.",
+"Signs the revocation certificate using the key specified in KEY_FILE.  If \
+the key is different from the certificate, this creates a third-party \
+revocation.  If this option is not provided, and the certificate includes \
+secret key material, then that key is used to sign the revocation \
+certificate.",
     )]
     pub secret_key_file: Option<String>,
     #[clap(

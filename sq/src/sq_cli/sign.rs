@@ -86,8 +86,8 @@ pub struct Command {
     pub merge: Option<String>,
     #[clap(
         long = "signer-key",
-        value_name = "KEY",
-        help = "Signs using KEY",
+        value_name = "KEY_FILE",
+        help = "Signs the message using the key in KEY_FILE",
     )]
     pub secret_key_file: Vec<String>,
     #[clap(

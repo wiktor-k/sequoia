@@ -141,8 +141,8 @@ OPTIONS:
             Adds a password to encrypt with.  The message can be decrypted with
             either one of the recipient's keys, or any password.
 
-        --signer-key <KEY>
-            Signs the message with KEY
+        --signer-key <KEY_FILE>
+            Signs the message using the key in KEY_FILE
 
     -t, --time <TIME>
             Chooses keys valid at the specified time and sets the signature's
@@ -215,8 +215,8 @@ OPTIONS:
         --private-key-store <KEY_STORE>
             Provides parameters for private key store
 
-        --recipient-key <KEY>
-            Decrypts with KEY
+        --recipient-key <KEY_FILE>
+            Decrypts the message using the key in KEY_FILE
 
         --session-key <SESSION-KEY>
             Decrypts an encrypted message using SESSION-KEY
@@ -292,8 +292,8 @@ OPTIONS:
         --private-key-store <KEY_STORE>
             Provides parameters for private key store
 
-        --signer-key <KEY>
-            Signs using KEY
+        --signer-key <KEY_FILE>
+            Signs the message using the key in KEY_FILE
 
     -t, --time <TIME>
             Chooses keys valid at the specified time and sets the signature's
@@ -1777,8 +1777,8 @@ OPTIONS:
         --private-key-store <KEY_STORE>
             Provides parameters for private key store
 
-        --recipient-key <KEY>
-            Decrypts the message with KEY
+        --recipient-key <KEY_FILE>
+            Decrypts the message using the key in KEY_FILE
 
         --session-key <SESSION-KEY>
             Decrypts an encrypted message using SESSION-KEY
@@ -2002,11 +2002,12 @@ OPTIONS:
         --private-key-store <KEY_STORE>
             Provides parameters for private key store
 
-        --revocation-key <KEY>
-            Signs the revocation certificate using KEY.  If the key is different
-            from the certificate, this creates a third-party revocation.  If
-            this option is not provided, and the certificate includes secret key
-            material, then that key is used to sign the revocation certificate.
+        --revocation-key <KEY_FILE>
+            Signs the revocation certificate using the key in KEY_FILE.  If the
+            key is different from the certificate, this creates a third-party
+            revocation.  If this option is not provided, and the certificate
+            includes secret key material, then that key is used to sign the
+            revocation certificate.
 
     -t, --time <TIME>
             Chooses keys valid at the specified time and sets the revocation
@@ -2099,11 +2100,12 @@ OPTIONS:
         --private-key-store <KEY_STORE>
             Provides parameters for private key store
 
-        --revocation-key <KEY>
-            Signs the revocation certificate using KEY.  If the key is different
-            from the certificate, this creates a third-party revocation.  If
-            this option is not provided, and the certificate includes secret key
-            material, then that key is used to sign the revocation certificate.
+        --revocation-key <KEY_FILE>
+            Signs the revocation certificate using the key in KEY_FILE.  If the
+            key is different from the certificate, this creates a third-party
+            revocation.  If this option is not provided, and the certificate
+            includes secret key material, then that key is used to sign the
+            revocation certificate.
 
     -t, --time <TIME>
             Chooses keys valid at the specified time and sets the revocation
@@ -2184,11 +2186,12 @@ OPTIONS:
         --private-key-store <KEY_STORE>
             Provides parameters for private key store
 
-        --revocation-key <KEY>
-            Signs the revocation certificate using KEY.  If the key is different
-            from the certificate, this creates a third-party revocation.  If
-            this option is not provided, and the certificate includes secret key
-            material, then that key is used to sign the revocation certificate.
+        --revocation-key <KEY_FILE>
+            Signs the revocation certificate using the key specified in
+            KEY_FILE.  If the key is different from the certificate, this
+            creates a third-party revocation.  If this option is not provided,
+            and the certificate includes secret key material, then that key is
+            used to sign the revocation certificate.
 
     -t, --time <TIME>
             Chooses keys valid at the specified time and sets the revocation

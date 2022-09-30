@@ -45,8 +45,8 @@ pub struct Command {
     pub recipients_cert_file: Vec<String>,
     #[clap(
         long = "signer-key",
-        value_name = "KEY",
-        help = "Signs the message with KEY",
+        value_name = "KEY_FILE",
+        help = "Signs the message using the key in KEY_FILE",
     )]
     pub signer_key_file: Vec<String>,
     #[clap(

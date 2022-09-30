@@ -111,8 +111,8 @@ pub struct DecryptCommand {
     pub binary: bool,
     #[clap(
         long = "recipient-key",
-        value_name = "KEY",
-        help = "Decrypts the message with KEY",
+        value_name = "KEY_FILE",
+        help = "Decrypts the message using the key in KEY_FILE",
     )]
     pub secret_key_file: Vec<String>,
     #[clap(
