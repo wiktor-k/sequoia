@@ -97,7 +97,7 @@ that can, among other things, be inspected using \"sq packet dump\".
 "EXAMPLES:
 
 # Unwraps the encryption revealing the signed message
-$ sq packet decrypt --recipient-key juliet.pgp ciphertext.pgp
+$ sq packet decrypt --recipient-file juliet.pgp ciphertext.pgp
 ",
 )]
 pub struct DecryptCommand {
@@ -110,7 +110,7 @@ pub struct DecryptCommand {
     )]
     pub binary: bool,
     #[clap(
-        long = "recipient-key",
+        long = "recipient-file",
         value_name = "KEY_FILE",
         help = "Decrypts the message using the key in KEY_FILE",
     )]

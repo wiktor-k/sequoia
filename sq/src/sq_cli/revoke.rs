@@ -66,13 +66,13 @@ pub enum Subcommands {
 
 Creates a revocation certificate for the certificate.
 
-If \"--revocation-key\" is provided, then that key is used to create
+If \"--revocation-file\" is provided, then that key is used to create
 the signature.  If that key is different from the certificate being
 revoked, this creates a third-party revocation.  This is normally only
 useful if the owner of the certificate designated the key to be a
 designated revoker.
 
-If \"--revocation-key\" is not provided, then the certificate must
+If \"--revocation-file\" is not provided, then the certificate must
 include a certification-capable key.
 ",
 )]
@@ -88,7 +88,7 @@ an error for the file to contain more than one certificate.",
     )]
     pub input: Option<String>,
     #[clap(
-        long = "revocation-key",
+        long = "revocation-file",
         value_name = "KEY_FILE",
         help = "Signs the revocation certificate using the key in KEY_FILE",
         long_help =
@@ -213,14 +213,14 @@ impl From<RevocationReason> for OpenPGPRevocationReason {
 
 Creates a revocation certificate for a subkey.
 
-If \"--revocation-key\" is provided, then that key is used to create \
-the signature.  If that key is different from the certificate being \
-revoked, this creates a third-party revocation.  This is normally only \
-useful if the owner of the certificate designated the key to be a \
-designated revoker.
+If \"--revocation-file\" is provided, then that key is used to \
+create the signature.  If that key is different from the certificate \
+being revoked, this creates a third-party revocation.  This is \
+normally only useful if the owner of the certificate designated the \
+key to be a designated revoker.
 
-If \"--revocation-key\" is not provided, then the certificate must \
-include a certification-capable key.",
+If \"--revocation-file\" is not provided, then the certificate \
+must include a certification-capable key.",
 )]
 pub struct SubkeyCommand {
     #[clap(
@@ -235,7 +235,7 @@ certificate."
     )]
     pub input: Option<String>,
     #[clap(
-        long = "revocation-key",
+        long = "revocation-file",
         value_name = "KEY_FILE",
         help = "Signs the revocation certificate using the key in KEY_FILE",
         long_help =
@@ -369,15 +369,14 @@ certificate."
     )]
     pub input: Option<String>,
     #[clap(
-        long = "revocation-key",
+        long = "revocation-file",
         value_name = "KEY_FILE",
-        help = "Signs the revocation certificate using the specified key",
+        help = "Signs the revocation certificate using the key in KEY_FILE",
         long_help =
-"Signs the revocation certificate using the key specified in KEY_FILE.  If \
-the key is different from the certificate, this creates a third-party \
-revocation.  If this option is not provided, and the certificate includes \
-secret key material, then that key is used to sign the revocation \
-certificate.",
+"Signs the revocation certificate using the key in KEY_FILE.  If the key is \
+different from the certificate, this creates a third-party revocation.  If \
+this option is not provided, and the certificate includes secret key material, \
+then that key is used to sign the revocation certificate.",
     )]
     pub secret_key_file: Option<String>,
     #[clap(

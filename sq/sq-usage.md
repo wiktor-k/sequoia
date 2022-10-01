@@ -141,7 +141,7 @@ OPTIONS:
             Adds a password to encrypt with.  The message can be decrypted with
             either one of the recipient's keys, or any password.
 
-        --signer-key <KEY_FILE>
+        --signer-file <KEY_FILE>
             Signs the message using the key in KEY_FILE
 
     -t, --time <TIME>
@@ -158,7 +158,7 @@ EXAMPLES:
 $ sq encrypt --recipient-cert romeo.pgp message.txt
 
 # Encrypt a file creating a signature in the process
-$ sq encrypt --recipient-cert romeo.pgp --signer-key juliet.pgp message.txt
+$ sq encrypt --recipient-cert romeo.pgp --signer-file juliet.pgp message.txt
 
 # Encrypt a file using a password
 $ sq encrypt --symmetric message.txt
@@ -215,7 +215,7 @@ OPTIONS:
         --private-key-store <KEY_STORE>
             Provides parameters for private key store
 
-        --recipient-key <KEY_FILE>
+        --recipient-file <KEY_FILE>
             Decrypts the message using the key in KEY_FILE
 
         --session-key <SESSION-KEY>
@@ -230,10 +230,10 @@ OPTIONS:
 EXAMPLES:
 
 # Decrypt a file using a secret key
-$ sq decrypt --recipient-key juliet.pgp ciphertext.pgp
+$ sq decrypt --recipient-file juliet.pgp ciphertext.pgp
 
 # Decrypt a file verifying signatures
-$ sq decrypt --recipient-key juliet.pgp --signer-cert romeo.pgp ciphertext.pgp
+$ sq decrypt --recipient-file juliet.pgp --signer-cert romeo.pgp ciphertext.pgp
 
 # Decrypt a file using a password
 $ sq decrypt ciphertext.pgp
@@ -292,7 +292,7 @@ OPTIONS:
         --private-key-store <KEY_STORE>
             Provides parameters for private key store
 
-        --signer-key <KEY_FILE>
+        --signer-file <KEY_FILE>
             Signs the message using the key in KEY_FILE
 
     -t, --time <TIME>
@@ -302,10 +302,10 @@ OPTIONS:
 EXAMPLES:
 
 # Create a signed message
-$ sq sign --signer-key juliet.pgp message.txt
+$ sq sign --signer-file juliet.pgp message.txt
 
 # Create a detached signature
-$ sq sign --detached --signer-key juliet.pgp message.txt
+$ sq sign --detached --signer-file juliet.pgp message.txt
 ```
 
 ## Subcommand sq verify
@@ -1777,7 +1777,7 @@ OPTIONS:
         --private-key-store <KEY_STORE>
             Provides parameters for private key store
 
-        --recipient-key <KEY_FILE>
+        --recipient-file <KEY_FILE>
             Decrypts the message using the key in KEY_FILE
 
         --session-key <SESSION-KEY>
@@ -1786,7 +1786,7 @@ OPTIONS:
 EXAMPLES:
 
 # Unwraps the encryption revealing the signed message
-$ sq packet decrypt --recipient-key juliet.pgp ciphertext.pgp
+$ sq packet decrypt --recipient-file juliet.pgp ciphertext.pgp
 ```
 
 ### Subcommand sq packet split
@@ -1924,13 +1924,13 @@ Revokes a certificate
 
 Creates a revocation certificate for the certificate.
 
-If "--revocation-key" is provided, then that key is used to create
+If "--revocation-file" is provided, then that key is used to create
 the signature.  If that key is different from the certificate being
 revoked, this creates a third-party revocation.  This is normally only
 useful if the owner of the certificate designated the key to be a
 designated revoker.
 
-If "--revocation-key" is not provided, then the certificate must
+If "--revocation-file" is not provided, then the certificate must
 include a certification-capable key.
 
 USAGE:
@@ -2002,7 +2002,7 @@ OPTIONS:
         --private-key-store <KEY_STORE>
             Provides parameters for private key store
 
-        --revocation-key <KEY_FILE>
+        --revocation-file <KEY_FILE>
             Signs the revocation certificate using the key in KEY_FILE.  If the
             key is different from the certificate, this creates a third-party
             revocation.  If this option is not provided, and the certificate
@@ -2021,12 +2021,12 @@ Revokes a subkey
 
 Creates a revocation certificate for a subkey.
 
-If "--revocation-key" is provided, then that key is used to create the
+If "--revocation-file" is provided, then that key is used to create the
 signature.  If that key is different from the certificate being revoked, this
 creates a third-party revocation.  This is normally only useful if the owner of
 the certificate designated the key to be a designated revoker.
 
-If "--revocation-key" is not provided, then the certificate must include a
+If "--revocation-file" is not provided, then the certificate must include a
 certification-capable key.
 
 USAGE:
@@ -2100,7 +2100,7 @@ OPTIONS:
         --private-key-store <KEY_STORE>
             Provides parameters for private key store
 
-        --revocation-key <KEY_FILE>
+        --revocation-file <KEY_FILE>
             Signs the revocation certificate using the key in KEY_FILE.  If the
             key is different from the certificate, this creates a third-party
             revocation.  If this option is not provided, and the certificate
@@ -2186,12 +2186,12 @@ OPTIONS:
         --private-key-store <KEY_STORE>
             Provides parameters for private key store
 
-        --revocation-key <KEY_FILE>
-            Signs the revocation certificate using the key specified in
-            KEY_FILE.  If the key is different from the certificate, this
-            creates a third-party revocation.  If this option is not provided,
-            and the certificate includes secret key material, then that key is
-            used to sign the revocation certificate.
+        --revocation-file <KEY_FILE>
+            Signs the revocation certificate using the key in KEY_FILE.  If the
+            key is different from the certificate, this creates a third-party
+            revocation.  If this option is not provided, and the certificate
+            includes secret key material, then that key is used to sign the
+            revocation certificate.
 
     -t, --time <TIME>
             Chooses keys valid at the specified time and sets the revocation

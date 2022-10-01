@@ -21,7 +21,7 @@ The converse operation is \"sq decrypt\".
 $ sq encrypt --recipient-cert romeo.pgp message.txt
 
 # Encrypt a file creating a signature in the process
-$ sq encrypt --recipient-cert romeo.pgp --signer-key juliet.pgp message.txt
+$ sq encrypt --recipient-cert romeo.pgp --signer-file juliet.pgp message.txt
 
 # Encrypt a file using a password
 $ sq encrypt --symmetric message.txt
@@ -44,7 +44,7 @@ pub struct Command {
     )]
     pub recipients_cert_file: Vec<String>,
     #[clap(
-        long = "signer-key",
+        long = "signer-file",
         value_name = "KEY_FILE",
         help = "Signs the message using the key in KEY_FILE",
     )]
