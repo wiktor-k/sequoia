@@ -1924,7 +1924,8 @@ mod tests {
             let sk = SessionKey::new(cipher.key_size().unwrap());
 
             let pkesk = PKESK3::for_recipient(cipher, &sk, &key).unwrap();
-            let (cipher_, sk_) = pkesk.decrypt(&mut keypair, None).unwrap();
+            let (cipher_, sk_) = pkesk.decrypt(&mut keypair, None)
+                .expect("keypair should be able to decrypt PKESK");
 
             assert_eq!(cipher, cipher_);
             assert_eq!(sk, sk_);
