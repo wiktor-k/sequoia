@@ -68,6 +68,12 @@ fn crypto_backends_sanity_check() {
              production_ready: false,
              constant_time: false,
          }),
+        (cfg!(feature = "crypto-openssl"),
+         Backend {
+             name: "OpenSSL",
+             production_ready: false,
+             constant_time: true,
+         }),
     ].into_iter().filter_map(|(selected, backend)| {
         if selected { Some(backend) } else { None }
     }).collect::<Vec<_>>();

@@ -88,6 +88,11 @@ at compile time.  Currently, these libraries are available:
     cannot offer the same security guarantees as more mature
     cryptographic libraries.
 
+  - The OpenSSL backend.  To select this backend, use
+    `default-features = false`, and explicitly include the
+    `crypto-openssl` feature to enable it.  As of this writing, this
+    backend is not considered production ready.
+
 ### Experimental and variable-time cryptographic backends
 
 Some cryptographic backends are not yet considered mature enough for

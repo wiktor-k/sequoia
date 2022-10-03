@@ -127,7 +127,7 @@ impl Signer for KeyPair {
 
             (pk_algo, _, _) => Err(Error::InvalidOperation(format!(
                 "unsupported combination of algorithm {:?}, key {:?}, \
-                 and secret key {:?}",
+                 and secret key {:?} by Nettle backend",
                 pk_algo, self.public(), self.secret())).into()),
         }})
     }
