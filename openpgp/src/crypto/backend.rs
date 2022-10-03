@@ -17,3 +17,8 @@ pub use self::rust::*;
 mod cng;
 #[cfg(feature = "crypto-cng")]
 pub use self::cng::*;
+
+#[cfg(feature = "crypto-openssl")]
+mod openssl;
+#[cfg(feature = "crypto-openssl")]
+pub use self::openssl::*;

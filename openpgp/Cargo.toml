@@ -44,6 +44,8 @@ regex-syntax = "0.6"
 sha1collisiondetection = { version = "0.2.3", default-features = false, features = ["std"] }
 thiserror = "1.0.2"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
+# .41 introduces openssl::pkey_ctx and openssl::cipher{,_ctx}
+openssl = { version = "0.10.41", optional = true, git = "https://github.com/sfackler/rust-openssl", rev = "refs/pull/1733/head" }
 
 # RustCrypto crates.
 aes = { version = "0.6.0", optional = true }
@@ -101,6 +103,7 @@ crypto-rust = [
     "rand_core", "rand_core/getrandom", "ecdsa"
 ]
 crypto-cng = ["eax", "winapi", "win-crypto-ng", "ed25519-dalek", "num-bigint-dig"]
+crypto-openssl = ["openssl"]
 
 # Experimental and variable-time cryptographic backends opt-ins
 allow-experimental-crypto = []
