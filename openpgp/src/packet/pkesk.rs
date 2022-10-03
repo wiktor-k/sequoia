@@ -309,7 +309,8 @@ mod tests {
         let pkesk: &PKESK =
             pile.descendants().next().unwrap().downcast_ref().unwrap();
 
-        let plain = pkesk.decrypt(&mut keypair, None).unwrap();
+        let plain = pkesk.decrypt(&mut keypair, None)
+            .expect("ECDH decryption using P-256 key should work");
         let plain_ =
             pkesk.decrypt(&mut keypair, Some(SymmetricAlgorithm::AES256))
             .unwrap();
@@ -338,7 +339,8 @@ mod tests {
         let pkesk: &PKESK =
             pile.descendants().next().unwrap().downcast_ref().unwrap();
 
-        let plain = pkesk.decrypt(&mut keypair, None).unwrap();
+        let plain = pkesk.decrypt(&mut keypair, None)
+            .expect("ECDH decryption using P-384 key should work");
         let plain_ =
             pkesk.decrypt(&mut keypair, Some(SymmetricAlgorithm::AES256))
             .unwrap();
@@ -367,7 +369,8 @@ mod tests {
         let pkesk: &PKESK =
             pile.descendants().next().unwrap().downcast_ref().unwrap();
 
-        let plain = pkesk.decrypt(&mut keypair, None).unwrap();
+        let plain = pkesk.decrypt(&mut keypair, None)
+            .expect("ECDH decryption using P-521 key should work");
         let plain_ =
             pkesk.decrypt(&mut keypair, Some(SymmetricAlgorithm::AES256))
             .unwrap();
