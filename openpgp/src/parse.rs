@@ -5493,6 +5493,7 @@ mod test {
     struct DecryptTest<'a> {
         filename: &'a str,
         algo: SymmetricAlgorithm,
+        aead_algo: Option<AEADAlgorithm>,
         key_hex: &'a str,
         plaintext: Data<'a>,
         paths: &'a[ (Tag, &'a[ usize ] ) ],
@@ -5507,6 +5508,7 @@ mod test {
         DecryptTest {
             filename: "encrypted-aes256-password-123.gpg",
             algo: SymmetricAlgorithm::AES256,
+            aead_algo: None,
             key_hex: "7EF4F08C44F780BEA866961423306166B8912C43352F3D9617F745E4E3939710",
             plaintext: Data::File("a-cypherpunks-manifesto.txt"),
             paths: &[
@@ -5519,6 +5521,7 @@ mod test {
         DecryptTest {
             filename: "encrypted-aes192-password-123456.gpg",
             algo: SymmetricAlgorithm::AES192,
+            aead_algo: None,
             key_hex: "B2F747F207EFF198A6C826F1D398DE037986218ED468DB61",
             plaintext: Data::File("a-cypherpunks-manifesto.txt"),
             paths: &[
@@ -5531,6 +5534,7 @@ mod test {
         DecryptTest {
             filename: "encrypted-aes128-password-123456789.gpg",
             algo: SymmetricAlgorithm::AES128,
+            aead_algo: None,
             key_hex: "AC0553096429260B4A90B1CEC842D6A0",
             plaintext: Data::File("a-cypherpunks-manifesto.txt"),
             paths: &[
@@ -5543,6 +5547,7 @@ mod test {
         DecryptTest {
             filename: "encrypted-twofish-password-red-fish-blue-fish.gpg",
             algo: SymmetricAlgorithm::Twofish,
+            aead_algo: None,
             key_hex: "96AFE1EDFA7C9CB7E8B23484C718015E5159CFA268594180D4DB68B2543393CB",
             plaintext: Data::File("a-cypherpunks-manifesto.txt"),
             paths: &[
@@ -5562,6 +5567,7 @@ mod test {
         DecryptTest {
             filename: "seip/msg-compression-not-signed-password-123.pgp",
             algo: SymmetricAlgorithm::AES128,
+            aead_algo: None,
             key_hex: "86A8C1C7961F55A3BE181A990D0ABB2A",
             plaintext: Data::String(b"compression, not signed\n"),
             paths: &[
@@ -5576,6 +5582,7 @@ mod test {
         DecryptTest {
             filename: "seip/msg-compression-signed-password-123.pgp",
             algo: SymmetricAlgorithm::AES128,
+            aead_algo: None,
             key_hex: "1B195CD35CAD4A99D9399B4CDA4CDA4E",
             plaintext: Data::String(b"compression, signed\n"),
             paths: &[
@@ -5591,6 +5598,7 @@ mod test {
         DecryptTest {
             filename: "seip/msg-no-compression-not-signed-password-123.pgp",
             algo: SymmetricAlgorithm::AES128,
+            aead_algo: None,
             key_hex: "AFB43B83A4B9D971E4B4A4C53749076A",
             plaintext: Data::String(b"no compression, not signed\n"),
             paths: &[
@@ -5603,6 +5611,7 @@ mod test {
         DecryptTest {
             filename: "seip/msg-no-compression-signed-password-123.pgp",
             algo: SymmetricAlgorithm::AES128,
+            aead_algo: None,
             key_hex: "9D5DB92F77F0E4A356EE53813EF2C3DC",
             plaintext: Data::String(b"no compression, signed\n"),
             paths: &[
@@ -5619,6 +5628,7 @@ mod test {
         DecryptTest {
             filename: "aed/msg-aes128-eax-chunk-size-64-password-123.pgp",
             algo: SymmetricAlgorithm::AES128,
+            aead_algo: Some(AEADAlgorithm::EAX),
             key_hex: "E88151F2B6F6F6F0AE6B56ED247AA61B",
             plaintext: Data::File("a-cypherpunks-manifesto.txt"),
             paths: &[
@@ -5630,6 +5640,7 @@ mod test {
         DecryptTest {
             filename: "aed/msg-aes128-eax-chunk-size-4194304-password-123.pgp",
             algo: SymmetricAlgorithm::AES128,
+            aead_algo: Some(AEADAlgorithm::EAX),
             key_hex: "918E6BF5C6CE4320D014735AF27BFA76",
             plaintext: Data::File("a-cypherpunks-manifesto.txt"),
             paths: &[
@@ -5688,6 +5699,14 @@ mod test {
             if !test.algo.is_supported() {
                 eprintln!("Algorithm {} unsupported, skipping", test.algo);
                 continue;
+            }
+
+            if let Some(aead_algo) = test.aead_algo {
+                if !aead_algo.is_supported() {
+                    eprintln!("AEAD algorithm {} unsupported by
+                               selected crypto backend, skipping", aead_algo);
+                    continue;
+                }
             }
 
             eprintln!("Decrypting {}, streaming content: {}",
@@ -5770,6 +5789,14 @@ mod test {
             if !test.algo.is_supported() {
                 eprintln!("Algorithm {} unsupported, skipping", test.algo);
                 continue;
+            }
+
+            if let Some(aead_algo) = test.aead_algo {
+                if !aead_algo.is_supported() {
+                    eprintln!("AEAD algorithm {} unsupported by
+                               selected crypto backend, skipping", aead_algo);
+                    continue;
+                }
             }
 
             let mut buf = Vec::new();
@@ -5936,6 +5963,13 @@ mod test {
             if !test.algo.is_supported() {
                 eprintln!("Algorithm {} unsupported, skipping", test.algo);
                 continue;
+            }
+
+            if let Some(aead_algo) = test.aead_algo {
+                if !aead_algo.is_supported() {
+                    eprintln!("AEAD algorithm {} unsupported, skipping", aead_algo);
+                    continue;
+                }
             }
 
             eprintln!("Decrypting {}", test.filename);

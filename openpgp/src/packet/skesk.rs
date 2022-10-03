@@ -566,7 +566,7 @@ impl From<SKESK5> for Packet {
 #[cfg(test)]
 impl Arbitrary for SKESK5 {
     fn arbitrary(g: &mut Gen) -> Self {
-        let algo = AEADAlgorithm::EAX;  // The only one we dig.
+        let algo = AEADAlgorithm::const_default();
         let mut iv = vec![0u8; algo.nonce_size().unwrap()];
         for b in iv.iter_mut() {
             *b = u8::arbitrary(g);
@@ -633,9 +633,11 @@ mod test {
                        &[0xb2, 0x55, 0x69, 0xb9, 0x54, 0x32, 0x45, 0x66,
                          0x45, 0x27, 0xc4, 0x97, 0x6e, 0x7a, 0x5d, 0x6e][..]);
 
-            assert_eq!(&s.decrypt(&password).unwrap().1[..],
+            if AEADAlgorithm::EAX.is_supported() {
+                assert_eq!(&s.decrypt(&password).unwrap().1[..],
                        &[0x86, 0xf1, 0xef, 0xb8, 0x69, 0x52, 0x32, 0x9f,
                          0x24, 0xac, 0xd3, 0xbf, 0xd0, 0xe5, 0x34, 0x6d][..]);
+            }
         } else {
             panic!("bad packet");
         }
