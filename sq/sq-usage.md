@@ -134,8 +134,8 @@ OPTIONS:
         --private-key-store <KEY_STORE>
             Provides parameters for private key store
 
-        --recipient-cert <CERT-RING>
-            Encrypts for all recipients in CERT-RING
+        --recipient-cert <CERT_RING_FILE>
+            Encrypts to all certificates in CERT_RING_FILE
 
     -s, --symmetric
             Adds a password to encrypt with.  The message can be decrypted with
@@ -221,8 +221,8 @@ OPTIONS:
         --session-key <SESSION-KEY>
             Decrypts an encrypted message using SESSION-KEY
 
-        --signer-cert <CERT>
-            Verifies signatures with CERT
+        --signer-cert <CERT_FILE>
+            Verifies signatures using the certificates in CERT_FILE
 
     -x, --hex
             Prints a hexdump (implies --dump)
@@ -355,8 +355,8 @@ OPTIONS:
     -o, --output <FILE>
             Writes to FILE or stdout if omitted
 
-        --signer-cert <CERT>
-            Verifies signatures with CERT
+        --signer-cert <CERT_FILE>
+            Verifies signatures using the certificate in CERT_FILE
 
 EXAMPLES:
 
@@ -2168,9 +2168,9 @@ OPTIONS:
     -B, --binary
             Emits binary data
 
-        --certificate <FILE>
-            Reads the certificate to revoke from FILE or stdin, if omitted.  It
-            is an error for the file to contain more than one certificate.
+        --certificate <CERT_FILE>
+            Reads the certificate to revoke from CERT_FILE or stdin, if omitted.
+            It is an error for the file to contain more than one certificate.
 
     -h, --help
             Print help information

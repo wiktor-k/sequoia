@@ -59,8 +59,8 @@ pub struct Command {
     pub signatures: Option<usize>,
     #[clap(
         long = "signer-cert",
-        value_name = "CERT",
-        help = "Verifies signatures with CERT",
+        value_name = "CERT_FILE",
+        help = "Verifies signatures using the certificates in CERT_FILE",
     )]
     pub sender_cert_file: Vec<String>,
     #[clap(

@@ -38,9 +38,9 @@ pub struct Command {
     pub binary: bool,
     #[clap(
         long = "recipient-cert",
-        value_name = "CERT-RING",
+        value_name = "CERT_RING_FILE",
         multiple_occurrences = true,
-        help = "Encrypts for all recipients in CERT-RING",
+        help = "Encrypts to all certificates in CERT_RING_FILE",
     )]
     pub recipients_cert_file: Vec<String>,
     #[clap(

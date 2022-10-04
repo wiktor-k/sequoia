@@ -59,8 +59,8 @@ pub struct Command {
     pub signatures: usize,
     #[clap(
         long = "signer-cert",
-        value_name = "CERT",
-        help = "Verifies signatures with CERT",
+        value_name = "CERT_FILE",
+        help = "Verifies signatures using the certificate in CERT_FILE",
     )]
     // TODO: Should at least one sender_cert_file be required? Verification does not make sense
     // without one, does it?
