@@ -382,13 +382,8 @@ pub fn insert<P, S, V>(base_path: P, domain: S, variant: V,
     Ok(())
 }
 
+#[derive(Default)]
 struct KeyRing(HashMap<Fingerprint, Cert>);
-
-impl Default for KeyRing {
-    fn default() -> Self {
-        Self(Default::default())
-    }
-}
 
 impl KeyRing {
     fn insert(&mut self, cert: Cert) -> Result<()> {
