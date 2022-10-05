@@ -34,7 +34,7 @@ The converse operation is \"sq encrypt\".
 $ sq decrypt --recipient-file juliet.pgp ciphertext.pgp
 
 # Decrypt a file verifying signatures
-$ sq decrypt --recipient-file juliet.pgp --signer-cert romeo.pgp ciphertext.pgp
+$ sq decrypt --recipient-file juliet.pgp --signer-file romeo.pgp ciphertext.pgp
 
 # Decrypt a file using a password
 $ sq decrypt ciphertext.pgp
@@ -58,7 +58,7 @@ pub struct Command {
     )]
     pub signatures: Option<usize>,
     #[clap(
-        long = "signer-cert",
+        long = "signer-file",
         value_name = "CERT_FILE",
         help = "Verifies signatures using the certificates in CERT_FILE",
     )]

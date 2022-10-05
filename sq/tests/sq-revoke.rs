@@ -162,7 +162,7 @@ mod integration {
                 Some(dir)
             },
             (true, false) => { // third_party && ! stdin
-                // sq revoke --certificate cert --revocation-file third-party
+                // sq revoke --cert-file cert --revocation-file third-party
                 let dir = TempDir::new()?;
 
                 let cert_pgp = dir.path().join("cert.pgp");
@@ -170,7 +170,7 @@ mod integration {
                 file.write_all(&cert)?;
 
                 cmd.args([
-                    "--certificate",
+                    "--cert-file",
                     &*cert_pgp.to_string_lossy()
                 ]);
 
@@ -192,7 +192,7 @@ mod integration {
                 None
             },
             (false, false) => { // ! third_party && ! stdin
-                // sq revoke --certificate key
+                // sq revoke --cert-file key
                 let dir = TempDir::new()?;
 
                 let key_pgp = dir.path().join("key.pgp");
@@ -200,7 +200,7 @@ mod integration {
                 file.write_all(&revoker)?;
 
                 cmd.args([
-                    "--certificate",
+                    "--cert-file",
                     &*key_pgp.to_string_lossy()
                 ]);
 

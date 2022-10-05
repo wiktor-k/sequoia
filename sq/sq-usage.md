@@ -134,7 +134,7 @@ OPTIONS:
         --private-key-store <KEY_STORE>
             Provides parameters for private key store
 
-        --recipient-cert <CERT_RING_FILE>
+        --recipient-file <CERT_RING_FILE>
             Encrypts to all certificates in CERT_RING_FILE
 
     -s, --symmetric
@@ -155,10 +155,10 @@ OPTIONS:
 EXAMPLES:
 
 # Encrypt a file using a certificate
-$ sq encrypt --recipient-cert romeo.pgp message.txt
+$ sq encrypt --recipient-file romeo.pgp message.txt
 
 # Encrypt a file creating a signature in the process
-$ sq encrypt --recipient-cert romeo.pgp --signer-file juliet.pgp message.txt
+$ sq encrypt --recipient-file romeo.pgp --signer-file juliet.pgp message.txt
 
 # Encrypt a file using a password
 $ sq encrypt --symmetric message.txt
@@ -221,7 +221,7 @@ OPTIONS:
         --session-key <SESSION-KEY>
             Decrypts an encrypted message using SESSION-KEY
 
-        --signer-cert <CERT_FILE>
+        --signer-file <CERT_FILE>
             Verifies signatures using the certificates in CERT_FILE
 
     -x, --hex
@@ -233,7 +233,7 @@ EXAMPLES:
 $ sq decrypt --recipient-file juliet.pgp ciphertext.pgp
 
 # Decrypt a file verifying signatures
-$ sq decrypt --recipient-file juliet.pgp --signer-cert romeo.pgp ciphertext.pgp
+$ sq decrypt --recipient-file juliet.pgp --signer-file romeo.pgp ciphertext.pgp
 
 # Decrypt a file using a password
 $ sq decrypt ciphertext.pgp
@@ -355,16 +355,16 @@ OPTIONS:
     -o, --output <FILE>
             Writes to FILE or stdout if omitted
 
-        --signer-cert <CERT_FILE>
+        --signer-file <CERT_FILE>
             Verifies signatures using the certificate in CERT_FILE
 
 EXAMPLES:
 
 # Verify a signed message
-$ sq verify --signer-cert juliet.pgp signed-message.pgp
+$ sq verify --signer-file juliet.pgp signed-message.pgp
 
 # Verify a detached message
-$ sq verify --signer-cert juliet.pgp --detached message.sig message.txt
+$ sq verify --signer-file juliet.pgp --detached message.sig message.txt
 ```
 
 ## Subcommand sq key
@@ -1909,11 +1909,11 @@ SUBCOMMANDS:
 EXAMPLES:
 
 # Revoke a certificate.
-$ sq revoke certificate --time 20220101 --certificate juliet.pgp \
+$ sq revoke certificate --time 20220101 --cert-file juliet.pgp \
   compromised "My parents went through my things, and found my backup."
 
 # Revoke a User ID.
-$ sq revoke userid --time 20220101 --certificate juliet.pgp \
+$ sq revoke userid --time 20220101 --cert-file juliet.pgp \
   "Juliet <juliet@capuleti.it>" retired "I've left the family."
 ```
 
@@ -1984,7 +1984,7 @@ OPTIONS:
     -B, --binary
             Emits binary data
 
-        --certificate <FILE>
+        --certificate-file <FILE>
             Reads the certificate to revoke from FILE or stdin, if omitted.  It
             is an error for the file to contain more than one certificate.
 
@@ -2081,7 +2081,7 @@ OPTIONS:
     -B, --binary
             Emits binary data
 
-        --certificate <FILE>
+        --certificate-file <FILE>
             Reads the certificate containing the subkey to revoke from FILE or
             stdin, if omitted.  It is an error for the file to contain more than
             one certificate.
@@ -2168,7 +2168,7 @@ OPTIONS:
     -B, --binary
             Emits binary data
 
-        --certificate <CERT_FILE>
+        --certificate-file <CERT_FILE>
             Reads the certificate to revoke from CERT_FILE or stdin, if omitted.
             It is an error for the file to contain more than one certificate.
 

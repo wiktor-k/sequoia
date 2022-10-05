@@ -35,11 +35,11 @@ certificate to a keyserver.
 "EXAMPLES:
 
 # Revoke a certificate.
-$ sq revoke certificate --time 20220101 --certificate juliet.pgp \\
+$ sq revoke certificate --time 20220101 --cert-file juliet.pgp \\
   compromised \"My parents went through my things, and found my backup.\"
 
 # Revoke a User ID.
-$ sq revoke userid --time 20220101 --certificate juliet.pgp \\
+$ sq revoke userid --time 20220101 --cert-file juliet.pgp \\
   \"Juliet <juliet@capuleti.it>\" retired \"I've left the family.\"
 ",
     subcommand_required = true,
@@ -79,8 +79,8 @@ include a certification-capable key.
 pub struct CertificateCommand {
     #[clap(
         value_name = "FILE",
-        long = "certificate",
-        alias = "cert",
+        long = "certificate-file",
+        alias = "cert-file",
         help = "The certificate to revoke",
         long_help =
 "Reads the certificate to revoke from FILE or stdin, if omitted.  It is \
@@ -225,8 +225,8 @@ must include a certification-capable key.",
 pub struct SubkeyCommand {
     #[clap(
         value_name = "FILE",
-        long = "certificate",
-        alias = "cert",
+        long = "certificate-file",
+        alias = "cert-file",
         help = "The certificate containing the subkey to revoke",
         long_help =
 "Reads the certificate containing the subkey to revoke from FILE or stdin, \
@@ -359,8 +359,8 @@ include a certification-capable key.",
 pub struct UseridCommand {
     #[clap(
         value_name = "CERT_FILE",
-        long = "certificate",
-        alias = "cert",
+        long = "certificate-file",
+        alias = "cert-file",
         help = "The certificate containing the User ID to revoke",
         long_help =
 "Reads the certificate to revoke from CERT_FILE or stdin, \
