@@ -1002,7 +1002,7 @@ impl<'a> UserIDAmalgamation<'a> {
         let old = self.clone()
             .with_policy(policy, None)
             .ok()
-            .and_then(|v| v.attestation_key_signatures().cloned().next());
+            .and_then(|v| v.attestation_key_signatures().next().cloned());
 
         attest_certifications_common(hash, old, primary_signer, certifications)
     }
@@ -1060,7 +1060,7 @@ impl<'a> UserAttributeAmalgamation<'a> {
         let old = self.clone()
             .with_policy(policy, None)
             .ok()
-            .and_then(|v| v.attestation_key_signatures().cloned().next());
+            .and_then(|v| v.attestation_key_signatures().next().cloned());
 
         attest_certifications_common(hash, old, primary_signer, certifications)
     }
