@@ -306,7 +306,7 @@ impl AutocryptHeaders {
 
             if key == "keydata" {
                 if let Ok(decoded) = base64::decode(
-                    &value.replace(" ", "")[..]) {
+                    &value.replace(' ', "")[..]) {
                     if let Ok(cert) = Cert::from_bytes(&decoded[..]) {
                         header.key = Some(cert);
                     }
