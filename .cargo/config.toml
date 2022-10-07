@@ -8,4 +8,5 @@ rustflags = [
           "-Aclippy::needless-question-mark",
           "-Aclippy::redundant-clone",
           "-Aclippy::try-err",
+          "-Aclippy::unnecessary-lazy-evaluations",
 ]
