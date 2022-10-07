@@ -2,8 +2,12 @@
 //!
 //! This crate aims to provide a complete implementation of OpenPGP as
 //! defined by [RFC 4880] as well as some extensions (e.g., [RFC
-//! 6637], which describes ECC cryptography for OpenPGP.  This
-//! includes support for unbuffered message processing.
+//! 6637], which describes ECC cryptography for OpenPGP.  OpenPGP is a
+//! standard by IETF.  It was derived from the PGP software, which was
+//! created by Phil Zimmermann in 1991.
+//!
+//! This crate also includes support for unbuffered message
+//! processing.
 //!
 //! A few features that the OpenPGP community considers to be
 //! deprecated (e.g., version 3 compatibility) have been left out.  We
