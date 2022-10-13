@@ -196,7 +196,7 @@ $ docker run --rm -i sq --help
 
 ## Requirements and MSRV
 
-The minimum supported Rust version (MSRV) is 1.56.  Sequoia aims to always be
+The minimum supported Rust version (MSRV) is 1.60.  Sequoia aims to always be
 compatible with the version included in [Debian testing], the MSRV follows what
 is available there.  Increasing the MSRV will be accompanied by a raise in
 the minor version of all crates.
@@ -215,7 +215,7 @@ needed libraries:
 
 Notes:
 
-  - You need at least `rustc` version 1.56.  This is the version included in
+  - You need at least `rustc` version 1.60.  This is the version included in
     Debian 12 (bookworm) at the time of writing.  You can use [rustup] if your
     distribution only includes an older Rust version.
   - You need at least Nettle 3.4.1.  Both the versions in Debian 10 (Buster)
