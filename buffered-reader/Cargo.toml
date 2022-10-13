@@ -13,6 +13,7 @@ repository = "https://gitlab.com/sequoia-pgp/sequoia"
 readme = "README.md"
 license = "LGPL-2.0-or-later"
 edition = "2018"
+rust-version = "1.60"
 
 [badges]
 gitlab = { repository = "sequoia-pgp/sequoia" }

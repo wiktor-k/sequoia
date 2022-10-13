@@ -242,7 +242,7 @@ clippy:
   before_script:
     - *before_script_start
     - apt-get -y install libssl-dev capnproto libsqlite3-dev
-    - rustup override unset
+    - rustup default 1.60.0
     - rustup component add clippy
     - cargo clippy --version
     - *before_script_end
@@ -260,7 +260,6 @@ rust-stable-armv7:
   before_script:
     - *before_script_start
     - cat .ci/snippet_for_cross_compilation_config.toml >> .cargo/config.toml
-    - rm rust-toolchain
     - *before_script_end
   script:
     - CARGO_PACKAGES="-p buffered-reader -p sequoia-openpgp" $MAKE_TOP test
@@ -306,6 +305,7 @@ windows-gnu-nettle:
   before_script:
     # the default before_scipt scriptlet doesn't work on Powershell
     - pacman -S gnupg --noconfirm
+    - rustup default "1.60.0"
     - rustc --version --verbose
     - cargo --version
     - clang -v
@@ -335,6 +335,7 @@ windows-gnu-cng:
       - $CI_PROJECT_NAMESPACE == "sequoia-pgp"
   before_script:
     # the default before_scipt scriptlet doesn't work on Powershell
+    - rustup default "1.60.0"
     - rustc --version --verbose
     - cargo --version
     - clang -v
@@ -360,6 +361,7 @@ windows-msvc-cng:
   before_script:
     # We don't call *before_script_start or *before_script_end as we
     # don't have bash, clang, etc.
+    - rustup default "1.60.0"
     - rustc --version --verbose
     - cargo --version
   script:
@@ -397,8 +399,7 @@ windows-msvc32-cng:
   before_script:
     # We don't call *before_script_start or *before_script_end as we
     # don't have bash, clang, etc.
-    - rm rust-toolchain
-    - rustup default 1.56.0-x86_64-pc-windows-msvc
+    - rustup default 1.60.0-x86_64-pc-windows-msvc
     - rustup target add i686-pc-windows-msvc
     - rustup show
     - rustc --version --verbose
