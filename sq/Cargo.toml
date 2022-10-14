@@ -4,9 +4,11 @@ description = "Command-line frontends for Sequoia"
 version = "0.27.0"
 authors = [
     "Azul <azul@sequoia-pgp.org>",
+    "Heiko Schaefer <heiko@schaefer.name>",
     "Igor Matuszewski <igor@sequoia-pgp.org>",
     "Justus Winter <justus@sequoia-pgp.org>",
     "Kai Michaelis <kai@sequoia-pgp.org>",
+    "Lars Wirzenius <liw@sequoia-pgp.org>",
     "Neal H. Walfield <neal@sequoia-pgp.org>",
     "Nora Widdecke <nora@sequoia-pgp.org>",
     "Wiktor Kwapisiewicz <wiktor@sequoia-pgp.org>",
