@@ -159,7 +159,7 @@ impl Drop for Protected {
         unsafe {
             let len = self.len();
             memsec::memzero(self.as_mut().as_mut_ptr(), len);
-            Box::from_raw(self.0);
+            drop(Box::from_raw(self.0));
         }
     }
 }
