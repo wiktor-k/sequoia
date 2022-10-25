@@ -501,14 +501,8 @@ impl SKESK5 {
                       self.aead_algo.into()];
             cipher.update(&ad);
             let mut plain: SessionKey = vec![0; esk.len()].into();
-            let mut digest = vec![0; self.aead_algo.digest_size()?];
-            cipher.decrypt(&mut plain, esk);
-            cipher.digest(&mut digest);
-            if digest[..] == self.aead_digest[..] {
-                Ok((SymmetricAlgorithm::Unencrypted, plain))
-            } else {
-                Err(Error::ManipulatedMessage.into())
-            }
+            cipher.decrypt_verify(&mut plain, esk, &self.aead_digest[..])?;
+            Ok((SymmetricAlgorithm::Unencrypted, plain))
         } else {
             Err(Error::MalformedPacket(
                 "No encrypted session key in v5 SKESK packet".into())

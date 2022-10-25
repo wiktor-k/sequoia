@@ -1,6 +1,7 @@
 //! Implementation of AEAD using pure Rust cryptographic libraries.
 
 use std::cmp;
+use std::cmp::Ordering;
 
 use cipher::{BlockCipher, NewBlockCipher};
 use cipher::block::Block;
@@ -10,8 +11,15 @@ use generic_array::{ArrayLength, GenericArray};
 
 use crate::{Error, Result};
 use crate::crypto::aead::{Aead, CipherOp};
+use crate::crypto::mem::secure_cmp;
 use crate::seal;
 use crate::types::{AEADAlgorithm, SymmetricAlgorithm};
+
+/// Disables authentication checks.
+///
+/// This is DANGEROUS, and is only useful for debugging problems with
+/// malformed AEAD-encrypted messages.
+const DANGER_DISABLE_AUTHENTICATION: bool = false;
 
 trait GenericArrayExt<T, N: ArrayLength<T>> {
     const LEN: usize;
@@ -56,7 +64,7 @@ where
         Self::encrypt(self, &mut dst[..len])
     }
 
-    fn decrypt(&mut self, _dst: &mut [u8], _src: &[u8]) {
+    fn decrypt_verify(&mut self, _dst: &mut [u8], _src: &[u8], _digest: &[u8]) -> Result<()> {
         panic!("AEAD decryption called in the encryption context")
     }
 }
@@ -83,10 +91,20 @@ where
         panic!("AEAD encryption called in the decryption context")
     }
 
-    fn decrypt(&mut self, dst: &mut [u8], src: &[u8]) {
+    fn decrypt_verify(&mut self, dst: &mut [u8], src: &[u8], digest: &[u8]) -> Result<()> {
         let len = core::cmp::min(dst.len(), src.len());
         dst[..len].copy_from_slice(&src[..len]);
-        self.decrypt_unauthenticated_hazmat(&mut dst[..len])
+        self.decrypt_unauthenticated_hazmat(&mut dst[..len]);
+
+        let mut chunk_digest = vec![0u8; self.digest_size()];
+
+        self.digest(&mut chunk_digest)?;
+        if secure_cmp(&chunk_digest[..], digest)
+             != Ordering::Equal && ! DANGER_DISABLE_AUTHENTICATION
+            {
+                 return Err(Error::ManipulatedMessage.into());
+            }
+        Ok(())
     }
 }
 

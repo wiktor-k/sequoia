@@ -1,11 +1,20 @@
 //! Implementation of AEAD using Nettle cryptographic library.
+use std::cmp::Ordering;
+
 use nettle::{aead, cipher};
 
 use crate::{Error, Result};
 
 use crate::crypto::aead::{Aead, CipherOp};
+use crate::crypto::mem::secure_cmp;
 use crate::seal;
 use crate::types::{AEADAlgorithm, SymmetricAlgorithm};
+
+/// Disables authentication checks.
+///
+/// This is DANGEROUS, and is only useful for debugging problems with
+/// malformed AEAD-encrypted messages.
+const DANGER_DISABLE_AUTHENTICATION: bool = false;
 
 impl<T: nettle::aead::Aead> seal::Sealed for T {}
 impl<T: nettle::aead::Aead> Aead for T {
@@ -15,8 +24,17 @@ impl<T: nettle::aead::Aead> Aead for T {
     fn encrypt(&mut self, dst: &mut [u8], src: &[u8]) {
         self.encrypt(dst, src)
     }
-    fn decrypt(&mut self, dst: &mut [u8], src: &[u8]) {
-        self.decrypt(dst, src)
+    fn decrypt_verify(&mut self, dst: &mut [u8], src: &[u8], digest: &[u8]) -> Result<()> {
+        self.decrypt(dst, src);
+        let mut chunk_digest = vec![0u8; self.digest_size()];
+
+        self.digest(&mut chunk_digest);
+        if secure_cmp(&chunk_digest[..], digest)
+             != Ordering::Equal && ! DANGER_DISABLE_AUTHENTICATION
+            {
+                 return Err(Error::ManipulatedMessage.into());
+            }
+        Ok(())
     }
     fn digest(&mut self, digest: &mut [u8]) {
         self.digest(digest)
