@@ -15,7 +15,6 @@ use crate::utils::{
 use crate::Error;
 use crate::Result;
 use crate::crypto::SessionKey;
-use crate::crypto::mem::secure_cmp;
 use crate::seal;
 use crate::parse::Cookie;
 
@@ -31,12 +30,6 @@ const MAX_CHUNK_SIZE: usize = 1 << 22; // 4MiB
 
 /// Maximum size of any Nonce used by an AEAD mode.
 pub const MAX_NONCE_LEN: usize = 16;
-
-/// Disables authentication checks.
-///
-/// This is DANGEROUS, and is only useful for debugging problems with
-/// malformed AEAD-encrypted messages.
-const DANGER_DISABLE_AUTHENTICATION: bool = false;
 
 /// Converts a chunk size to a usize.
 pub(crate) fn chunk_size_usize(chunk_size: u64) -> Result<usize> {
@@ -63,13 +56,16 @@ pub trait Aead : seal::Sealed {
     /// Encrypts one block `src` to `dst`.
     fn encrypt(&mut self, dst: &mut [u8], src: &[u8]);
     /// Decrypts one block `src` to `dst`.
-    fn decrypt(&mut self, dst: &mut [u8], src: &[u8]);
 
     /// Produce the digest.
     fn digest(&mut self, digest: &mut [u8]);
 
     /// Length of the digest in bytes.
     fn digest_size(&self) -> usize;
+
+    /// Decrypt one block `src` to `dst` and verify if the digest
+    /// matches `digest`.
+    fn decrypt_verify(&mut self, dst: &mut [u8], src: &[u8], digest: &[u8]) -> Result<()>;
 }
 
 /// Whether AEAD cipher is used for data encryption or decryption.
@@ -299,12 +295,7 @@ impl<'a, S: Schedule> Decryptor<'a, S> {
     // is less than `plaintext.len()`, then it is either because we
     // reached the end of the input or an error occurred.
     fn read_helper(&mut self, plaintext: &mut [u8]) -> Result<usize> {
-        use std::cmp::Ordering;
-
         let mut pos = 0;
-
-        // Buffer to hold a digest.
-        let mut digest = vec![0u8; self.digest_size];
 
         // 1. Copy any buffered data.
         if !self.buffer.is_empty() {
@@ -418,15 +409,7 @@ impl<'a, S: Schedule> Decryptor<'a, S> {
                     &mut plaintext[pos..pos + to_decrypt]
                 };
 
-                aead.decrypt(buffer, &chunk[..to_decrypt]);
-
-                // Check digest.
-                aead.digest(&mut digest);
-                if secure_cmp(&digest[..], &chunk[to_decrypt..])
-                    != Ordering::Equal && ! DANGER_DISABLE_AUTHENTICATION
-                {
-                    return Err(Error::ManipulatedMessage.into());
-                }
+                aead.decrypt_verify(buffer, &chunk[..to_decrypt], &chunk[to_decrypt..])?;
 
                 if double_buffer {
                     let to_copy = plaintext.len() - pos;
@@ -464,15 +447,9 @@ impl<'a, S: Schedule> Decryptor<'a, S> {
                             })
                     })?;
 
-                aead.digest(&mut digest);
-
                 let final_digest = self.source.data(final_digest_size)?;
-                if final_digest.len() != final_digest_size
-                    || secure_cmp(&digest[..], final_digest) != Ordering::Equal
-                    && ! DANGER_DISABLE_AUTHENTICATION
-                {
-                    return Err(Error::ManipulatedMessage.into());
-                }
+
+                aead.decrypt_verify(&mut [], &[], final_digest)?;
 
                 // Consume the data only on success so that we keep
                 // returning the error.
