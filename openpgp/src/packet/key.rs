@@ -2210,6 +2210,41 @@ FwPoSAbbsLkNS/iNN2MDGAVYvezYn2QZ
         Ok(())
     }
 
+    #[test]
+    fn cv25519_secret_is_reversed() {
+        let private_key: &[u8] = &crate::crypto::SessionKey::new(32);
+        let key: Key4<_, UnspecifiedRole> = Key4::import_secret_cv25519(private_key, None, None, None).unwrap();
+        if let crate::packet::key::SecretKeyMaterial::Unencrypted(key) = key.secret() {
+            key.map(|secret| {
+                if let mpi::SecretKeyMaterial::ECDH { scalar } = secret {
+                    let scalar_reversed = private_key.iter().copied().rev().collect::<Vec<u8>>();
+                    assert_eq!(scalar.value(), scalar_reversed);
+                } else {
+                    unreachable!();
+                }
+            })
+        } else {
+            unreachable!();
+        }
+    }
+
+    #[test]
+    fn ed25519_secret_is_not_reversed() {
+        let private_key: &[u8] = &crate::crypto::SessionKey::new(32);
+        let key: Key4<_, UnspecifiedRole> = Key4::import_secret_ed25519(private_key, None).unwrap();
+        if let crate::packet::key::SecretKeyMaterial::Unencrypted(key) = key.secret() {
+            key.map(|secret| {
+                if let mpi::SecretKeyMaterial::EdDSA { scalar } = secret {
+                    assert_eq!(scalar.value(), private_key);
+                } else {
+                    unreachable!();
+                }
+            })
+        } else {
+            unreachable!();
+        }
+    }
+
     fn mutate_eq_discriminates_key<P, R>(key: Key<P, R>, i: usize) -> bool
         where P: KeyParts,
               R: KeyRole,
