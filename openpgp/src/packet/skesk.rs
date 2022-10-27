@@ -462,15 +462,15 @@ impl SKESK5 {
 
         // Prepare associated data.
         let ad = [0xc3, 5, esk_algo.into(), esk_aead.into()];
-        ctx.update(&ad);
+        ctx.update(&ad)?;
 
         // We need to prefix the cipher specifier to the session key.
         let mut esk = vec![0u8; session_key.len()];
-        ctx.encrypt(&mut esk, session_key);
+        ctx.encrypt(&mut esk, session_key)?;
 
         // Digest.
         let mut digest = vec![0u8; esk_aead.digest_size()?];
-        ctx.digest(&mut digest);
+        ctx.digest(&mut digest)?;
 
         SKESK5::new(esk_algo, esk_aead, s2k, iv.into_boxed_slice(), esk.into(),
                     digest.into_boxed_slice())
@@ -499,7 +499,7 @@ impl SKESK5 {
 
             let ad = [0xc3, 5 /* Version.  */, self.symmetric_algo().into(),
                       self.aead_algo.into()];
-            cipher.update(&ad);
+            cipher.update(&ad)?;
             let mut plain: SessionKey = vec![0; esk.len()].into();
             cipher.decrypt_verify(&mut plain, esk, &self.aead_digest[..])?;
             Ok((SymmetricAlgorithm::Unencrypted, plain))

@@ -18,11 +18,13 @@ const DANGER_DISABLE_AUTHENTICATION: bool = false;
 
 impl<T: nettle::aead::Aead> seal::Sealed for T {}
 impl<T: nettle::aead::Aead> Aead for T {
-    fn update(&mut self, ad: &[u8]) {
-        self.update(ad)
+    fn update(&mut self, ad: &[u8]) -> Result<()> {
+        self.update(ad);
+        Ok(())
     }
-    fn encrypt(&mut self, dst: &mut [u8], src: &[u8]) {
-        self.encrypt(dst, src)
+    fn encrypt(&mut self, dst: &mut [u8], src: &[u8]) -> Result<()> {
+        self.encrypt(dst, src);
+        Ok(())
     }
     fn decrypt_verify(&mut self, dst: &mut [u8], src: &[u8], digest: &[u8]) -> Result<()> {
         self.decrypt(dst, src);
@@ -36,8 +38,9 @@ impl<T: nettle::aead::Aead> Aead for T {
             }
         Ok(())
     }
-    fn digest(&mut self, digest: &mut [u8]) {
-        self.digest(digest)
+    fn digest(&mut self, digest: &mut [u8]) -> Result<()> {
+        self.digest(digest);
+        Ok(())
     }
     fn digest_size(&self) -> usize {
         self.digest_size()
