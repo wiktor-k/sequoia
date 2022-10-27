@@ -45,23 +45,26 @@ where
     Cipher: BlockCipher<BlockSize = U16> + NewBlockCipher + Clone,
     Cipher::ParBlocks: ArrayLength<Block<Cipher>>,
 {
-    fn update(&mut self, ad: &[u8]) {
-        self.update_assoc(ad)
+    fn update(&mut self, ad: &[u8]) -> Result<()> {
+        self.update_assoc(ad);
+        Ok(())
     }
 
     fn digest_size(&self) -> usize {
         eax::Tag::LEN
     }
 
-    fn digest(&mut self, digest: &mut [u8]) {
+    fn digest(&mut self, digest: &mut [u8]) -> Result<()> {
         let tag = self.tag_clone();
         digest[..tag.len()].copy_from_slice(&tag[..]);
+        Ok(())
     }
 
-    fn encrypt(&mut self, dst: &mut [u8], src: &[u8]) {
+    fn encrypt(&mut self, dst: &mut [u8], src: &[u8]) -> Result<()> {
         let len = cmp::min(dst.len(), src.len());
         dst[..len].copy_from_slice(&src[..len]);
-        Self::encrypt(self, &mut dst[..len])
+        Self::encrypt(self, &mut dst[..len]);
+        Ok(())
     }
 
     fn decrypt_verify(&mut self, _dst: &mut [u8], _src: &[u8], _digest: &[u8]) -> Result<()> {
@@ -74,20 +77,22 @@ where
     Cipher: BlockCipher<BlockSize = U16> + NewBlockCipher + Clone,
     Cipher::ParBlocks: ArrayLength<Block<Cipher>>,
 {
-    fn update(&mut self, ad: &[u8]) {
-        self.update_assoc(ad)
+    fn update(&mut self, ad: &[u8]) -> Result<()> {
+        self.update_assoc(ad);
+        Ok(())
     }
 
     fn digest_size(&self) -> usize {
         eax::Tag::LEN
     }
 
-    fn digest(&mut self, digest: &mut [u8]) {
+    fn digest(&mut self, digest: &mut [u8]) -> Result<()> {
         let tag = self.tag_clone();
         digest[..tag.len()].copy_from_slice(&tag[..]);
+        Ok(())
     }
 
-    fn encrypt(&mut self, _dst: &mut [u8], _src: &[u8]) {
+    fn encrypt(&mut self, _dst: &mut [u8], _src: &[u8]) -> Result<()> {
         panic!("AEAD encryption called in the decryption context")
     }
 

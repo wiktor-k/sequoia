@@ -89,18 +89,23 @@ macro_rules! impl_aead {
     ($($type: ty),*) => {
         $(
         impl Aead for EaxOnline<$type, Encrypt> {
-            fn update(&mut self, ad: &[u8]) { self.update_assoc(ad) }
+            fn update(&mut self, ad: &[u8]) -> Result<()> {
+                self.update_assoc(ad);
+                Ok(())
+            }
             fn digest_size(&self) -> usize {
                 <eax::Tag as GenericArrayExt<_, _>>::LEN
             }
-            fn digest(&mut self, digest: &mut [u8]) {
+            fn digest(&mut self, digest: &mut [u8]) -> Result<()> {
                 let tag = self.tag_clone();
                 digest[..tag.len()].copy_from_slice(&tag[..]);
+                Ok(())
             }
-            fn encrypt(&mut self, dst: &mut [u8], src: &[u8]) {
+            fn encrypt(&mut self, dst: &mut [u8], src: &[u8]) -> Result<()> {
                 let len = core::cmp::min(dst.len(), src.len());
                 dst[..len].copy_from_slice(&src[..len]);
-                EaxOnline::<$type, Encrypt>::encrypt(self, &mut dst[..len])
+                EaxOnline::<$type, Encrypt>::encrypt(self, &mut dst[..len]);
+                Ok(())
             }
             fn decrypt_verify(&mut self, _dst: &mut [u8], _src: &[u8], _digest: &[u8]) -> Result<()> {
                 panic!("AEAD decryption called in the encryption context")
@@ -110,15 +115,19 @@ macro_rules! impl_aead {
         )*
         $(
         impl Aead for EaxOnline<$type, Decrypt> {
-            fn update(&mut self, ad: &[u8]) { self.update_assoc(ad) }
+            fn update(&mut self, ad: &[u8]) -> Result<()> {
+                self.update_assoc(ad);
+                Ok(())
+            }
             fn digest_size(&self) -> usize {
                 <eax::Tag as GenericArrayExt<_, _>>::LEN
             }
-            fn digest(&mut self, digest: &mut [u8]) {
+            fn digest(&mut self, digest: &mut [u8]) -> Result<()> {
                 let tag = self.tag_clone();
                 digest[..tag.len()].copy_from_slice(&tag[..]);
+                Ok(())
             }
-            fn encrypt(&mut self, _dst: &mut [u8], _src: &[u8]) {
+            fn encrypt(&mut self, _dst: &mut [u8], _src: &[u8]) -> Result<()> {
                 panic!("AEAD encryption called in the decryption context")
             }
             fn decrypt_verify(&mut self, dst: &mut [u8], src: &[u8], digest: &[u8]) -> Result<()> {
