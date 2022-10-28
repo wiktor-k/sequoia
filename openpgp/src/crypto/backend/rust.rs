@@ -73,4 +73,23 @@ impl AEADAlgorithm {
                 => false,
         }
     }
+
+    #[cfg(test)]
+    pub(crate) fn supports_symmetric_algo(&self, algo: &SymmetricAlgorithm) -> bool {
+        match &self {
+            AEADAlgorithm::EAX =>
+                match algo {
+                    SymmetricAlgorithm::AES128 |
+                    SymmetricAlgorithm::AES192 |
+                    SymmetricAlgorithm::AES256 |
+                    // XXX: Skipping Twofish until Twofish implements Clone
+                    // SymmetricAlgorithm::Twofish |
+                    SymmetricAlgorithm::Camellia128 |
+                    SymmetricAlgorithm::Camellia192 |
+                    SymmetricAlgorithm::Camellia256 => true,
+                    _ => false,
+                },
+            _ => false
+        }
+    }
 }

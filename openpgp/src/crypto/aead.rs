@@ -832,17 +832,10 @@ mod tests {
                          .iter()
                          .filter(|algo| algo.is_supported()) {
 
-            if cfg!(feature = "crypto-rust")
-                && sym_algo == &SymmetricAlgorithm::Twofish {
-                    eprintln!("XXX: Skipping Twofish until Twofish \
-                               implements Clone");
-                    continue;
-            }
-
             for aead in [
                 AEADAlgorithm::EAX,
                 AEADAlgorithm::OCB,
-            ].iter().filter(|algo| algo.is_supported()) {
+            ].iter().filter(|algo| algo.is_supported() && algo.supports_symmetric_algo(sym_algo)) {
                 let chunk_size = 64;
                 let mut key = vec![0; sym_algo.key_size().unwrap()];
                 crate::crypto::random(&mut key);
