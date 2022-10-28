@@ -450,6 +450,19 @@ impl Default for HashAlgoSecurity {
 /// algorithms is no longer considered safe.  Attempts to use an
 /// algorithm after its cutoff time should fail.
 ///
+/// A `StandardPolicy` can be configured using Rust.  Sometimes it is
+/// useful to configure it via a configuration file.  This can be done
+/// using the [`sequoia-policy-config`] crate.
+///
+///   [`sequoia-policy-config`]: https://docs.rs/sequoia-policy-config/latest/sequoia_policy_config/
+///
+/// It is recommended to support using a configuration file when the
+/// program should respect the system's crypto policy.  This is
+/// required on Fedora, for instance.  See the [Fedora Crypto
+/// Policies] project for more information.
+///
+///   [Fedora]: https://gitlab.com/redhat-crypto/fedora-crypto-policies
+///
 /// When validating a signature, we normally want to know whether the
 /// algorithms used are safe *now*.  That is, we don't use the
 /// signature's alleged creation time when considering whether an
