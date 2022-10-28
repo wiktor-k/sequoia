@@ -57,6 +57,7 @@ impl SymmetricAlgorithm {
         use SymmetricAlgorithm::*;
         match self {
             AES128 | AES192 | AES256 => true,
+            Camellia128 => true,
             _ => false,
         }
     }
@@ -69,6 +70,7 @@ impl SymmetricAlgorithm {
             SymmetricAlgorithm::AES128 => 16,
             SymmetricAlgorithm::AES192 => 24,
             SymmetricAlgorithm::AES256 => 32,
+            SymmetricAlgorithm::Camellia128 => 16,
             _ => Err(Error::UnsupportedSymmetricAlgorithm(self))?,
         })
     }
@@ -81,6 +83,7 @@ impl SymmetricAlgorithm {
             SymmetricAlgorithm::AES128 => 16,
             SymmetricAlgorithm::AES192 => 16,
             SymmetricAlgorithm::AES256 => 16,
+            SymmetricAlgorithm::Camellia128 => 16,
             _ => Err(Error::UnsupportedSymmetricAlgorithm(self))?,
         })
     }
@@ -91,6 +94,7 @@ impl SymmetricAlgorithm {
             SymmetricAlgorithm::AES128 => Cipher::aes_128_cfb128(),
             SymmetricAlgorithm::AES192 => Cipher::aes_192_cfb128(),
             SymmetricAlgorithm::AES256 => Cipher::aes_256_cfb128(),
+            SymmetricAlgorithm::Camellia128 => Cipher::camellia128_cfb128(),
             _ => Err(Error::UnsupportedSymmetricAlgorithm(self))?,
         };
         let mut ctx = CipherCtx::new()?;
@@ -104,6 +108,7 @@ impl SymmetricAlgorithm {
             SymmetricAlgorithm::AES128 => Cipher::aes_128_cfb128(),
             SymmetricAlgorithm::AES192 => Cipher::aes_192_cfb128(),
             SymmetricAlgorithm::AES256 => Cipher::aes_256_cfb128(),
+            SymmetricAlgorithm::Camellia128 => Cipher::camellia128_cfb128(),
             _ => Err(Error::UnsupportedSymmetricAlgorithm(self))?,
         };
         let mut ctx = CipherCtx::new()?;
@@ -117,6 +122,7 @@ impl SymmetricAlgorithm {
             SymmetricAlgorithm::AES128 => Cipher::aes_128_ecb(),
             SymmetricAlgorithm::AES192 => Cipher::aes_192_ecb(),
             SymmetricAlgorithm::AES256 => Cipher::aes_256_ecb(),
+            SymmetricAlgorithm::Camellia128 => Cipher::camellia128_ecb(),
             _ => Err(Error::UnsupportedSymmetricAlgorithm(self))?,
         };
         let mut ctx = CipherCtx::new()?;
@@ -130,6 +136,7 @@ impl SymmetricAlgorithm {
             SymmetricAlgorithm::AES128 => Cipher::aes_128_ecb(),
             SymmetricAlgorithm::AES192 => Cipher::aes_192_ecb(),
             SymmetricAlgorithm::AES256 => Cipher::aes_256_ecb(),
+            SymmetricAlgorithm::Camellia128 => Cipher::camellia128_ecb(),
             _ => Err(Error::UnsupportedSymmetricAlgorithm(self))?,
         };
         let mut ctx = CipherCtx::new()?;
