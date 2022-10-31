@@ -1514,7 +1514,7 @@ impl<'a> Policy for StandardPolicy<'a> {
 /// Note: This enum cannot be exhaustively matched to allow future
 /// extensions.
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Copy)]
 pub enum AsymmetricAlgorithm {
     /// RSA with key sizes up to 2048-1 bit.
     RSA1024,

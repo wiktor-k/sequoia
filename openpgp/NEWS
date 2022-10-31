@@ -2,6 +2,9 @@
 #+TITLE: sequoia-openpgp NEWS – history of user-visible changes
 #+STARTUP: content hidestars
 
+* Changes in 1.11.0
+ * New functionality
+   - AsymmetricAlgorithm implements PartialEq, Eq, and Copy.
 * Changes in 1.10.0
 ** New functionality
    - Cert::insert_packets2
