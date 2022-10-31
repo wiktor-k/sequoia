@@ -120,7 +120,7 @@ impl<A> Default for CutoffList<A> {
 
 impl<A> CutoffList<A> {
     // Rejects all algorithms.
-    const fn reject_all() -> Self {
+    pub(super) const fn reject_all() -> Self {
         Self {
             cutoffs: VecOrSlice::empty(),
             _a: std::marker::PhantomData,
@@ -192,6 +192,7 @@ macro_rules! a_cutoff_list {
             Custom(CutoffList<$algo>),
         }
 
+        #[allow(unused)]
         impl $name {
             const DEFAULTS : [ Option<Timestamp>; $values_count ] = $values;
 
@@ -215,6 +216,15 @@ macro_rules! a_cutoff_list {
 
             fn set(&mut self, a: $algo, cutoff: Option<Timestamp>) {
                 self.force().set(a, cutoff)
+            }
+
+            // Reset the cutoff list to its defaults.
+            fn defaults(&mut self) {
+                *self = Self::Default();
+            }
+
+            fn reject_all(&mut self) {
+                *self = Self::Custom(CutoffList::reject_all());
             }
 
             fn cutoff(&self, a: $algo) -> Option<Timestamp> {

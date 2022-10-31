@@ -909,6 +909,18 @@ impl<'a> StandardPolicy<'a> {
         self.second_pre_image_resistant_hash_algos.set(h, REJECT);
     }
 
+    /// Considers all hash algorithms to be insecure.
+    ///
+    /// Causes all hash algorithms to be considered insecure in all
+    /// security contexts.
+    ///
+    /// This is useful when using a good list to determine what
+    /// algorithms are allowed.
+    pub fn reject_all_hashes(&mut self) {
+        self.collision_resistant_hash_algos.reject_all();
+        self.second_pre_image_resistant_hash_algos.reject_all();
+    }
+
     /// Considers `h` to be insecure in all security contexts starting
     /// at time `t`.
     ///
@@ -1114,6 +1126,14 @@ impl<'a> StandardPolicy<'a> {
         self.critical_subpackets.set(s, REJECT);
     }
 
+    /// Considers all critical subpackets to be insecure.
+    ///
+    /// This is useful when using a good list to determine what
+    /// critical subpackets are allowed.
+    pub fn reject_all_critical_subpackets(&mut self) {
+        self.critical_subpackets.reject_all();
+    }
+
     /// Considers `s` to be insecure starting at `cutoff`.
     ///
     /// A cutoff of `None` means that there is no cutoff and the
@@ -1153,6 +1173,14 @@ impl<'a> StandardPolicy<'a> {
         self.asymmetric_algos.set(a, REJECT);
     }
 
+    /// Considers all asymmetric algorithms to be insecure.
+    ///
+    /// This is useful when using a good list to determine what
+    /// algorithms are allowed.
+    pub fn reject_all_asymmetric_algos(&mut self) {
+        self.asymmetric_algos.reject_all();
+    }
+
     /// Considers `a` to be insecure starting at `cutoff`.
     ///
     /// A cutoff of `None` means that there is no cutoff and the
@@ -1186,6 +1214,14 @@ impl<'a> StandardPolicy<'a> {
     /// Always considers `s` to be insecure.
     pub fn reject_symmetric_algo(&mut self, s: SymmetricAlgorithm) {
         self.symmetric_algos.set(s, REJECT);
+    }
+
+    /// Considers all symmetric algorithms to be insecure.
+    ///
+    /// This is useful when using a good list to determine what
+    /// algorithms are allowed.
+    pub fn reject_all_symmetric_algos(&mut self) {
+        self.symmetric_algos.reject_all();
     }
 
     /// Considers `s` to be insecure starting at `cutoff`.
@@ -1233,6 +1269,14 @@ impl<'a> StandardPolicy<'a> {
         self.aead_algos.set(a, REJECT);
     }
 
+    /// Considers all AEAD algorithms to be insecure.
+    ///
+    /// This is useful when using a good list to determine what
+    /// algorithms are allowed.
+    pub fn reject_all_aead_algos(&mut self) {
+        self.aead_algos.reject_all();
+    }
+
     /// Considers `a` to be insecure starting at `cutoff`.
     ///
     /// A cutoff of `None` means that there is no cutoff and the
@@ -1266,6 +1310,14 @@ impl<'a> StandardPolicy<'a> {
     /// Always reject packets with the given tag.
     pub fn reject_packet_tag(&mut self, tag: Tag) {
         self.packet_tags.set(tag, REJECT);
+    }
+
+    /// Considers all packets to be insecure.
+    ///
+    /// This is useful when using a good list to determine what
+    /// packets are allowed.
+    pub fn reject_all_packet_tags(&mut self) {
+        self.packet_tags.reject_all();
     }
 
     /// Start rejecting packets with the given tag at `t`.
@@ -2733,4 +2785,118 @@ mod test {
         assert_eq!(cert.with_policy(p, t).unwrap().keys().count(), 1);
         Ok(())
     }
+
+    #[test]
+    fn reject_all_hashes() -> Result<()> {
+        let mut p = StandardPolicy::new();
+
+        let set_variants = [
+            HashAlgorithm::MD5,
+            HashAlgorithm::Unknown(234),
+        ];
+        let check_variants = [
+            HashAlgorithm::SHA512,
+            HashAlgorithm::Unknown(239),
+        ];
+
+        // Accept a few hashes explicitly.
+        for v in set_variants.iter().cloned() {
+            p.accept_hash(v);
+            assert_eq!(
+                p.hash_cutoff(
+                    v,
+                    HashAlgoSecurity::SecondPreImageResistance),
+                ACCEPT.map(Into::into));
+            assert_eq!(
+                p.hash_cutoff(
+                    v,
+                    HashAlgoSecurity::CollisionResistance),
+                ACCEPT.map(Into::into));
+        }
+
+        // Reject all hashes.
+        p.reject_all_hashes();
+
+        for v in set_variants.iter().chain(check_variants.iter()).cloned() {
+            p.accept_hash(v);
+            assert_eq!(
+                p.hash_cutoff(
+                    v,
+                    HashAlgoSecurity::SecondPreImageResistance),
+                ACCEPT.map(Into::into));
+            assert_eq!(
+                p.hash_cutoff(
+                    v,
+                    HashAlgoSecurity::CollisionResistance),
+                ACCEPT.map(Into::into));
+        }
+
+        Ok(())
+    }
+
+    macro_rules! reject_all_check {
+        ($reject_all:ident, $accept_one:ident, $cutoff:ident,
+         $set_variants:expr, $check_variants:expr) => {
+            #[test]
+            fn $reject_all() -> Result<()> {
+                let mut p = StandardPolicy::new();
+
+                // Accept a few hashes explicitly.
+                for v in $set_variants.iter().cloned() {
+                    p.$accept_one(v);
+                    assert_eq!(p.$cutoff(v), ACCEPT.map(Into::into));
+                }
+
+                // Reject all hashes.
+                p.$reject_all();
+
+                for v in $set_variants.iter()
+                    .chain($check_variants.iter()).cloned()
+                {
+                    assert_eq!(
+                        p.$cutoff(v),
+                        REJECT.map(Into::into));
+                }
+                Ok(())
+            }
+        }
+    }
+
+    reject_all_check!(reject_all_critical_subpackets,
+                      accept_critical_subpacket,
+                      critical_subpacket_cutoff,
+                      &[ SubpacketTag::TrustSignature,
+                         SubpacketTag::Unknown(252) ],
+                      &[ SubpacketTag::Unknown(253),
+                         SubpacketTag::SignatureCreationTime ]);
+
+    reject_all_check!(reject_all_asymmetric_algos,
+                      accept_asymmetric_algo,
+                      asymmetric_algo_cutoff,
+                      &[ AsymmetricAlgorithm::RSA3072,
+                         AsymmetricAlgorithm::Cv25519 ],
+                      &[ AsymmetricAlgorithm::Unknown,
+                         AsymmetricAlgorithm::NistP256 ]);
+
+    reject_all_check!(reject_all_symmetric_algos,
+                      accept_symmetric_algo,
+                      symmetric_algo_cutoff,
+                      &[ SymmetricAlgorithm::Unencrypted,
+                         SymmetricAlgorithm::Unknown(252) ],
+                      &[ SymmetricAlgorithm::AES256,
+                         SymmetricAlgorithm::Unknown(230) ]);
+
+    reject_all_check!(reject_all_aead_algos,
+                      accept_aead_algo,
+                      aead_algo_cutoff,
+                      &[ AEADAlgorithm::OCB ],
+                      &[ AEADAlgorithm::EAX ]);
+
+    reject_all_check!(reject_all_packet_tags,
+                      accept_packet_tag,
+                      packet_tag_cutoff,
+                      &[ Tag::SEIP,
+                         Tag::Unknown(252) ],
+                      &[ Tag::Signature,
+                         Tag::Unknown(230) ]);
 }

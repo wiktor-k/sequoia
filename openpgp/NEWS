@@ -18,6 +18,12 @@
    - DataFormat::variants.
    - packet::Tag::variants.
    - SubpacketTag::variants.
+   - StandardPolicy::reject_all_hashes
+   - StandardPolicy::reject_all_critical_subpackets
+   - StandardPolicy::reject_all_asymmetric_algos
+   - StandardPolicy::reject_all_symmetric_algos
+   - StandardPolicy::reject_all_aead_algos
+   - StandardPolicy::reject_all_packet_tags
 * Changes in 1.10.0
 ** New functionality
    - Cert::insert_packets2
