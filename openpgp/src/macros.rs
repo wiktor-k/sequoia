@@ -26,6 +26,7 @@ macro_rules! tracer {
         // Currently, Rust doesn't support $( ... ) in a nested
         // macro's definition.  See:
         // https://users.rust-lang.org/t/nested-macros-issue/8348/2
+        #[allow(unused_macros)]
         macro_rules! t {
             ( $fmt:expr ) =>
             { trace!($TRACE, "{}{}: {}", crate::macros::indent($indent), $func, $fmt) };
