@@ -5,6 +5,8 @@
 * Changes in 1.11.0
  * New functionality
    - AsymmetricAlgorithm implements PartialEq, Eq, and Copy.
+   - Signature3 implements support for parsing, verifying, and
+     reserializing version 3 signature packages.
 * Changes in 1.10.0
 ** New functionality
    - Cert::insert_packets2

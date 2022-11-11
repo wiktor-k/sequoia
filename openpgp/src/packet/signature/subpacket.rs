@@ -3730,12 +3730,12 @@ impl TryFrom<Signature> for Signature4 {
     fn try_from(sig: Signature) -> Result<Self> {
         match sig {
             Signature::V4(sig) => Ok(sig),
-            // XXX: Once there are more signature variants:
-            //sig => Err(
-            //    Error::InvalidArgument(
-            //        format!("Got a v{}, require a v4 signature", sig.version())
-            //            .into())
-            //        .into()),
+            sig => Err(
+                Error::InvalidArgument(
+                    format!(
+                        "Got a v{}, require a v4 signature",
+                        sig.version()))
+                    .into()),
         }
     }
 }

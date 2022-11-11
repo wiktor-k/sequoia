@@ -152,6 +152,7 @@ use crate::packet::signature::subpacket::{
     SubpacketArea, Subpacket, SubpacketValue, SubpacketLength
 };
 use crate::packet::prelude::*;
+use crate::packet::signature::Signature3;
 use crate::seal;
 use crate::types::{
     RevocationKey,
@@ -1591,12 +1592,14 @@ impl seal::Sealed for Signature {}
 impl Marshal for Signature {
     fn serialize(&self, o: &mut dyn std::io::Write) -> Result<()> {
         match self {
+            Signature::V3(ref s) => s.serialize(o),
             Signature::V4(ref s) => s.serialize(o),
         }
     }
 
     fn export(&self, o: &mut dyn std::io::Write) -> Result<()> {
         match self {
+            Signature::V3(ref s) => s.export(o),
             Signature::V4(ref s) => s.export(o),
         }
     }
@@ -1605,26 +1608,170 @@ impl Marshal for Signature {
 impl MarshalInto for Signature {
     fn serialized_len(&self) -> usize {
         match self {
+            Signature::V3(ref s) => s.serialized_len(),
             Signature::V4(ref s) => s.serialized_len(),
         }
     }
 
     fn serialize_into(&self, buf: &mut [u8]) -> Result<usize> {
         match self {
+            Signature::V3(ref s) => s.serialize_into(buf),
             Signature::V4(ref s) => s.serialize_into(buf),
         }
     }
 
     fn export_into(&self, buf: &mut [u8]) -> Result<usize> {
         match self {
+            Signature::V3(ref s) => s.export_into(buf),
             Signature::V4(ref s) => s.export_into(buf),
         }
     }
 
     fn export_to_vec(&self) -> Result<Vec<u8>> {
         match self {
+            Signature::V3(ref s) => s.export_to_vec(),
             Signature::V4(ref s) => s.export_to_vec(),
         }
+    }
+}
+
+impl NetLength for Signature {
+    fn net_len(&self) -> usize {
+        match self {
+            Signature::V3(sig) => sig.net_len(),
+            Signature::V4(sig) => sig.net_len(),
+        }
+    }
+}
+
+impl seal::Sealed for Signature3 {}
+impl Marshal for Signature3 {
+    /// Writes a serialized version of the specified `Signature`
+    /// packet to `o`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::InvalidArgument`] if `self` does not contain
+    /// a valid v3 signature.  Because v3 signature support was added
+    /// late in the 1.x release cycle, `Signature3` is just a thin
+    /// wrapper around a `Signature4`.  As such, it is possible to add
+    /// v4 specific data to a `Signature3`.  In general, this isn't a
+    /// significnat problem as generating v3 is deprecated.
+    ///
+    /// [`Error::InvalidArgument`]: Error::InvalidArgument
+    fn serialize(&self, o: &mut dyn std::io::Write) -> Result<()> {
+        use crate::packet::signature::subpacket::SubpacketTag;
+
+        assert_eq!(self.version(), 3);
+        write_byte(o, self.version())?;
+        // hashed length.
+        write_byte(o, 5)?;
+        write_byte(o, self.typ().into())?;
+        if let Some(SubpacketValue::SignatureCreationTime(ct))
+            = self.hashed_area().subpacket(
+                SubpacketTag::SignatureCreationTime)
+            .map(|sp| sp.value())
+        {
+            write_be_u32(o, u32::from(*ct))?;
+        } else {
+            return Err(Error::InvalidArgument(
+                "Invalid v3 signature, missing creation time.".into()).into());
+        }
+
+        // Only one signature creation time subpacket is allowed in
+        // the hashed area.
+        let mut iter = self.hashed_area().iter();
+        let _ = iter.next();
+        if iter.next().is_some() {
+            return Err(Error::InvalidArgument(
+                format!("Invalid v3 signature: \
+                         subpackets are not allowed: {}",
+                        self.hashed_area().iter().map(|sp| {
+                            format!("{}: {:?}", sp.tag(), sp.value())
+                        }).collect::<Vec<String>>().join(", "))).into());
+        }
+
+        if let Some(SubpacketValue::Issuer(keyid))
+            = self.unhashed_area().subpacket(SubpacketTag::Issuer)
+            .map(|sp| sp.value())
+        {
+            match keyid {
+                KeyID::V4(bytes) => {
+                    assert_eq!(bytes.len(), 8);
+                    o.write_all(&bytes[..])?;
+                }
+                KeyID::Invalid(_) => {
+                    return Err(Error::InvalidArgument(
+                        "Invalid v3 signature, invalid issuer.".into()).into());
+                }
+            }
+        } else {
+            return Err(Error::InvalidArgument(
+                "Invalid v3 signature, missing issuer.".into()).into());
+        }
+
+        // Only one issuer subpacket is allowed in the unhashed area.
+        let mut iter = self.unhashed_area().iter();
+        let _ = iter.next();
+        if iter.next().is_some() {
+            return Err(Error::InvalidArgument(
+                format!("Invalid v3 signature: \
+                         subpackets are not allowed: {}",
+                        self.unhashed_area().iter().map(|sp| {
+                            format!("{}: {:?}", sp.tag(), sp.value())
+                        }).collect::<Vec<String>>().join(", "))).into());
+        }
+
+        write_byte(o, self.pk_algo().into())?;
+        write_byte(o, self.hash_algo().into())?;
+
+        write_byte(o, self.digest_prefix()[0])?;
+        write_byte(o, self.digest_prefix()[1])?;
+
+        self.mpis().serialize(o)?;
+
+        Ok(())
+    }
+
+    fn export(&self, o: &mut dyn std::io::Write) -> Result<()> {
+        self.exportable()?;
+        self.serialize(o)
+    }
+}
+
+impl NetLength for Signature3 {
+    fn net_len(&self) -> usize {
+        assert_eq!(self.version(), 3);
+
+        1 // Version.
+            + 1 // Hashed length.
+            + 1 // Signature type.
+            + 4 // Creation time.
+            + 8 // Issuer.
+            + 1 // PK algorithm.
+            + 1 // Hash algorithm.
+            + 2 // Hash prefix.
+            + self.mpis().serialized_len()
+    }
+}
+
+impl MarshalInto for Signature3 {
+    fn serialized_len(&self) -> usize {
+        self.net_len()
+    }
+
+    fn serialize_into(&self, buf: &mut [u8]) -> Result<usize> {
+        generic_serialize_into(self, MarshalInto::serialized_len(self), buf)
+    }
+
+    fn export_into(&self, buf: &mut [u8]) -> Result<usize> {
+        self.exportable()?;
+        self.serialize_into(buf)
+    }
+
+    fn export_to_vec(&self) -> Result<Vec<u8>> {
+        self.exportable()?;
+        self.to_vec()
     }
 }
 
@@ -1678,6 +1825,8 @@ impl Marshal for Signature4 {
 
 impl NetLength for Signature4 {
     fn net_len(&self) -> usize {
+        assert_eq!(self.version(), 4);
+
         1 // Version.
             + 1 // Signature type.
             + 1 // PK algorithm.

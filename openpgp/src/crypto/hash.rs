@@ -40,7 +40,7 @@ use crate::packet::UserAttribute;
 use crate::packet::key;
 use crate::packet::key::Key4;
 use crate::packet::Signature;
-use crate::packet::signature::{self, Signature4};
+use crate::packet::signature::{self, Signature3, Signature4};
 use crate::Result;
 use crate::types::Timestamp;
 
@@ -411,8 +411,36 @@ impl<P, R> Hash for Key4<P, R>
 impl Hash for Signature {
     fn hash(&self, hash: &mut dyn Digest) {
         match self {
+            Signature::V3(sig) => sig.hash(hash),
             Signature::V4(sig) => sig.hash(hash),
         }
+    }
+}
+
+impl Hash for Signature3 {
+    fn hash(&self, hash: &mut dyn Digest) {
+        // XXX: Annoyingly, we have no proper way of handling errors
+        // here.
+
+        let mut buffer = [0u8; 5];
+
+        // Signature type.
+        buffer[0] = u8::from(self.typ());
+
+        // Creation time.
+        let creation_time: u32 =
+            Timestamp::try_from(
+                self.signature_creation_time()
+                    .unwrap_or(std::time::UNIX_EPOCH))
+            .unwrap_or_else(|_| Timestamp::from(0))
+            .into();
+
+        buffer[1] = (creation_time >> 24) as u8;
+        buffer[2] = (creation_time >> 16) as u8;
+        buffer[3] = (creation_time >>  8) as u8;
+        buffer[4] = (creation_time      ) as u8;
+
+        hash.update(&buffer[..]);
     }
 }
 
@@ -566,6 +594,7 @@ impl Signature {
     /// signature.
     pub fn hash_for_confirmation(&self, hash: &mut dyn Digest) {
         match self {
+            Signature::V3(s) => s.hash_for_confirmation(hash),
             Signature::V4(s) => s.hash_for_confirmation(hash),
         }
     }

@@ -113,6 +113,7 @@
 //! [its documentation]: subpacket::SubpacketAreas
 
 use std::cmp::Ordering;
+use std::convert::TryFrom;
 use std::fmt;
 use std::hash::Hasher;
 use std::ops::{Deref, DerefMut};
@@ -128,6 +129,7 @@ use crate::crypto::{
     hash::{self, Hash, Digest},
     Signer,
 };
+use crate::KeyID;
 use crate::KeyHandle;
 use crate::HashAlgorithm;
 use crate::PublicKeyAlgorithm;
@@ -148,6 +150,7 @@ use crate::packet::signature::subpacket::{
     SubpacketTag,
     SubpacketValue,
 };
+use crate::types::Timestamp;
 
 #[cfg(test)]
 /// Like quickcheck::Arbitrary, but bounded.
@@ -1742,6 +1745,7 @@ impl SignatureBuilder {
 impl From<Signature> for SignatureBuilder {
     fn from(sig: Signature) -> Self {
         match sig {
+            Signature::V3(sig) => sig.into(),
             Signature::V4(sig) => sig.into(),
         }
     }
@@ -2007,6 +2011,204 @@ impl Signature4 {
         }
 
         Ok(())
+    }
+}
+
+impl From<Signature3> for SignatureBuilder {
+    fn from(sig: Signature3) -> Self {
+        SignatureBuilder::from(sig.intern)
+    }
+}
+
+/// Holds a v3 Signature packet.
+///
+/// This holds a [version 3] Signature packet.  Normally, you won't
+/// directly work with this data structure, but with the [`Signature`]
+/// enum, which is version agnostic.  An exception is when you need to
+/// do version-specific operations.  But currently, there aren't any
+/// version-specific methods.
+///
+///   [version 3]: https://tools.ietf.org/html/rfc4880#section-5.2
+///   [`Signature`]: super::Signature
+///
+/// Note: Per RFC 4880, v3 signatures should not be generated, but
+/// they should be accepted.  As such, support for version 3
+/// signatures is limited to verifying them, but not generating them.
+#[derive(Clone)]
+pub struct Signature3 {
+    pub(crate) intern: Signature4,
+}
+assert_send_and_sync!(Signature3);
+
+impl TryFrom<Signature> for Signature3 {
+    type Error = anyhow::Error;
+
+    fn try_from(sig: Signature) -> Result<Self> {
+        match sig {
+            Signature::V3(sig) => Ok(sig),
+            sig => Err(
+                Error::InvalidArgument(
+                    format!(
+                        "Got a v{}, require a v3 signature",
+                        sig.version()))
+                    .into()),
+        }
+    }
+}
+
+// Yes, Signature3 derefs to Signature4.  This is because Signature
+// derefs to Signature4 so this is the only way to add support for v3
+// sigs without breaking the semver.
+impl Deref for Signature3 {
+    type Target = Signature4;
+
+    fn deref(&self) -> &Self::Target {
+        &self.intern
+    }
+}
+
+impl DerefMut for Signature3 {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.intern
+    }
+}
+
+impl fmt::Debug for Signature3 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Signature3")
+            .field("version", &self.version())
+            .field("typ", &self.typ())
+            .field("pk_algo", &self.pk_algo())
+            .field("hash_algo", &self.hash_algo())
+            .field("hashed_area", self.hashed_area())
+            .field("unhashed_area", self.unhashed_area())
+            .field("additional_issuers", &self.additional_issuers)
+            .field("digest_prefix",
+                   &crate::fmt::to_hex(&self.digest_prefix, false))
+            .field(
+                "computed_digest",
+                &self
+                    .computed_digest
+                    .as_ref()
+                    .map(|hash| crate::fmt::to_hex(&hash[..], false)),
+            )
+            .field("level", &self.level)
+            .field("mpis", &self.mpis)
+            .finish()
+    }
+}
+
+impl PartialEq for Signature3 {
+    /// This method tests for self and other values to be equal, and
+    /// is used by ==.
+    ///
+    /// This method compares the serialized version of the two
+    /// packets.  Thus, the computed values are ignored ([`level`],
+    /// [`computed_digest`]).
+    ///
+    /// Note: because this function also compares the unhashed
+    /// subpacket area, it is possible for a malicious party to take
+    /// valid signatures, add subpackets to the unhashed area,
+    /// yielding valid but distinct signatures.  If you want to ignore
+    /// the unhashed area, you should instead use the
+    /// [`Signature::normalized_eq`] method.
+    ///
+    /// [`level`]: Signature3::level()
+    /// [`computed_digest`]: Signature3::computed_digest()
+    fn eq(&self, other: &Signature3) -> bool {
+        self.cmp(other) == Ordering::Equal
+    }
+}
+
+impl Eq for Signature3 {}
+
+impl PartialOrd for Signature3 {
+    fn partial_cmp(&self, other: &Signature3) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Signature3 {
+    fn cmp(&self, other: &Signature3) -> Ordering {
+        self.intern.cmp(&other.intern)
+    }
+}
+
+impl std::hash::Hash for Signature3 {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        use std::hash::Hash as StdHash;
+        StdHash::hash(&self.intern, state);
+    }
+}
+
+impl Signature3 {
+    /// Creates a new signature packet.
+    ///
+    /// If you want to sign something, consider using the [`SignatureBuilder`]
+    /// interface.
+    ///
+    pub fn new(typ: SignatureType, creation_time: Timestamp,
+               issuer: KeyID,
+               pk_algo: PublicKeyAlgorithm,
+               hash_algo: HashAlgorithm,
+               digest_prefix: [u8; 2],
+               mpis: mpi::Signature) -> Self {
+        let hashed_area = SubpacketArea::new(vec![
+            Subpacket::new(
+                SubpacketValue::SignatureCreationTime(creation_time),
+                true).expect("fits"),
+        ]).expect("fits");
+        let unhashed_area = SubpacketArea::new(vec![
+            Subpacket::new(
+                SubpacketValue::Issuer(issuer),
+                false).expect("fits"),
+        ]).expect("fits");
+
+        let mut sig = Signature4::new(typ,
+                                      pk_algo, hash_algo,
+                                      hashed_area, unhashed_area,
+                                      digest_prefix, mpis);
+        sig.version = 3;
+
+        Signature3 {
+            intern: sig,
+        }
+    }
+
+    /// Gets the public key algorithm.
+    // SigantureFields::pk_algo is private, because we don't want it
+    // available on SignatureBuilder, which also derefs to
+    // &SignatureFields.
+    pub fn pk_algo(&self) -> PublicKeyAlgorithm {
+        self.fields.pk_algo()
+    }
+
+    /// Gets the hash prefix.
+    pub fn digest_prefix(&self) -> &[u8; 2] {
+        &self.digest_prefix
+    }
+
+    /// Gets the signature packet's MPIs.
+    pub fn mpis(&self) -> &mpi::Signature {
+        &self.mpis
+    }
+
+    /// Gets the computed hash value.
+    ///
+    /// This is set by the [`PacketParser`] when parsing the message.
+    ///
+    /// [`PacketParser`]: crate::parse::PacketParser
+    pub fn computed_digest(&self) -> Option<&[u8]> {
+        self.computed_digest.as_ref().map(|d| &d[..])
+    }
+
+    /// Gets the signature level.
+    ///
+    /// A level of 0 indicates that the signature is directly over the
+    /// data, a level of 1 means that the signature is a notarization
+    /// over all level 0 signatures and the data, and so on.
+    pub fn level(&self) -> usize {
+        self.level
     }
 }
 
@@ -3152,6 +3354,18 @@ impl Signature {
     }
 }
 
+impl From<Signature3> for Packet {
+    fn from(s: Signature3) -> Self {
+        Packet::Signature(s.into())
+    }
+}
+
+impl From<Signature3> for super::Signature {
+    fn from(s: Signature3) -> Self {
+        super::Signature::V3(s)
+    }
+}
+
 impl From<Signature4> for Packet {
     fn from(s: Signature4) -> Self {
         Packet::Signature(s.into())
@@ -3167,7 +3381,11 @@ impl From<Signature4> for super::Signature {
 #[cfg(test)]
 impl ArbitraryBounded for super::Signature {
     fn arbitrary_bounded(g: &mut Gen, depth: usize) -> Self {
-        Signature4::arbitrary_bounded(g, depth).into()
+        if bool::arbitrary(g) {
+            Signature3::arbitrary_bounded(g, depth).into()
+        } else {
+            Signature4::arbitrary_bounded(g, depth).into()
+        }
     }
 }
 
@@ -3220,6 +3438,52 @@ impl ArbitraryBounded for Signature4 {
 
 #[cfg(test)]
 impl_arbitrary_with_bound!(Signature4);
+
+#[cfg(test)]
+impl ArbitraryBounded for Signature3 {
+    fn arbitrary_bounded(g: &mut Gen, _depth: usize) -> Self {
+        use mpi::MPI;
+        use PublicKeyAlgorithm::*;
+
+        let pk_algo = PublicKeyAlgorithm::arbitrary_for_signing(g);
+
+        #[allow(deprecated)]
+        let mpis = match pk_algo {
+            RSAEncryptSign | RSASign => mpi::Signature::RSA  {
+                s: MPI::arbitrary(g),
+            },
+
+            DSA => mpi::Signature::DSA {
+                r: MPI::arbitrary(g),
+                s: MPI::arbitrary(g),
+            },
+
+            EdDSA => mpi::Signature::EdDSA  {
+                r: MPI::arbitrary(g),
+                s: MPI::arbitrary(g),
+            },
+
+            ECDSA => mpi::Signature::ECDSA  {
+                r: MPI::arbitrary(g),
+                s: MPI::arbitrary(g),
+            },
+
+            _ => unreachable!(),
+        };
+
+        Signature3::new(
+            SignatureType::arbitrary(g),
+            Timestamp::arbitrary(g),
+            KeyID::arbitrary(g),
+            pk_algo,
+            HashAlgorithm::arbitrary(g),
+            [Arbitrary::arbitrary(g), Arbitrary::arbitrary(g)],
+            mpis)
+    }
+}
+
+#[cfg(test)]
+impl_arbitrary_with_bound!(Signature3);
 
 #[cfg(test)]
 mod test {
@@ -3482,6 +3746,28 @@ mod test {
             crate::tests::message("a-cypherpunks-manifesto.txt.ed25519.sig"))
             .unwrap();
         let mut sig = if let Packet::Signature(s) = p {
+            s
+        } else {
+            panic!("Expected a Signature, got: {:?}", p);
+        };
+
+        sig.verify_message(cert.primary_key().key(), msg).unwrap();
+    }
+
+    #[test]
+    fn verify_v3_sig() {
+        if ! PublicKeyAlgorithm::DSA.is_supported() {
+            return;
+        }
+
+        let cert = Cert::from_bytes(crate::tests::key(
+                "dennis-simon-anton-private.pgp")).unwrap();
+        let msg = crate::tests::manifesto();
+        let p = Packet::from_bytes(
+            crate::tests::message("a-cypherpunks-manifesto.txt.dennis-simon-anton-v3.sig"))
+            .unwrap();
+        let mut sig = if let Packet::Signature(s) = p {
+            assert_eq!(s.version(), 3);
             s
         } else {
             panic!("Expected a Signature, got: {:?}", p);

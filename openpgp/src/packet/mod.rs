@@ -987,6 +987,9 @@ fn packet_path_iter() {
 #[non_exhaustive]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Debug)]
 pub enum Signature {
+    /// Signature packet version 3.
+    V3(self::signature::Signature3),
+
     /// Signature packet version 4.
     V4(self::signature::Signature4),
 }
@@ -996,6 +999,7 @@ impl Signature {
     /// Gets the version.
     pub fn version(&self) -> u8 {
         match self {
+            Signature::V3(_) => 3,
             Signature::V4(_) => 4,
         }
     }
@@ -1013,6 +1017,7 @@ impl Deref for Signature {
 
     fn deref(&self) -> &Self::Target {
         match self {
+            Signature::V3(sig) => &sig.intern,
             Signature::V4(sig) => sig,
         }
     }
@@ -1022,6 +1027,7 @@ impl Deref for Signature {
 impl DerefMut for Signature {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match self {
+            Signature::V3(ref mut sig) => &mut sig.intern,
             Signature::V4(ref mut sig) => sig,
         }
     }
