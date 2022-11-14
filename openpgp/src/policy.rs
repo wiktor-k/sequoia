@@ -1557,6 +1557,37 @@ pub enum AsymmetricAlgorithm {
 }
 assert_send_and_sync!(AsymmetricAlgorithm);
 
+const ASYMMETRIC_ALGORITHM_VARIANTS: [AsymmetricAlgorithm; 18] = [
+    AsymmetricAlgorithm::RSA1024,
+    AsymmetricAlgorithm::RSA2048,
+    AsymmetricAlgorithm::RSA3072,
+    AsymmetricAlgorithm::RSA4096,
+    AsymmetricAlgorithm::ElGamal1024,
+    AsymmetricAlgorithm::ElGamal2048,
+    AsymmetricAlgorithm::ElGamal3072,
+    AsymmetricAlgorithm::ElGamal4096,
+    AsymmetricAlgorithm::DSA1024,
+    AsymmetricAlgorithm::DSA2048,
+    AsymmetricAlgorithm::DSA3072,
+    AsymmetricAlgorithm::DSA4096,
+    AsymmetricAlgorithm::NistP256,
+    AsymmetricAlgorithm::NistP384,
+    AsymmetricAlgorithm::NistP521,
+    AsymmetricAlgorithm::BrainpoolP256,
+    AsymmetricAlgorithm::BrainpoolP512,
+    AsymmetricAlgorithm::Cv25519,
+];
+
+impl AsymmetricAlgorithm {
+    /// Returns an iterator over all valid variants.
+    ///
+    /// Returns an iterator over all known variants.  This does not
+    /// include the [`AsymmetricAlgorithm::Unknown`] variant.
+    pub fn variants() -> impl Iterator<Item=AsymmetricAlgorithm> {
+        ASYMMETRIC_ALGORITHM_VARIANTS.iter().cloned()
+    }
+}
+
 impl std::fmt::Display for AsymmetricAlgorithm {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{:?}", self)

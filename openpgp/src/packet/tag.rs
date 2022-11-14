@@ -217,6 +217,27 @@ impl fmt::Display for Tag {
     }
 }
 
+const PACKET_TAG_VARIANTS: [Tag; 18] = [
+    Tag::PKESK,
+    Tag::Signature,
+    Tag::SKESK,
+    Tag::OnePassSig,
+    Tag::SecretKey,
+    Tag::PublicKey,
+    Tag::SecretSubkey,
+    Tag::CompressedData,
+    Tag::SED,
+    Tag::Marker,
+    Tag::Literal,
+    Tag::Trust,
+    Tag::UserID,
+    Tag::PublicSubkey,
+    Tag::UserAttribute,
+    Tag::SEIP,
+    Tag::MDC,
+    Tag::AED,
+];
+
 #[cfg(test)]
 impl Arbitrary for Tag {
     fn arbitrary(g: &mut Gen) -> Self {
@@ -259,6 +280,15 @@ impl Tag {
             // Standalone signature, old-style signature.
             || *self == Tag::Signature
     }
+
+    /// Returns an iterator over all valid variants.
+    ///
+    /// Returns an iterator over all known variants.  This does not
+    /// include the [`Tag::Reserved`], [`Tag::Private`], or
+    /// [`Tag::Unknown`] variants.
+    pub fn variants() -> impl Iterator<Item=Tag> {
+        PACKET_TAG_VARIANTS.iter().cloned()
+    }
 }
 
 #[cfg(test)]
@@ -294,5 +324,34 @@ mod tests {
         for i in 0..u8::MAX {
             let _ = Tag::from(i);
         }
+    }
+
+    #[test]
+    fn tag_variants() {
+        use std::collections::HashSet;
+        use std::iter::FromIterator;
+
+        // PACKET_TAG_VARIANTS is a list.  Derive it in a different way
+        // to double check that nothing is missing.
+        let derived_variants = (0..=u8::MAX)
+            .map(Tag::from)
+            .filter(|t| {
+                match t {
+                    Tag::Reserved => false,
+                    Tag::Private(_) => false,
+                    Tag::Unknown(_) => false,
+                    _ => true,
+                }
+            })
+            .collect::<HashSet<_>>();
+
+        let known_variants
+            = HashSet::from_iter(PACKET_TAG_VARIANTS.iter().cloned());
+
+        let missing = known_variants
+            .symmetric_difference(&derived_variants)
+            .collect::<Vec<_>>();
+
+        assert!(missing.is_empty(), "{:?}", missing);
     }
 }

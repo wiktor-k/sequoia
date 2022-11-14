@@ -127,6 +127,19 @@ pub enum PublicKeyAlgorithm {
 }
 assert_send_and_sync!(PublicKeyAlgorithm);
 
+#[allow(deprecated)]
+const PUBLIC_KEY_ALGORITHM_VARIANTS: [PublicKeyAlgorithm; 9] = [
+    PublicKeyAlgorithm::RSAEncryptSign,
+    PublicKeyAlgorithm::RSAEncrypt,
+    PublicKeyAlgorithm::RSASign,
+    PublicKeyAlgorithm::ElGamalEncrypt,
+    PublicKeyAlgorithm::DSA,
+    PublicKeyAlgorithm::ECDH,
+    PublicKeyAlgorithm::ECDSA,
+    PublicKeyAlgorithm::ElGamalEncryptSign,
+    PublicKeyAlgorithm::EdDSA,
+];
+
 impl PublicKeyAlgorithm {
     /// Returns true if the algorithm can sign data.
     ///
@@ -196,6 +209,15 @@ impl PublicKeyAlgorithm {
     /// ```
     pub fn is_supported(&self) -> bool {
         self.is_supported_by_backend()
+    }
+
+    /// Returns an iterator over all valid variants.
+    ///
+    /// Returns an iterator over all known variants.  This does not
+    /// include the [`PublicKeyAlgorithm::Private`], or
+    /// [`PublicKeyAlgorithm::Unknown`] variants.
+    pub fn variants() -> impl Iterator<Item=Self> {
+        PUBLIC_KEY_ALGORITHM_VARIANTS.iter().cloned()
     }
 }
 
@@ -658,6 +680,20 @@ pub enum SymmetricAlgorithm {
 }
 assert_send_and_sync!(SymmetricAlgorithm);
 
+const SYMMETRIC_ALGORITHM_VARIANTS: [ SymmetricAlgorithm; 11 ] = [
+    SymmetricAlgorithm::IDEA,
+    SymmetricAlgorithm::TripleDES,
+    SymmetricAlgorithm::CAST5,
+    SymmetricAlgorithm::Blowfish,
+    SymmetricAlgorithm::AES128,
+    SymmetricAlgorithm::AES192,
+    SymmetricAlgorithm::AES256,
+    SymmetricAlgorithm::Twofish,
+    SymmetricAlgorithm::Camellia128,
+    SymmetricAlgorithm::Camellia192,
+    SymmetricAlgorithm::Camellia256,
+];
+
 impl Default for SymmetricAlgorithm {
     fn default() -> Self {
         SymmetricAlgorithm::AES256
@@ -799,6 +835,18 @@ impl Arbitrary for SymmetricAlgorithm {
         u8::arbitrary(g).into()
     }
 }
+
+impl SymmetricAlgorithm {
+    /// Returns an iterator over all valid variants.
+    ///
+    /// Returns an iterator over all known variants.  This does not
+    /// include the [`SymmetricAlgorithm::Unencrypted`],
+    /// [`SymmetricAlgorithm::Private`], or
+    /// [`SymmetricAlgorithm::Unknown`] variants.
+    pub fn variants() -> impl Iterator<Item=Self> {
+        SYMMETRIC_ALGORITHM_VARIANTS.iter().cloned()
+    }
+}
 
 /// The AEAD algorithms as defined in [Section 9.6 of RFC 4880bis].
 ///
@@ -847,6 +895,11 @@ pub enum AEADAlgorithm {
 }
 assert_send_and_sync!(AEADAlgorithm);
 
+const AEAD_ALGORITHM_VARIANTS: [AEADAlgorithm; 2] = [
+    AEADAlgorithm::EAX,
+    AEADAlgorithm::OCB,
+];
+
 impl AEADAlgorithm {
     /// Returns whether this algorithm is supported.
     ///
@@ -860,6 +913,15 @@ impl AEADAlgorithm {
     /// ```
     pub fn is_supported(&self) -> bool {
         self.is_supported_by_backend()
+    }
+
+    /// Returns an iterator over all valid variants.
+    ///
+    /// Returns an iterator over all known variants.  This does not
+    /// include the [`AEADAlgorithm::Private`], or
+    /// [`AEADAlgorithm::Unknown`] variants.
+    pub fn variants() -> impl Iterator<Item=Self> {
+        AEAD_ALGORITHM_VARIANTS.iter().cloned()
     }
 }
 
@@ -991,6 +1053,13 @@ pub enum CompressionAlgorithm {
 }
 assert_send_and_sync!(CompressionAlgorithm);
 
+const COMPRESSION_ALGORITHM_VARIANTS: [CompressionAlgorithm; 4] = [
+    CompressionAlgorithm::Uncompressed,
+    CompressionAlgorithm::Zip,
+    CompressionAlgorithm::Zlib,
+    CompressionAlgorithm::BZip2,
+];
+
 impl Default for CompressionAlgorithm {
     fn default() -> Self {
         use self::CompressionAlgorithm::*;
@@ -1028,6 +1097,15 @@ impl CompressionAlgorithm {
             BZip2 => true,
             _ => false,
         }
+    }
+
+    /// Returns an iterator over all valid variants.
+    ///
+    /// Returns an iterator over all known variants.  This does not
+    /// include the [`CompressionAlgorithm::Private`], or
+    /// [`CompressionAlgorithm::Unknown`] variants.
+    pub fn variants() -> impl Iterator<Item=Self> {
+        COMPRESSION_ALGORITHM_VARIANTS.iter().cloned()
     }
 }
 
@@ -1123,6 +1201,16 @@ pub enum HashAlgorithm {
     Unknown(u8),
 }
 assert_send_and_sync!(HashAlgorithm);
+
+const HASH_ALGORITHM_VARIANTS: [HashAlgorithm; 7] = [
+    HashAlgorithm::MD5,
+    HashAlgorithm::SHA1,
+    HashAlgorithm::RipeMD,
+    HashAlgorithm::SHA256,
+    HashAlgorithm::SHA384,
+    HashAlgorithm::SHA512,
+    HashAlgorithm::SHA224,
+];
 
 impl Default for HashAlgorithm {
     fn default() -> Self {
@@ -1240,6 +1328,15 @@ impl HashAlgorithm {
                 Err(Error::UnsupportedHashAlgorithm(*self).into()),
         }
     }
+
+    /// Returns an iterator over all valid variants.
+    ///
+    /// Returns an iterator over all known variants.  This does not
+    /// include the [`HashAlgorithm::Private`], or
+    /// [`HashAlgorithm::Unknown`] variants.
+    pub fn variants() -> impl Iterator<Item=Self> {
+        HASH_ALGORITHM_VARIANTS.iter().cloned()
+    }
 }
 
 #[cfg(test)]
@@ -1323,6 +1420,24 @@ pub enum SignatureType {
 }
 assert_send_and_sync!(SignatureType);
 
+const SIGNATURE_TYPE_VARIANTS: [SignatureType; 16] = [
+    SignatureType::Binary,
+    SignatureType::Text,
+    SignatureType::Standalone,
+    SignatureType::GenericCertification,
+    SignatureType::PersonaCertification,
+    SignatureType::CasualCertification,
+    SignatureType::PositiveCertification,
+    SignatureType::AttestationKey,
+    SignatureType::SubkeyBinding,
+    SignatureType::PrimaryKeyBinding,
+    SignatureType::DirectKey,
+    SignatureType::KeyRevocation,
+    SignatureType::SubkeyRevocation,
+    SignatureType::CertificationRevocation,
+    SignatureType::Timestamp,
+    SignatureType::Confirmation,
+];
 
 impl From<u8> for SignatureType {
     fn from(u: u8) -> Self {
@@ -1420,6 +1535,16 @@ impl Arbitrary for SignatureType {
     }
 }
 
+impl SignatureType {
+    /// Returns an iterator over all valid variants.
+    ///
+    /// Returns an iterator over all known variants.  This does not
+    /// include the [`SignatureType::Unknown`] variants.
+    pub fn variants() -> impl Iterator<Item=Self> {
+        SIGNATURE_TYPE_VARIANTS.iter().cloned()
+    }
+}
+
 /// Describes the reason for a revocation.
 ///
 /// See the description of revocation subpackets [Section 5.2.3.23 of RFC 4880].
@@ -1502,6 +1627,14 @@ pub enum ReasonForRevocation {
     Unknown(u8),
 }
 assert_send_and_sync!(ReasonForRevocation);
+
+const REASON_FOR_REVOCATION_VARIANTS: [ReasonForRevocation; 5] = [
+    ReasonForRevocation::Unspecified,
+    ReasonForRevocation::KeySuperseded,
+    ReasonForRevocation::KeyCompromised,
+    ReasonForRevocation::KeyRetired,
+    ReasonForRevocation::UIDRetired,
+];
 
 impl From<u8> for ReasonForRevocation {
     fn from(u: u8) -> Self {
@@ -1678,6 +1811,15 @@ impl ReasonForRevocation {
             ReasonForRevocation::Unknown(_) => RevocationType::Hard,
         }
     }
+
+    /// Returns an iterator over all valid variants.
+    ///
+    /// Returns an iterator over all known variants.  This does not
+    /// include the [`ReasonForRevocation::Private`] or
+    /// [`ReasonForRevocation::Unknown`] variants.
+    pub fn variants() -> impl Iterator<Item=Self> {
+        REASON_FOR_REVOCATION_VARIANTS.iter().cloned()
+    }
 }
 
 /// Describes the format of the body of a literal data packet.
@@ -1741,6 +1883,14 @@ pub enum DataFormat {
     Unknown(char),
 }
 assert_send_and_sync!(DataFormat);
+
+#[allow(deprecated)]
+const DATA_FORMAT_VARIANTS: [DataFormat; 4] = [
+    DataFormat::Binary,
+    DataFormat::Text,
+    DataFormat::Unicode,
+    DataFormat::MIME,
+];
 
 impl Default for DataFormat {
     fn default() -> Self {
@@ -1812,6 +1962,16 @@ impl fmt::Display for DataFormat {
 impl Arbitrary for DataFormat {
     fn arbitrary(g: &mut Gen) -> Self {
         u8::arbitrary(g).into()
+    }
+}
+
+impl DataFormat {
+    /// Returns an iterator over all valid variants.
+    ///
+    /// Returns an iterator over all known variants.  This does not
+    /// include the [`DataFormat::Unknown`] variants.
+    pub fn variants() -> impl Iterator<Item=Self> {
+        DATA_FORMAT_VARIANTS.iter().cloned()
     }
 }
 
@@ -2106,5 +2266,235 @@ mod tests {
                 _ => true
             }
         }
+    }
+
+    #[test]
+    fn public_key_algorithms_variants() {
+        use std::collections::HashSet;
+        use std::iter::FromIterator;
+
+        // PUBLIC_KEY_ALGORITHM_VARIANTS is a list.  Derive it in a
+        // different way to double check that nothing is missing.
+        let derived_variants = (0..=u8::MAX)
+            .map(PublicKeyAlgorithm::from)
+            .filter(|t| {
+                match t {
+                    PublicKeyAlgorithm::Private(_) => false,
+                    PublicKeyAlgorithm::Unknown(_) => false,
+                    _ => true,
+                }
+            })
+            .collect::<HashSet<_>>();
+
+        let known_variants
+            = HashSet::from_iter(PUBLIC_KEY_ALGORITHM_VARIANTS.iter().cloned());
+
+        let missing = known_variants
+            .symmetric_difference(&derived_variants)
+            .collect::<Vec<_>>();
+
+        assert!(missing.is_empty(), "{:?}", missing);
+    }
+
+    #[test]
+    fn symmetric_algorithms_variants() {
+        use std::collections::HashSet;
+        use std::iter::FromIterator;
+
+        // SYMMETRIC_ALGORITHM_VARIANTS is a list.  Derive it in a
+        // different way to double check that nothing is missing.
+        let derived_variants = (0..=u8::MAX)
+            .map(SymmetricAlgorithm::from)
+            .filter(|t| {
+                match t {
+                    SymmetricAlgorithm::Unencrypted => false,
+                    SymmetricAlgorithm::Private(_) => false,
+                    SymmetricAlgorithm::Unknown(_) => false,
+                    _ => true,
+                }
+            })
+            .collect::<HashSet<_>>();
+
+        let known_variants
+            = HashSet::from_iter(SYMMETRIC_ALGORITHM_VARIANTS
+                                 .iter().cloned());
+
+        let missing = known_variants
+            .symmetric_difference(&derived_variants)
+            .collect::<Vec<_>>();
+
+        assert!(missing.is_empty(), "{:?}", missing);
+    }
+
+    #[test]
+    fn aead_algorithms_variants() {
+        use std::collections::HashSet;
+        use std::iter::FromIterator;
+
+        // AEAD_ALGORITHM_VARIANTS is a list.  Derive it in a
+        // different way to double check that nothing is missing.
+        let derived_variants = (0..=u8::MAX)
+            .map(AEADAlgorithm::from)
+            .filter(|t| {
+                match t {
+                    AEADAlgorithm::Private(_) => false,
+                    AEADAlgorithm::Unknown(_) => false,
+                    _ => true,
+                }
+            })
+            .collect::<HashSet<_>>();
+
+        let known_variants
+            = HashSet::from_iter(AEAD_ALGORITHM_VARIANTS
+                                 .iter().cloned());
+
+        let missing = known_variants
+            .symmetric_difference(&derived_variants)
+            .collect::<Vec<_>>();
+
+        assert!(missing.is_empty(), "{:?}", missing);
+    }
+
+    #[test]
+    fn compression_algorithms_variants() {
+        use std::collections::HashSet;
+        use std::iter::FromIterator;
+
+        // COMPRESSION_ALGORITHM_VARIANTS is a list.  Derive it in a
+        // different way to double check that nothing is missing.
+        let derived_variants = (0..=u8::MAX)
+            .map(CompressionAlgorithm::from)
+            .filter(|t| {
+                match t {
+                    CompressionAlgorithm::Private(_) => false,
+                    CompressionAlgorithm::Unknown(_) => false,
+                    _ => true,
+                }
+            })
+            .collect::<HashSet<_>>();
+
+        let known_variants
+            = HashSet::from_iter(COMPRESSION_ALGORITHM_VARIANTS
+                                 .iter().cloned());
+
+        let missing = known_variants
+            .symmetric_difference(&derived_variants)
+            .collect::<Vec<_>>();
+
+        assert!(missing.is_empty(), "{:?}", missing);
+    }
+
+    #[test]
+    fn hash_algorithms_variants() {
+        use std::collections::HashSet;
+        use std::iter::FromIterator;
+
+        // HASH_ALGORITHM_VARIANTS is a list.  Derive it in a
+        // different way to double check that nothing is missing.
+        let derived_variants = (0..=u8::MAX)
+            .map(HashAlgorithm::from)
+            .filter(|t| {
+                match t {
+                    HashAlgorithm::Private(_) => false,
+                    HashAlgorithm::Unknown(_) => false,
+                    _ => true,
+                }
+            })
+            .collect::<HashSet<_>>();
+
+        let known_variants
+            = HashSet::from_iter(HASH_ALGORITHM_VARIANTS
+                                 .iter().cloned());
+
+        let missing = known_variants
+            .symmetric_difference(&derived_variants)
+            .collect::<Vec<_>>();
+
+        assert!(missing.is_empty(), "{:?}", missing);
+    }
+
+    #[test]
+    fn signature_types_variants() {
+        use std::collections::HashSet;
+        use std::iter::FromIterator;
+
+        // SIGNATURE_TYPE_VARIANTS is a list.  Derive it in a
+        // different way to double check that nothing is missing.
+        let derived_variants = (0..=u8::MAX)
+            .map(SignatureType::from)
+            .filter(|t| {
+                match t {
+                    SignatureType::Unknown(_) => false,
+                    _ => true,
+                }
+            })
+            .collect::<HashSet<_>>();
+
+        let known_variants
+            = HashSet::from_iter(SIGNATURE_TYPE_VARIANTS
+                                 .iter().cloned());
+
+        let missing = known_variants
+            .symmetric_difference(&derived_variants)
+            .collect::<Vec<_>>();
+
+        assert!(missing.is_empty(), "{:?}", missing);
+    }
+
+    #[test]
+    fn reason_for_revocation_variants() {
+        use std::collections::HashSet;
+        use std::iter::FromIterator;
+
+        // REASON_FOR_REVOCATION_VARIANTS is a list.  Derive it in a
+        // different way to double check that nothing is missing.
+        let derived_variants = (0..=u8::MAX)
+            .map(ReasonForRevocation::from)
+            .filter(|t| {
+                match t {
+                    ReasonForRevocation::Private(_) => false,
+                    ReasonForRevocation::Unknown(_) => false,
+                    _ => true,
+                }
+            })
+            .collect::<HashSet<_>>();
+
+        let known_variants
+            = HashSet::from_iter(REASON_FOR_REVOCATION_VARIANTS
+                                 .iter().cloned());
+
+        let missing = known_variants
+            .symmetric_difference(&derived_variants)
+            .collect::<Vec<_>>();
+
+        assert!(missing.is_empty(), "{:?}", missing);
+    }
+
+    #[test]
+    fn data_format_variants() {
+        use std::collections::HashSet;
+        use std::iter::FromIterator;
+
+        // DATA_FORMAT_VARIANTS is a list.  Derive it in a different
+        // way to double check that nothing is missing.
+        let derived_variants = (0..=u8::MAX)
+            .map(DataFormat::from)
+            .filter(|t| {
+                match t {
+                    DataFormat::Unknown(_) => false,
+                    _ => true,
+                }
+            })
+            .collect::<HashSet<_>>();
+
+        let known_variants
+            = HashSet::from_iter(DATA_FORMAT_VARIANTS
+                                 .iter().cloned());
+
+        let missing = known_variants
+            .symmetric_difference(&derived_variants)
+            .collect::<Vec<_>>();
+
+        assert!(missing.is_empty(), "{:?}", missing);
     }
 }

@@ -333,6 +333,9 @@ pub enum SubpacketTag {
     Private(u8),
     /// Unknown subpacket tag.
     Unknown(u8),
+
+    // If you add a new variant, make sure to add it to the
+    // conversions and to SUBPACKET_TAG_VARIANTS.
 }
 assert_send_and_sync!(SubpacketTag);
 
@@ -418,6 +421,49 @@ impl From<SubpacketTag> for u8 {
     }
 }
 
+const SUBPACKET_TAG_VARIANTS: [SubpacketTag; 28] = [
+    SubpacketTag::SignatureCreationTime,
+    SubpacketTag::SignatureExpirationTime,
+    SubpacketTag::ExportableCertification,
+    SubpacketTag::TrustSignature,
+    SubpacketTag::RegularExpression,
+    SubpacketTag::Revocable,
+    SubpacketTag::KeyExpirationTime,
+    SubpacketTag::PlaceholderForBackwardCompatibility,
+    SubpacketTag::PreferredSymmetricAlgorithms,
+    SubpacketTag::RevocationKey,
+    SubpacketTag::Issuer,
+    SubpacketTag::NotationData,
+    SubpacketTag::PreferredHashAlgorithms,
+    SubpacketTag::PreferredCompressionAlgorithms,
+    SubpacketTag::KeyServerPreferences,
+    SubpacketTag::PreferredKeyServer,
+    SubpacketTag::PrimaryUserID,
+    SubpacketTag::PolicyURI,
+    SubpacketTag::KeyFlags,
+    SubpacketTag::SignersUserID,
+    SubpacketTag::ReasonForRevocation,
+    SubpacketTag::Features,
+    SubpacketTag::SignatureTarget,
+    SubpacketTag::EmbeddedSignature,
+    SubpacketTag::IssuerFingerprint,
+    SubpacketTag::PreferredAEADAlgorithms,
+    SubpacketTag::IntendedRecipient,
+    SubpacketTag::AttestedCertifications,
+];
+
+impl SubpacketTag {
+    /// Returns an iterator over all valid variants.
+    ///
+    /// Returns an iterator over all known variants.  This does not
+    /// include the [`SubpacketTag::Reserved`],
+    /// [`SubpacketTag::Private`], or [`SubpacketTag::Unknown`]
+    /// variants.
+    pub fn variants() -> impl Iterator<Item=Self> {
+        SUBPACKET_TAG_VARIANTS.iter().cloned()
+    }
+}
+
 #[cfg(test)]
 impl Arbitrary for SubpacketTag {
     fn arbitrary(g: &mut Gen) -> Self {
@@ -447,6 +493,35 @@ mod tests {
                 _ => true
             }
         }
+    }
+
+    #[test]
+    fn subpacket_tag_variants() {
+        use std::collections::HashSet;
+        use std::iter::FromIterator;
+
+        // SUBPACKET_TAG_VARIANTS is a list.  Derive it in a different way
+        // to double check that nothing is missing.
+        let derived_variants = (0..=u8::MAX)
+            .map(SubpacketTag::from)
+            .filter(|t| {
+                match t {
+                    SubpacketTag::Reserved(_) => false,
+                    SubpacketTag::Private(_) => false,
+                    SubpacketTag::Unknown(_) => false,
+                    _ => true,
+                }
+            })
+            .collect::<HashSet<_>>();
+
+        let known_variants
+            = HashSet::from_iter(SUBPACKET_TAG_VARIANTS.iter().cloned());
+
+        let missing = known_variants
+            .symmetric_difference(&derived_variants)
+            .collect::<Vec<_>>();
+
+        assert!(missing.is_empty(), "{:?}", missing);
     }
 }
 
