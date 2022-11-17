@@ -2105,13 +2105,6 @@ impl PartialEq for Signature3 {
     /// packets.  Thus, the computed values are ignored ([`level`],
     /// [`computed_digest`]).
     ///
-    /// Note: because this function also compares the unhashed
-    /// subpacket area, it is possible for a malicious party to take
-    /// valid signatures, add subpackets to the unhashed area,
-    /// yielding valid but distinct signatures.  If you want to ignore
-    /// the unhashed area, you should instead use the
-    /// [`Signature::normalized_eq`] method.
-    ///
     /// [`level`]: Signature3::level()
     /// [`computed_digest`]: Signature3::computed_digest()
     fn eq(&self, other: &Signature3) -> bool {
