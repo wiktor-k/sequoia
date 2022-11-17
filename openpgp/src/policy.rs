@@ -2818,17 +2818,16 @@ mod test {
         p.reject_all_hashes();
 
         for v in set_variants.iter().chain(check_variants.iter()).cloned() {
-            p.accept_hash(v);
             assert_eq!(
                 p.hash_cutoff(
                     v,
                     HashAlgoSecurity::SecondPreImageResistance),
-                ACCEPT.map(Into::into));
+                REJECT.map(Into::into));
             assert_eq!(
                 p.hash_cutoff(
                     v,
                     HashAlgoSecurity::CollisionResistance),
-                ACCEPT.map(Into::into));
+                REJECT.map(Into::into));
         }
 
         Ok(())
