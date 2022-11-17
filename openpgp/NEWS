@@ -24,6 +24,12 @@
    - StandardPolicy::reject_all_symmetric_algos
    - StandardPolicy::reject_all_aead_algos
    - StandardPolicy::reject_all_packet_tags
+   - StandardPolicy::accept_packet_tag_version
+   - StandardPolicy::reject_packet_tag_version
+   - StandardPolicy::reject_packet_tag_version_at
+   - StandardPolicy::packet_tag_version_cutoff
+** Deprecated functionality
+   - StandardPolicy::packet_tag_cutoff
 * Changes in 1.10.0
 ** New functionality
    - Cert::insert_packets2

@@ -60,6 +60,7 @@ use cutofflist::{
     CutoffList,
     REJECT,
     ACCEPT,
+    VersionedCutoffList,
 };
 
 /// A policy for cryptographic operations.
@@ -746,30 +747,38 @@ a_cutoff_list!(AEADAlgorithmCutoffList, AEADAlgorithm, 3,
                    ACCEPT,                 // 2. OCB.
                ]);
 
-a_cutoff_list!(PacketTagCutoffList, Tag, 21,
-               [
-                   REJECT,                   // 0. Reserved.
-                   ACCEPT,                   // 1. PKESK.
-                   ACCEPT,                   // 2. Signature.
-                   ACCEPT,                   // 3. SKESK.
-                   ACCEPT,                   // 4. OnePassSig.
-                   ACCEPT,                   // 5. SecretKey.
-                   ACCEPT,                   // 6. PublicKey.
-                   ACCEPT,                   // 7. SecretSubkey.
-                   ACCEPT,                   // 8. CompressedData.
-                   Some(Timestamp::Y2004M2), // 9. SED.
-                   ACCEPT,                   // 10. Marker.
-                   ACCEPT,                   // 11. Literal.
-                   ACCEPT,                   // 12. Trust.
-                   ACCEPT,                   // 13. UserID.
-                   ACCEPT,                   // 14. PublicSubkey.
-                   REJECT,                   // 15. Not assigned.
-                   REJECT,                   // 16. Not assigned.
-                   ACCEPT,                   // 17. UserAttribute.
-                   ACCEPT,                   // 18. SEIP.
-                   ACCEPT,                   // 19. MDC.
-                   ACCEPT,                   // 20. AED.
-               ]);
+a_versioned_cutoff_list!(PacketTagCutoffList, Tag, 21,
+    [
+        REJECT,                   // 0. Reserved.
+        ACCEPT,                   // 1. PKESK.
+        ACCEPT,                   // 2. Signature.
+        ACCEPT,                   // 3. SKESK.
+        ACCEPT,                   // 4. OnePassSig.
+        ACCEPT,                   // 5. SecretKey.
+        ACCEPT,                   // 6. PublicKey.
+        ACCEPT,                   // 7. SecretSubkey.
+        ACCEPT,                   // 8. CompressedData.
+        Some(Timestamp::Y2004M2), // 9. SED.
+        ACCEPT,                   // 10. Marker.
+        ACCEPT,                   // 11. Literal.
+        ACCEPT,                   // 12. Trust.
+        ACCEPT,                   // 13. UserID.
+        ACCEPT,                   // 14. PublicSubkey.
+        REJECT,                   // 15. Not assigned.
+        REJECT,                   // 16. Not assigned.
+        ACCEPT,                   // 17. UserAttribute.
+        ACCEPT,                   // 18. SEIP.
+        ACCEPT,                   // 19. MDC.
+        ACCEPT,                   // 20. AED.
+    ],
+    // The versioned list overrides the unversioned list.  So we only
+    // need to tweak the above.
+    //
+    // Note: this list must be sorted and the tag and version must be unique!
+    1,
+    [
+        (Tag::Signature, 3, Some(Timestamp::Y2007M2)),
+    ]);
 
 // We need to convert a `SystemTime` to a `Timestamp` in
 // `StandardPolicy::reject_hash_at`.  Unfortunately, a `SystemTime`
@@ -1302,14 +1311,34 @@ impl<'a> StandardPolicy<'a> {
         self.aead_algos.cutoff(a).map(|t| t.into())
     }
 
-    /// Always accept packets with the given tag.
+    /// Always accept the specified version of the packet.
+    ///
+    /// If a packet does not have a version field, then its version is
+    /// `0`.
+    pub fn accept_packet_tag_version(&mut self, tag: Tag, version: u8) {
+        self.packet_tags.set_versioned(tag, version, ACCEPT);
+    }
+
+    /// Always accept packets with the given tag independent of their
+    /// version.
+    ///
+    /// If you previously set a cutoff for a specific version of a
+    /// packet, this overrides that.
     pub fn accept_packet_tag(&mut self, tag: Tag) {
-        self.packet_tags.set(tag, ACCEPT);
+        self.packet_tags.set_unversioned(tag, ACCEPT);
+    }
+
+    /// Always reject the specified version of the packet.
+    ///
+    /// If a packet does not have a version field, then its version is
+    /// `0`.
+    pub fn reject_packet_tag_version(&mut self, tag: Tag, version: u8) {
+        self.packet_tags.set_versioned(tag, version, REJECT);
     }
 
     /// Always reject packets with the given tag.
     pub fn reject_packet_tag(&mut self, tag: Tag) {
-        self.packet_tags.set(tag, REJECT);
+        self.packet_tags.set_unversioned(tag, REJECT);
     }
 
     /// Considers all packets to be insecure.
@@ -1320,7 +1349,8 @@ impl<'a> StandardPolicy<'a> {
         self.packet_tags.reject_all();
     }
 
-    /// Start rejecting packets with the given tag at `t`.
+    /// Start rejecting the specified version of packets with the
+    /// given tag at `t`.
     ///
     /// A cutoff of `None` means that there is no cutoff and the
     /// packet has no known vulnerabilities.
@@ -1343,17 +1373,69 @@ impl<'a> StandardPolicy<'a> {
     ///
     ///   [Debian 3.0]: https://www.debian.org/News/2002/20020719
     ///   [GnuPG 1.0.3]: https://lists.gnupg.org/pipermail/gnupg-announce/2000q3/000075.html
+    pub fn reject_packet_tag_version_at<C>(&mut self, tag: Tag, version: u8,
+                                           cutoff: C)
+        where C: Into<Option<SystemTime>>,
+    {
+        self.packet_tags.set_versioned(
+            tag, version,
+            cutoff.into().and_then(system_time_cutoff_to_timestamp));
+    }
+
+    /// Start rejecting packets with the given tag at `t`.
+    ///
+    /// See the documentation for
+    /// [`StandardPolicy::reject_packet_tag_version_at`].
     pub fn reject_packet_tag_at<C>(&mut self, tag: Tag, cutoff: C)
         where C: Into<Option<SystemTime>>,
     {
-        self.packet_tags.set(
+        self.packet_tags.set_unversioned(
             tag,
             cutoff.into().and_then(system_time_cutoff_to_timestamp));
     }
 
-    /// Returns the cutoff times for the specified hash algorithm.
+    /// Returns the cutoff for the specified version of the specified
+    /// packet tag.
+    ///
+    /// This first considers the versioned cutoff list.  If there is
+    /// no entry in the versioned list, it fallsback to the
+    /// unversioned cutoff list.  If there is also no entry there,
+    /// then it falls back to the default.
+    pub fn packet_tag_version_cutoff(&self, tag: Tag, version: u8)
+        -> Option<SystemTime>
+    {
+        self.packet_tags.cutoff(tag, version).map(|t| t.into())
+    }
+
+    /// Returns the cutoff time for the specified packet tag.
+    ///
+    /// This function returns the maximum cutoff for all versions of
+    /// the packet.  That is, if one version has a cutoff of `t1`, and
+    /// another version has a cutoff of `t2`, this returns `max(t1,
+    /// t2)`.  These semantics answer the question: "Up to which point
+    /// can we use this packet?"
+    #[deprecated(note = "Since 1.11.  Use `packet_tag_version_cutoff`.")]
     pub fn packet_tag_cutoff(&self, tag: Tag) -> Option<SystemTime> {
-        self.packet_tags.cutoff(tag).map(|t| t.into())
+        // Versioned policy.
+        self.packet_tags.versioned_cutoffs
+            .iter()
+            .filter_map(|(t, _v, cutoff)| {
+                if t == &tag {
+                    Some(cutoff)
+                } else {
+                    None
+                }
+            })
+            // Unversioned policy or default, if nont.
+            .chain(
+                std::iter::once(
+                    self.packet_tags.unversioned_cutoffs.get(
+                        u8::from(tag) as usize)
+                        .unwrap_or(&cutofflist::DEFAULT_POLICY)))
+            // Prefer None.
+            .max_by(|a, b| a.is_none().cmp(&b.is_none()).then(a.cmp(b)))
+            .expect("have one")
+            .map(Into::into)
     }
 }
 
@@ -1533,7 +1615,11 @@ impl<'a> Policy for StandardPolicy<'a> {
 
     fn packet(&self, packet: &Packet) -> Result<()> {
         let time = self.time.unwrap_or_else(Timestamp::now);
-        self.packet_tags.check(packet.tag(), time, None)
+        self.packet_tags
+            .check(
+                packet.tag(),
+                packet.version().unwrap_or(0),
+                time, None)
             .context("Policy rejected packet type")
     }
 
@@ -2891,11 +2977,174 @@ mod test {
                       &[ AEADAlgorithm::OCB ],
                       &[ AEADAlgorithm::EAX ]);
 
-    reject_all_check!(reject_all_packet_tags,
-                      accept_packet_tag,
-                      packet_tag_cutoff,
-                      &[ Tag::SEIP,
-                         Tag::Unknown(252) ],
-                      &[ Tag::Signature,
-                         Tag::Unknown(230) ]);
+    #[test]
+    fn reject_all_packets() -> Result<()> {
+        let mut p = StandardPolicy::new();
+
+        let set_variants = [
+            (Tag::SEIP, 4),
+            (Tag::Unknown(252), 17),
+        ];
+        let check_variants = [
+            (Tag::Signature, 4),
+            (Tag::Unknown(230), 9),
+        ];
+
+        // Accept a few packets explicitly.
+        for (t, v) in set_variants.iter().cloned() {
+            p.accept_packet_tag_version(t, v);
+            assert_eq!(
+                p.packet_tag_version_cutoff(t, v),
+                ACCEPT.map(Into::into));
+        }
+
+        // Reject all hashes.
+        p.reject_all_packet_tags();
+
+        for (t, v) in set_variants.iter().chain(check_variants.iter()).cloned() {
+            assert_eq!(
+                p.packet_tag_version_cutoff(t, v),
+                REJECT.map(Into::into));
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn packet_versions() -> Result<()> {
+        // Accept the version of a packet.  Optionally make sure a
+        // different version is not accepted.
+        fn accept_and_check(p: &mut StandardPolicy,
+                            tag: Tag,
+                            accept_versions: &[u8],
+                            good_versions: &[u8],
+                            bad_versions: &[u8]) {
+            for v in accept_versions {
+                p.accept_packet_tag_version(tag, *v);
+                assert_eq!(
+                    p.packet_tag_version_cutoff(tag, *v),
+                    ACCEPT.map(Into::into));
+            }
+
+            for v in good_versions.iter() {
+                assert_eq!(
+                    p.packet_tag_version_cutoff(tag, *v),
+                    ACCEPT.map(Into::into));
+            }
+            for v in bad_versions.iter() {
+                assert_eq!(
+                    p.packet_tag_version_cutoff(tag, *v),
+                    REJECT.map(Into::into));
+            }
+        }
+
+        use rand::seq::SliceRandom;
+        let mut rng = rand::thread_rng();
+
+        let mut all_versions = (0..=u8::MAX).collect::<Vec<_>>();
+        all_versions.shuffle(&mut rng);
+        let all_versions = &all_versions[..];
+        let mut not_v5 = all_versions.iter()
+            .filter(|&&v| v != 5)
+            .cloned()
+            .collect::<Vec<_>>();
+        not_v5.shuffle(&mut rng);
+        let not_v5 = &not_v5[..];
+
+        let p = &mut StandardPolicy::new();
+        p.reject_all_packet_tags();
+
+        // First only use the versioned interfaces.
+        accept_and_check(p, Tag::Signature, &[3], &[], &[4, 5]);
+        accept_and_check(p, Tag::Signature, &[4], &[3], &[5]);
+
+        // Only use an unversioned policy.
+        accept_and_check(p, Tag::SEIP,
+                         &[], // set to accept
+                         &[], // good
+                         all_versions, // bad
+        );
+        p.accept_packet_tag(Tag::SEIP);
+        accept_and_check(p, Tag::SEIP,
+                         &[], // set to accept
+                         all_versions, // good
+                         &[], // bad
+        );
+
+        // Set an unversioned policy and then a versioned policy.
+        accept_and_check(p, Tag::PKESK,
+                         &[], // set to accept
+                         &[], // good
+                         all_versions, // bad
+        );
+        p.accept_packet_tag(Tag::PKESK);
+        accept_and_check(p, Tag::PKESK,
+                         &[], // set to accept
+                         &(0..u8::MAX).collect::<Vec<_>>()[..], // good
+                         &[], // bad
+        );
+        p.reject_packet_tag_version(Tag::PKESK, 5);
+        accept_and_check(p, Tag::PKESK,
+                         &[], // set to accept
+                         not_v5, // good
+                         &[5], // bad
+        );
+
+        // Set a versioned policy and then an unversioned policy.
+        // Make sure that the versioned policy is cleared by the
+        // unversioned policy.
+        accept_and_check(p, Tag::SKESK,
+                         &[], // set to accept
+                         &[], // good
+                         all_versions, // bad
+        );
+        p.accept_packet_tag_version(Tag::SKESK, 5);
+        accept_and_check(p, Tag::SKESK,
+                         &[], // set to accept
+                         &[5], // good
+                         not_v5, // bad
+        );
+        p.reject_packet_tag(Tag::SKESK);
+        // All versions should be bad now...
+        accept_and_check(p, Tag::SKESK,
+                         &[], // set to accept
+                         &[], // good
+                         all_versions, // bad
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn packet_tag_cutoff() {
+        // The semantics of packet_tag_cutoff are: max of all
+        // versioned cutoffs and the unversioned cutoff.
+
+        let p = &mut StandardPolicy::new();
+        p.reject_all_packet_tags();
+
+        assert_eq!(p.packet_tag_cutoff(Tag::Signature),
+                   REJECT.map(Into::into));
+
+        p.reject_packet_tag_version_at(Tag::Signature, 5,
+                                       Timestamp::Y2007M2);
+        assert_eq!(p.packet_tag_cutoff(Tag::Signature),
+                   Some(Timestamp::Y2007M2.into()));
+
+        p.reject_packet_tag_version_at(Tag::Signature, 3,
+                                       Timestamp::Y2005M2);
+        assert_eq!(p.packet_tag_cutoff(Tag::Signature),
+                   Some(Timestamp::Y2007M2.into()));
+
+        p.reject_packet_tag_version_at(Tag::Signature, 6,
+                                       ACCEPT.map(Into::into));
+        assert_eq!(p.packet_tag_cutoff(Tag::Signature),
+                   ACCEPT.map(Into::into));
+
+        p.reject_packet_tag_version_at(Tag::Signature, 6,
+                                       Timestamp::Y2005M2);
+        assert_eq!(p.packet_tag_cutoff(Tag::Signature),
+                   Some(Timestamp::Y2007M2.into()));
+    }
 }
