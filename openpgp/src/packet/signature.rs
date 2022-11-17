@@ -1901,7 +1901,6 @@ impl Signature4 {
     ///
     /// If you want to sign something, consider using the [`SignatureBuilder`]
     /// interface.
-    ///
     pub fn new(typ: SignatureType, pk_algo: PublicKeyAlgorithm,
                hash_algo: HashAlgorithm, hashed_area: SubpacketArea,
                unhashed_area: SubpacketArea,
