@@ -406,17 +406,18 @@ impl<A> VersionedCutoffList<A>
     //
     // `tolerance` is added to the cutoff time.
     #[inline]
-    pub(super) fn check(&self, a: A, version: u8, time: Timestamp,
+    pub(super) fn check(&self, algo: A, version: u8, time: Timestamp,
                         tolerance: Option<Duration>)
         -> Result<()>
     {
-        if let Some(cutoff) = self.cutoff(a.clone(), version) {
+        if let Some(cutoff) = self.cutoff(algo.clone(), version) {
             let cutoff = cutoff
                 .checked_add(tolerance.unwrap_or_else(|| Duration::seconds(0)))
                 .unwrap_or(Timestamp::MAX);
             if time >= cutoff {
                 Err(Error::PolicyViolation(
-                    a.to_string(), Some(cutoff.into())).into())
+                    format!("{} v{}", algo, version),
+                    Some(cutoff.into())).into())
             } else {
                 Ok(())
             }
