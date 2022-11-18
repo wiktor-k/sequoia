@@ -35,11 +35,8 @@ use crate::sq_cli;
 
 pub fn dispatch_keyserver(config: Config, c: sq_cli::keyserver::Command) -> Result<()> {
     let network_policy = c.network_policy.into();
-    let mut ks = if let Some(uri) = c.server {
-        KeyServer::new(network_policy, &uri)
-    } else {
-        KeyServer::keys_openpgp_org(network_policy)
-    }.context("Malformed keyserver URI")?;
+    let mut ks = KeyServer::new(network_policy, &c.server)
+        .context("Malformed keyserver URI")?;
 
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_io()

@@ -1311,6 +1311,8 @@ OPTIONS:
     -s, --server <URI>
             Sets the keyserver to use
 
+            [default: hkps://keys.openpgp.org]
+
 SUBCOMMANDS:
     get
             Retrieves a key

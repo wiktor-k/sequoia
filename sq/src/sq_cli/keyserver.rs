@@ -22,10 +22,11 @@ pub struct Command {
     #[clap(
         short,
         long,
+        default_value = "hkps://keys.openpgp.org",
         value_name = "URI",
         help = "Sets the keyserver to use",
     )]
-    pub server: Option<String>,
+    pub server: String,
     #[clap(subcommand)]
     pub subcommand: Subcommands,
 }
