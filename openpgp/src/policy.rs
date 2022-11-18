@@ -1489,9 +1489,11 @@ impl<'a> Policy for StandardPolicy<'a> {
                 .context("Policy rejected critical signature subpacket")?;
             if let SubpacketValue::NotationData(n) = csp.value() {
                 if ! self.good_critical_notations.contains(&n.name()) {
-                    return Err(Error::PolicyViolation(
-                        format!("Policy rejected critical notation {:?}",
-                                n.name()), None).into());
+                    return Err(anyhow::Error::from(
+                        Error::PolicyViolation(
+                            format!("Critical notation {:?}",
+                                    n.name()), None))
+                               .context("Policy rejected critical notation"));
                 }
             }
         }
