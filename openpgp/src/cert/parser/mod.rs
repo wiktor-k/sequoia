@@ -157,6 +157,12 @@ impl KeyringValidator {
             Tag::UserAttribute => Token::UserAttribute(None),
             Tag::Signature => Token::Signature(None),
             Tag::Trust => Token::Trust(None),
+            Tag::Marker => {
+                // Ignore Marker Packet.  RFC4880, section 5.8:
+                //
+                //   Such a packet MUST be ignored when received.
+                return;
+            },
             _ => {
                 // Unknown token.
                 self.error = Some(CertParserError::OpenPGP(
