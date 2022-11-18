@@ -776,6 +776,12 @@ mod tests {
                      (Signature, None, 0)],
                 result: true,
             },
+            TestVector {
+                s: &[(OnePassSig, None, 0), (Literal, None, 0),
+                     (Signature, None, 0),
+                     (Marker, None, 0)],
+                result: true,
+            },
         ];
 
         for v in &test_vectors {
