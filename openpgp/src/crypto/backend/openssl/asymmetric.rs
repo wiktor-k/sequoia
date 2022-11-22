@@ -12,7 +12,7 @@ use crate::types::{Curve, HashAlgorithm, PublicKeyAlgorithm};
 use std::convert::{TryFrom, TryInto};
 use std::time::SystemTime;
 
-use openssl::bn::{BigNum, BigNumContext};
+use openssl::bn::{BigNum, BigNumRef, BigNumContext};
 use openssl::ec::{EcGroup, EcKey, EcPoint, PointConversionForm};
 use openssl::ecdsa::EcdsaSig;
 use openssl::nid::Nid;
@@ -31,10 +31,34 @@ impl TryFrom<&ProtectedMPI> for BigNum {
     }
 }
 
+impl From<&BigNumRef> for ProtectedMPI {
+    fn from(bn: &BigNumRef) -> Self {
+        bn.to_vec().into()
+    }
+}
+
+impl From<BigNum> for ProtectedMPI {
+    fn from(bn: BigNum) -> Self {
+        bn.to_vec().into()
+    }
+}
+
+impl From<BigNum> for MPI {
+    fn from(bn: BigNum) -> Self {
+        bn.to_vec().into()
+    }
+}
+
 impl TryFrom<&MPI> for BigNum {
     type Error = anyhow::Error;
     fn try_from(mpi: &MPI) -> std::result::Result<BigNum, anyhow::Error> {
         Ok(BigNum::from_slice(mpi.value())?)
+    }
+}
+
+impl From<&BigNumRef> for MPI {
+    fn from(bn: &BigNumRef) -> Self {
+        bn.to_vec().into()
     }
 }
 
@@ -133,8 +157,8 @@ impl Signer for KeyPair {
                     let key = EcKey::from_private_components(&group, &private, &point)?;
                     let sig = EcdsaSig::sign(digest, &key)?;
                     Ok(mpi::Signature::ECDSA {
-                        r: sig.r().to_vec().into(),
-                        s: sig.s().to_vec().into(),
+                        r: sig.r().into(),
+                        s: sig.s().into(),
                     })
                 }
 
@@ -155,8 +179,8 @@ impl Signer for KeyPair {
                         // https://tools.ietf.org/html/rfc8032#section-5.1.6
                         let (r, s) = signature.split_at(signature.len() / 2);
                         Ok(mpi::Signature::EdDSA {
-                            r: mpi::MPI::new(r),
-                            s: mpi::MPI::new(s),
+                            r: r.to_vec().into(),
+                            s: s.to_vec().into(),
                         })
                     }
                     _ => Err(crate::Error::UnsupportedEllipticCurve(curve.clone()).into()),
@@ -251,9 +275,9 @@ impl<P: key::KeyParts, R: key::KeyRole> Key<P, R> {
 
                     // The ciphertext has the length of the modulus.
                     let mut buf = vec![0; rsa.size().try_into()?];
-                    let encrypted_len = rsa.public_encrypt(data, &mut buf, Padding::PKCS1)?;
+                    rsa.public_encrypt(data, &mut buf, Padding::PKCS1)?;
                     Ok(mpi::Ciphertext::RSA {
-                        c: mpi::MPI::new(&buf[..encrypted_len]),
+                        c: buf.into(),
                     })
                 }
                 pk => Err(crate::Error::MalformedPacket(format!(
@@ -336,8 +360,8 @@ impl<P: key::KeyParts, R: key::KeyRole> Key<P, R> {
                 let point = EcPoint::from_bytes(&group, q.value(), &mut ctx)?;
                 let key = EcKey::from_public_key(&group, &point)?;
                 let sig = EcdsaSig::from_private_components(
-                    BigNum::from_slice(r.value())?,
-                    BigNum::from_slice(s.value())?,
+                    r.try_into()?,
+                    s.try_into()?,
                 )?;
                 sig.verify(digest, &key)?
             }
@@ -425,7 +449,7 @@ where
             PublicKeyAlgorithm::EdDSA,
             mpi::PublicKey::EdDSA {
                 curve: Curve::Ed25519,
-                q: mpi::MPI::new(&public_key),
+                q: public_key.into(),
             },
             mpi::SecretKeyMaterial::EdDSA {
                 scalar: mpi::MPI::new(&private_key).into(),
@@ -471,14 +495,14 @@ where
             ctime.into().unwrap_or_else(crate::now),
             PublicKeyAlgorithm::RSAEncryptSign,
             mpi::PublicKey::RSA {
-                e: mpi::MPI::new(&e.to_vec()),
-                n: mpi::MPI::new(&n.to_vec()),
+                e: e.into(),
+                n: n.into(),
             },
             mpi::SecretKeyMaterial::RSA {
-                d: mpi::MPI::new(&d_bn.to_vec()).into(),
+                d: d_bn.into(),
                 p: mpi::MPI::new(p).into(),
                 q: mpi::MPI::new(q).into(),
-                u: mpi::MPI::new(&u.to_vec()).into(),
+                u: u.into(),
             }
             .into(),
         )
@@ -506,14 +530,14 @@ where
             crate::now(),
             PublicKeyAlgorithm::RSAEncryptSign,
             mpi::PublicKey::RSA {
-                e: mpi::MPI::new(&e.to_vec()),
-                n: mpi::MPI::new(&n.to_vec()),
+                e: e.into(),
+                n: n.into(),
             },
             mpi::SecretKeyMaterial::RSA {
-                d: mpi::MPI::new(&d.to_vec()).into(),
-                p: mpi::MPI::new(&p.to_vec()).into(),
-                q: mpi::MPI::new(&q.to_vec()).into(),
-                u: mpi::MPI::new(&u.to_vec()).into(),
+                d: d.into(),
+                p: p.into(),
+                q: q.into(),
+                u: u.into(),
             }
             .into(),
         )
