@@ -340,7 +340,9 @@ fn userid_add(config: Config, command: sq_cli::key::UseridAddCommand) -> Result<
     // If a password is needed to use the key, the user will be prompted.
     let pk = get_primary_keys(&[key.clone()], &config.policy,
                               command.private_key_store.as_deref(),
-                              creation_time, None)?;
+                              creation_time, None);
+
+    let pk = pk.context("Adding a User ID requires the private key")?;
 
     assert_eq!(pk.len(), 1, "Expect exactly one result from get_primary_keys()");
     let mut pk = pk.into_iter().next().unwrap();
