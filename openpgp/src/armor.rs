@@ -53,6 +53,9 @@ use base64_utils::*;
 mod crc;
 use crc::Crc;
 
+/// Whether to trace execution by default (on stderr).
+const TRACE: bool = false;
+
 /// The encoded output stream must be represented in lines of no more
 /// than 76 characters each (see (see [RFC 4880, section
 /// 6.3](https://tools.ietf.org/html/rfc4880#section-6.3).  GnuPG uses
@@ -542,7 +545,9 @@ pub struct Reader<'a> {
     // XXX: Directly implement the BufferedReader protocol.  This may
     // actually simplify the code and reduce the required buffering.
 
-    buffer: Option<Box<[u8]>>,
+    buffer: Option<Vec<u8>>,
+    /// Currently unused buffer, a cache.
+    unused_buffer: Option<Vec<u8>>,
     // The next byte to read in the buffer.
     cursor: usize,
     // The preferred chunk size.  This is just a hint.
@@ -551,6 +556,8 @@ pub struct Reader<'a> {
     source: Box<dyn BufferedReader<Cookie> + 'a>,
     // Stashed error, if any.
     error: Option<Error>,
+    /// Whether we hit EOF on the underlying reader.
+    eof: bool,
     // The user settable cookie.
     cookie: Cookie,
     // End fields of the embedded generic reader.
@@ -744,10 +751,12 @@ impl<'a> Reader<'a> {
         Reader {
             // The embedded generic reader's fields.
             buffer: None,
+            unused_buffer: None,
             cursor: 0,
             preferred_chunk_size: DEFAULT_BUF_SIZE,
             source: inner,
             error: None,
+            eof: false,
             cookie,
             // End of the embedded generic reader's fields.
 
@@ -1518,17 +1527,16 @@ impl<'a> Reader<'a> {
     // buffered_reader::Generic::data_helper, the only modification is
     // that it uses the above do_read function.
     fn data_helper(&mut self, amount: usize, hard: bool, and_consume: bool)
-                   -> Result<&[u8]> {
-        // println!("Generic.data_helper(\
-        //           amount: {}, hard: {}, and_consume: {} (cursor: {}, buffer: {:?})",
-        //          amount, hard, and_consume,
-        //          self.cursor,
-        //          if let Some(ref buffer) = self.buffer { Some(buffer.len()) }
-        //          else { None });
-
+                   -> io::Result<&[u8]> {
+        tracer!(TRACE, "armor::Reader::data_helper");
+        t!("amount: {}, hard: {}, and_consume: {} (cursor: {}, buffer: {:?})",
+           amount, hard, and_consume,
+           self.cursor,
+           self.buffer.as_ref().map(|buffer| buffer.len()));
 
         // See if there is an error from the last invocation.
         if let Some(e) = self.error.take() {
+            t!("Returning stashed error: {}", e);
             return Err(e);
         }
 
@@ -1550,14 +1558,29 @@ impl<'a> Reader<'a> {
                 DEFAULT_BUF_SIZE,
                 2 * self.preferred_chunk_size), amount);
 
-            let mut buffer_new : Vec<u8> = vec![0u8; capacity];
+            let mut buffer_new = self.unused_buffer.take()
+                .map(|mut v| {
+                    vec_resize(&mut v, capacity);
+                    v
+                })
+                .unwrap_or_else(|| vec![0u8; capacity]);
 
             let mut amount_read = 0;
             while amount_buffered + amount_read < amount {
+                t!("Have {} bytes, need {} bytes",
+                   amount_buffered + amount_read, amount);
+
+                if self.eof {
+                    t!("Hit EOF on the underlying reader, don't poll again.");
+                    break;
+                }
+
                 match self.do_read(&mut buffer_new
                                    [amount_buffered + amount_read..]) {
                     Ok(read) => {
+                        t!("Read {} bytes", read);
                         if read == 0 {
+                            self.eof = true;
                             break;
                         } else {
                             amount_read += read;
@@ -1585,9 +1608,9 @@ impl<'a> Reader<'a> {
                 }
 
                 vec_truncate(&mut buffer_new, amount_buffered + amount_read);
-                buffer_new.shrink_to_fit();
 
-                self.buffer = Some(buffer_new.into_boxed_slice());
+                self.unused_buffer = self.buffer.take();
+                self.buffer = Some(buffer_new);
                 self.cursor = 0;
             }
         }
@@ -1596,19 +1619,24 @@ impl<'a> Reader<'a> {
             = self.buffer.as_ref().map(|b| b.len() - self.cursor).unwrap_or(0);
 
         if self.error.is_some() {
+            t!("Encountered an error: {}", self.error.as_ref().unwrap());
             // An error occurred.  If we have enough data to fulfill
             // the caller's request, then don't return the error.
             if hard && amount > amount_buffered {
+                t!("Not enough data to fulfill request, returning error");
                 return Err(self.error.take().unwrap());
             }
             if !hard && amount_buffered == 0 {
+                t!("No data data buffered, returning error");
                 return Err(self.error.take().unwrap());
             }
         }
 
         if hard && amount_buffered < amount {
+            t!("Unexpected EOF");
             Err(Error::new(ErrorKind::UnexpectedEof, "EOF"))
         } else if amount == 0 || amount_buffered == 0 {
+            t!("Returning zero-length slice");
             Ok(&b""[..])
         } else {
             let buffer = self.buffer.as_ref().unwrap();
@@ -1616,8 +1644,13 @@ impl<'a> Reader<'a> {
                 let amount_consumed = cmp::min(amount_buffered, amount);
                 self.cursor += amount_consumed;
                 assert!(self.cursor <= buffer.len());
+                t!("Consuming {} bytes, returning {} bytes",
+                   amount_consumed,
+                   buffer[self.cursor-amount_consumed..].len());
                 Ok(&buffer[self.cursor-amount_consumed..])
             } else {
+                t!("Returning {} bytes",
+                   buffer[self.cursor..].len());
                 Ok(&buffer[self.cursor..])
             }
         }

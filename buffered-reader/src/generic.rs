@@ -112,7 +112,7 @@ impl<T: io::Read + Send + Sync, C: fmt::Debug + Sync + Send> Generic<T, C> {
     // If you find a bug in this function, consider whether
     // sequoia_openpgp::armor::Reader::data_helper is also affected.
     fn data_helper(&mut self, amount: usize, hard: bool, and_consume: bool)
-                   -> Result<&[u8], io::Error> {
+                   -> io::Result<&[u8]> {
         tracer!(TRACE, "Generic::data_helper");
         t!("amount: {}, hard: {}, and_consume: {} (cursor: {}, buffer: {:?})",
            amount, hard, and_consume,
